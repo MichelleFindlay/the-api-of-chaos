@@ -1,0 +1,56 @@
+# The API of Chaos — Apache configuration
+# Place alongside the PHP file, in the same directory.
+# Assumes the script is named index.php. If you kept the name
+# kick-rocks.php, change the two references below to match.
+# Requires AllowOverride All (or at least FileInfo Options Limit Indexes).
+
+DirectoryIndex index.php
+Options -Indexes -MultiViews
+
+# --- Front controller -------------------------------------------------
+# Send every request that isn't a real file or directory to the script,
+# so /kick-rocks and /pound-dirt reach the router.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If deployed in a subdirectory, uncomment and set it, e.g. /kraas
+    # RewriteBase /
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Fallback for servers without mod_rewrite (Apache 2.2.16+).
+# The path is URL-absolute: use /kraas/index.php if in a subdirectory.
+<IfModule !mod_rewrite.c>
+    FallbackResource /index.php
+</IfModule>
+
+# --- Protect the pile store -------------------------------------------
+# Only relevant if you set KRAAS_DIR to somewhere under the web root.
+# Better still: keep it outside the web root entirely.
+<FilesMatch "\.json$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_alias.c>
+    RedirectMatch 404 /kraas-piles/
+</IfModule>
+
+# --- Responses --------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Public read-only API, so cross-origin GETs are fine. Tighten or
+    # drop these three lines if you'd rather it wasn't embeddable.
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "X-Pile-Id, Content-Type"
+</IfModule>
+
+# Preflight requests never need to reach PHP.
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^ - [R=204,L]
+</IfModule>
