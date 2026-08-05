@@ -22,6 +22,9 @@ declare(strict_types=1);
  *   GET    /kick/dirt/leaderboard  top 20 piles, IPs partly masked
  *   DELETE /kick/dirt            reset the pile (cowardly)
  *   GET    /excuses/teams       a reason not to join the call
+ *   GET    /excuses/social      a reason not to attend, drawn from a tier
+ *   GET    /excuses/social/tiers  the five sub-tiers of social excuse
+ *   GET    /ministry/gentle-correction  rolls a d6 against approved remedies
  *   GET    /healthz             liveness
  *
  * Query params
@@ -240,6 +243,15 @@ const SOCIAL_EXCUSES = [
     ],
 ];
 
+const GENTLE_CORRECTION_VERDICTS = [
+    1 => 'Reassuring pat',
+    2 => 'Firm tap',
+    3 => 'The Fonz',
+    4 => 'Dad-fixing-the-telly',
+    5 => 'Percussive maintenance (formal)',
+    6 => 'Consult the warranty first',
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -446,6 +458,9 @@ function handle_index(): never
             'GET /kick/dirt/leaderboard' => 'Top 20 piles, ranked. IPs shown with the final octet removed.',
             'DELETE /kick/dirt'      => 'Reset the pile. Only from the IP that raised it.',
             'GET /excuses/teams'     => 'A reason not to join the call.',
+            'GET /excuses/social'    => 'A reason not to attend, with tier.',
+            'GET /excuses/social/tiers' => 'The five sub-tiers of social excuse.',
+            'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies.',
             'GET /healthz'           => 'Liveness.',
         ],
         'notes' => [
@@ -631,6 +646,32 @@ function handle_excuses_social(): never
     ]);
 }
 
+function handle_excuses_social_tiers(): never
+{
+    $tiers = [];
+    foreach (SOCIAL_EXCUSES as $tier => $excuses) {
+        $tiers[] = [
+            'tier'  => $tier,
+            'count' => count($excuses),
+        ];
+    }
+
+    send(200, [
+        'tiers' => $tiers,
+    ]);
+}
+
+function handle_gentle_correction(): never
+{
+    $roll = mt_rand(1, 6);
+
+    send(200, [
+        'instruction' => 'When in doubt, apply gentle correction.',
+        'roll'        => $roll,
+        'verdict'     => GENTLE_CORRECTION_VERDICTS[$roll],
+    ]);
+}
+
 /* ------------------------------------------------------------------ *
  * Router
  * ------------------------------------------------------------------ */
@@ -673,6 +714,8 @@ match (true) {
     $method === 'GET' && $path === '/kick/dirt/leaderboard' => handle_leaderboard(),
     $method === 'GET' && $path === '/excuses/teams'       => handle_excuses_teams(),
     $method === 'GET' && $path === '/excuses/social'      => handle_excuses_social(),
+    $method === 'GET' && $path === '/excuses/social/tiers' => handle_excuses_social_tiers(),
+    $method === 'GET' && $path === '/ministry/gentle-correction' => handle_gentle_correction(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
         'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
