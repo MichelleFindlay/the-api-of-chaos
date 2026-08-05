@@ -177,6 +177,69 @@ const NO_TEAMS_TODAY_REASONS = [
     "I'll be there in spirit, which is arguably the most I've contributed to any of the last six.",
 ];
 
+const SOCIAL_EXCUSES = [
+    'The Domestic Crisis Tier' => [
+        'My sourdough starter has entered a critical phase and cannot be left unsupervised.',
+        "A pigeon got into the airing cupboard and we've reached an uneasy stalemate.",
+        "My smoke alarm is beeping in a rhythm I'm beginning to think is deliberate.",
+        "The washing machine walked three feet across the kitchen and I need to see where it's going.",
+        "I've locked myself out of the house but only emotionally.",
+        "There's a bee in the conservatory that I've decided to name and I can't leave now.",
+        "My freezer defrosted and I'm currently in a race against fourteen bags of peas.",
+        'I have to be home for a delivery scheduled between 8am and the heat death of the universe.',
+        'The boiler is making a noise I would describe as "confessional."',
+        'I put something in the microwave in 2019 and I need to deal with that today.',
+    ],
+    'The Technical Difficulties Tier' => [
+        'My calendar and I are no longer on speaking terms.',
+        "My laptop has entered a fan cycle I'm legally obligated to see through.",
+        'I updated something and now nothing is where I left it, including my resolve.',
+        'My webcam works but only shows a version of me from four seconds ago and I find that upsetting.',
+        'My phone autocorrected my RSVP to "no" and I don\'t want to make it a whole thing.',
+        'The Wi-Fi is fine but the vibes are down.',
+        "My headphones connected to my neighbour's television and I'm three episodes deep now.",
+        'I accidentally set my status to Away in real life.',
+        'Two-factor authentication has locked me out of the building, spiritually.',
+        'My alarm went off but in the wrong emotional key.',
+    ],
+    'The Medical-Adjacent Tier' => [
+        'I have a mild case of not.',
+        "I've come down with a 24-hour personality.",
+        'My back went out and took my willingness with it.',
+        "I'm allergic to buffets held after 6pm.",
+        'Doctor says I should avoid crowds, small talk, and anyone who says "circle back."',
+        "I've developed a temporary intolerance to standing near a cheese board.",
+        'My sleep schedule has become a work of abstract art and I refuse to interpret it.',
+        'I strained something reaching for a metaphor.',
+        "I've been advised to rest my opinions.",
+        'I have a sore throat but only for talking, not eating.',
+    ],
+    'The Cosmic / Existential Tier' => [
+        "Mercury isn't in retrograde but I'm choosing to act as if it is.",
+        "I promised my past self I'd stop doing this and I'd hate to let him down.",
+        'I looked at the invite too long and became briefly aware of my own mortality.',
+        "I'm currently the only thing holding the week together and cannot be moved.",
+        "I've been thinking about the ocean and now I'm no good to anyone.",
+        'Time is a flat circle and I already attended this in a previous configuration.',
+        'I have a prior commitment to lying on the floor.',
+        "I've reached my annual limit of being perceived.",
+        'My horoscope specifically said "no."',
+        "I'm observing a personal holiday. It's called Wednesday.",
+    ],
+    'The Wildly Specific Tier' => [
+        "I'm on jury duty for a dispute between two of my houseplants.",
+        "My cat has scheduled a performance review and I don't want to reschedule.",
+        "I'm the emergency contact for someone who is, I'm now realising, also me.",
+        'I have to drive a very small distance for a very long time.',
+        "There's a man coming to look at the loft. He's been coming for three years.",
+        "I'm helping a friend move something that is technically an idea.",
+        "I'm in a queue and I've come too far to leave now.",
+        "My sat nav sent me somewhere and I've decided to stay.",
+        "I'm attending in spirit, and my spirit is famously unreliable.",
+        'I said yes assuming it would never actually happen, and now look at us.',
+    ],
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -554,6 +617,17 @@ function handle_excuses_teams(): never
     send(200, [
         'instruction' => 'Do not join the call.',
         'reason'      => pick(NO_TEAMS_TODAY_REASONS),
+    ]);
+}
+
+function handle_excuses_social(): never
+{
+    $tier = array_rand(SOCIAL_EXCUSES);
+
+    send(200, [
+        'instruction' => 'You will not be attending.',
+        'reason'      => pick(SOCIAL_EXCUSES[$tier]),
+        'tier'        => $tier,
     ]);
 }
 
