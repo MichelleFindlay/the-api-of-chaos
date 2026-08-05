@@ -19,6 +19,8 @@
 | `GET` | `/excuses/social` | A reason not to attend, with tier. |
 | `GET` | `/excuses/social/tiers` | The five sub-tiers of social excuse. |
 | `GET` | `/excuses/oops` | A reason it went wrong, with tier explanation. |
+| `GET` | `/excuses/ring-ring` | A reason you did not pick up |
+| `GET` | `/excuses/rlate` | A reason you're late |
 | `GET` | `/ministry/gentle-correction` | Rolls a d6 against the Ministry's approved remedies, graded in newtons. |
 | `GET` | `/healthz` | Liveness. |
 
