@@ -13,22 +13,23 @@ declare(strict_types=1);
  *
  * Endpoints
  *   GET    /                    service index
- *   GET    /kick-rocks          assigns you a rock to kick
- *   GET    /kick-rocks/tiers    the full scale, moon rock -> Moon
- *   GET    /pound-dirt          adds to your pile and returns it
- *   POST   /pound-dirt          same, for the semantically fussy
- *   GET    /pound-dirt/status   peek without pounding
- *   GET    /pound-dirt/tiers    the full scale, fistful -> second moon
- *   DELETE /pound-dirt          reset the pile (cowardly)
- *   GET    /no-teams-today      a reason not to join the call
+ *   GET    /kick/rocks          assigns you a rock to kick
+ *   GET    /kick/rocks/tiers    the full scale, moon rock -> Moon
+ *   GET    /kick/dirt            adds to your pile and returns it
+ *   POST   /kick/dirt            same, for the semantically fussy
+ *   GET    /kick/dirt/status     peek without pounding
+ *   GET    /kick/dirt/tiers      the full scale, fistful -> second moon
+ *   GET    /kick/dirt/leaderboard  top 20 piles, IPs partly masked
+ *   DELETE /kick/dirt            reset the pile (cowardly)
+ *   GET    /excuses/teams       a reason not to join the call
  *   GET    /healthz             liveness
  *
  * Query params
- *   /kick-rocks?tier=7          request a specific tier (1-14)
- *   /kick-rocks?min=9&max=12    constrain the random range
- *   /pound-dirt?pile=michelle   named pile; also honours X-Pile-Id header
+ *   /kick/rocks?tier=7          request a specific tier (1-14)
+ *   /kick/rocks?min=9&max=12    constrain the random range
+ *   /kick/dirt?pile=michelle    named pile; also honours X-Pile-Id header
  *
- * Piles persist as JSON files under sys_get_temp_dir()/kraas-piles
+ * Piles persist as JSON files under sys_get_temp_dir()/jar
  * (override with KRAAS_DIR), because PHP forgets everything between
  * requests. Much like the people you are sending here.
  */
@@ -95,6 +96,7 @@ const KICK_REMARKS = [
 
 const DIRT_STAGES = [
     [1.0,   'a disappointing fistful'],
+    [5.0,   'You\'ve got a jar of dirt'],
     [12.0,  'a bucketful'],
     [90.0,  'a wheelbarrow load'],
     [600.0, 'a proper molehill'],
@@ -212,9 +214,22 @@ function stage_for(float $litres): string
     return 'indescribable';
 }
 
+/**
+ * The largest finite tier boundary in DIRT_STAGES. Piles are capped
+ * here so a pile can never grow past the top of the scale.
+ */
+function dirt_max_litres(): float
+{
+    static $max = null;
+    if ($max === null) {
+        $max = max(array_filter(array_column(DIRT_STAGES, 0), 'is_finite'));
+    }
+    return $max;
+}
+
 function pile_dir(): string
 {
-    $dir = getenv('KRAAS_DIR') ?: sys_get_temp_dir() . '/kraas-piles';
+    $dir = getenv('KRAAS_DIR') ?: sys_get_temp_dir() . '/jar';
     if (!is_dir($dir)) {
         mkdir($dir, 0770, true);
     }
@@ -238,6 +253,27 @@ function client_ip(): string
         return $cf;
     }
     return $_SERVER['REMOTE_ADDR'] ?? 'anonymous';
+}
+
+/**
+ * Anonymises an identifier for public display: IPs get their final
+ * octet (or, for IPv6, final hextet) knocked off. Custom pile names
+ * (from ?pile= or X-Pile-Id) are left as-is, since they were chosen
+ * to be shown.
+ */
+function mask_ip(string $id): string
+{
+    if (filter_var($id, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+        $parts = explode('.', $id);
+        $parts[3] = 'x';
+        return implode('.', $parts);
+    }
+    if (filter_var($id, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false) {
+        $parts = explode(':', $id);
+        $parts[count($parts) - 1] = 'x';
+        return implode(':', $parts);
+    }
+    return $id;
 }
 
 function pile_id(): string
@@ -273,16 +309,22 @@ function pile_pound(string $id): array
     $raw  = stream_get_contents($fh);
     $pile = json_decode((string) $raw, true);
     if (!is_array($pile)) {
-        $pile = ['litres' => 0.0, 'blows' => 0, 'since' => gmdate('c')];
+        // owner_ip is fixed at creation, independent of ?pile=/X-Pile-Id,
+        // so a named pile can't later be deleted by anyone who guesses its name.
+        $pile = ['litres' => 0.0, 'blows' => 0, 'since' => gmdate('c'), 'owner_ip' => client_ip()];
     }
 
     // Each blow adds a random amount that scales with what is already
     // there, so the pile compounds rather than creeping.
+    $before = (float) $pile['litres'];
     $growth = frand(0.18, 0.73);
-    $delta  = max(frand(0.4, 2.9), (float) $pile['litres'] * $growth);
+    $delta  = max(frand(0.4, 2.9), $before * $growth);
+    $after  = min(dirt_max_litres(), $before + $delta);
 
-    $pile['litres'] = (float) $pile['litres'] + $delta;
+    $pile['litres'] = $after;
     $pile['blows']  = (int) $pile['blows'] + 1;
+    $pile['id']     = $id;
+    $delta          = $after - $before;
 
     ftruncate($fh, 0);
     rewind($fh);
@@ -333,19 +375,22 @@ function handle_index(): never
         'version' => '1.0.0',
         'tagline' => 'Dismissal, at scale, with an SLA of none.',
         'endpoints' => [
-            'GET /kick-rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
-            'GET /kick-rocks/tiers'  => 'The full scale, tier 1 through 14.',
-            'GET|POST /pound-dirt'   => 'Adds to your pile. Optional: ?pile=name',
-            'GET /pound-dirt/status' => 'Peek at the pile without pounding it.',
-            'GET /pound-dirt/tiers'  => 'The full scale, fistful through second moon.',
-            'DELETE /pound-dirt'     => 'Reset the pile. Noted on your permanent record.',
-            'GET /no-teams-today'    => 'A reason not to join the call.',
+            'GET /kick/rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
+            'GET /kick/rocks/tiers'  => 'The full scale, tier 1 through 14.',
+            'GET|POST /kick/dirt'    => 'Adds to your pile. Optional: ?pile=name',
+            'GET /kick/dirt/status'  => 'Peek at the pile without pounding it.',
+            'GET /kick/dirt/tiers'   => 'The full scale, fistful through second moon.',
+            'GET /kick/dirt/leaderboard' => 'Top 20 piles, ranked. IPs shown with the final octet removed.',
+            'DELETE /kick/dirt'      => 'Reset the pile. Only from the IP that raised it.',
+            'GET /excuses/teams'     => 'A reason not to join the call.',
             'GET /healthz'           => 'Liveness.',
         ],
         'notes' => [
             'Piles are files on disk and survive restarts, unlike morale.',
             'Tier 14 is the Moon. There is no tier 15.',
         ],
+        'source'  => 'https://github.com/MichelleFindlay/the-api-of-chaos',
+        'license' => 'GPL-3.0',
     ]);
 }
 
@@ -406,6 +451,37 @@ function handle_dirt_tiers(): never
     ]);
 }
 
+function handle_leaderboard(): never
+{
+    $rows = [];
+    foreach (glob(pile_dir() . '/*.json') ?: [] as $file) {
+        $pile = json_decode((string) file_get_contents($file), true);
+        if (!is_array($pile) || !isset($pile['litres'])) continue;
+
+        $rows[] = [
+            'contender'    => mask_ip(is_string($pile['id'] ?? null) ? $pile['id'] : 'anonymous'),
+            'total'        => human_volume((float) $pile['litres']),
+            'total_litres' => round((float) $pile['litres'], 2),
+            'now_roughly'  => stage_for((float) $pile['litres']),
+            'blows'        => (int) ($pile['blows'] ?? 0),
+            'since'        => $pile['since'] ?? null,
+        ];
+    }
+
+    usort($rows, static fn (array $a, array $b): int => $b['total_litres'] <=> $a['total_litres']);
+    $rows = array_slice($rows, 0, 20);
+    foreach ($rows as $i => &$row) {
+        $row = ['rank' => $i + 1] + $row;
+    }
+    unset($row);
+
+    send(200, [
+        'instruction'  => 'Behold the competition.',
+        'leaderboard'  => $rows,
+        'notes'        => ['Top 20 by volume. IPs are shown with the final octet removed.'],
+    ]);
+}
+
 function handle_pound_dirt(): never
 {
     $id   = pile_id();
@@ -452,7 +528,16 @@ function handle_pile_status(): never
 
 function handle_pile_reset(): never
 {
-    $id      = pile_id();
+    $id   = pile_id();
+    $pile = pile_read($id);
+
+    if ($pile !== null && ($pile['owner_ip'] ?? null) !== client_ip()) {
+        send(403, [
+            'pile'   => ['id' => $id],
+            'remark' => 'That pile was not raised from your IP. It stays.',
+        ]);
+    }
+
     $path    = pile_path($id);
     $existed = is_file($path) && unlink($path);
 
@@ -464,7 +549,7 @@ function handle_pile_reset(): never
     ]);
 }
 
-function handle_no_teams_today(): never
+function handle_excuses_teams(): never
 {
     send(200, [
         'instruction' => 'Do not join the call.',
@@ -504,20 +589,21 @@ if ($path === '' || $path === '/index.php' || $path === '/kick-rocks.php') {
 
 match (true) {
     $method === 'GET' && $path === '/'                    => handle_index(),
-    $method === 'GET' && $path === '/kick-rocks'          => handle_kick_rocks(),
-    $method === 'GET' && $path === '/kick-rocks/tiers'    => handle_tiers(),
+    $method === 'GET' && $path === '/kick/rocks'          => handle_kick_rocks(),
+    $method === 'GET' && $path === '/kick/rocks/tiers'    => handle_tiers(),
     in_array($method, ['GET', 'POST'], true)
-        && $path === '/pound-dirt'                        => handle_pound_dirt(),
-    $method === 'DELETE' && $path === '/pound-dirt'       => handle_pile_reset(),
-    $method === 'GET' && $path === '/pound-dirt/status'   => handle_pile_status(),
-    $method === 'GET' && $path === '/pound-dirt/tiers'    => handle_dirt_tiers(),
-    $method === 'GET' && $path === '/no-teams-today'      => handle_no_teams_today(),
+        && $path === '/kick/dirt'                         => handle_pound_dirt(),
+    $method === 'DELETE' && $path === '/kick/dirt'        => handle_pile_reset(),
+    $method === 'GET' && $path === '/kick/dirt/status'    => handle_pile_status(),
+    $method === 'GET' && $path === '/kick/dirt/tiers'     => handle_dirt_tiers(),
+    $method === 'GET' && $path === '/kick/dirt/leaderboard' => handle_leaderboard(),
+    $method === 'GET' && $path === '/excuses/teams'       => handle_excuses_teams(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
         'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
     ]),
     default => send(404, [
         'error'  => 'No such service.',
-        'remark' => 'There is, however, a rock. See GET /kick-rocks.',
+        'remark' => 'There is, however, a rock. See GET /kick/rocks.',
     ]),
 };
