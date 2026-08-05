@@ -24,6 +24,7 @@ declare(strict_types=1);
  *   GET    /excuses/teams       a reason not to join the call
  *   GET    /excuses/social      a reason not to attend, drawn from a tier
  *   GET    /excuses/social/tiers  the five sub-tiers of social excuse
+ *   GET    /excuses/oops        a reason it went wrong, with tier explanation
  *   GET    /ministry/gentle-correction  rolls a d6 against approved remedies
  *   GET    /healthz             liveness
  *
@@ -240,6 +241,84 @@ const SOCIAL_EXCUSES = [
         "My sat nav sent me somewhere and I've decided to stay.",
         "I'm attending in spirit, and my spirit is famously unreliable.",
         'I said yes assuming it would never actually happen, and now look at us.',
+    ],
+];
+
+const OOPS_EXCUSES = [
+    'Cosmic Interference' => [
+        'description' => 'Forces beyond mortal accountability: the universe, physics, or a rogue butterfly.',
+        'excuses' => [
+            'The moon was doing something and nobody warned me.',
+            'A butterfly flapped in 1994 and this was always going to happen to me specifically.',
+            "I was downstream of someone else's bad decision and it splashed.",
+            'The universe needed a small failure to balance a large success elsewhere. I was volunteered.',
+            "Somewhere there's a version of me who got this right and he's insufferable about it.",
+            "I was operating under yesterday's laws of physics.",
+            'A prophecy required it. Sorry.',
+            "Mercury isn't in retrograde but I am.",
+            "Time briefly moved to the left and I didn't follow.",
+            "I caught a stray thought that wasn't addressed to me.",
+        ],
+    ],
+    'Bodily Betrayal' => [
+        'description' => 'Your own body did something without asking you first.',
+        'excuses' => [
+            'My hands acted independently and have declined to give a statement.',
+            'My left eye was still asleep.',
+            'I blinked at the exact moment competence was being distributed.',
+            'Low blood sugar with a side of unearned confidence.',
+            'Muscle memory from a job I had eleven years ago.',
+            'My thumb has always been a liability and today it showed its hand.',
+            'I yawned mid-decision and something fell out.',
+            'I was, at the critical moment, thinking about a completely different door.',
+            'My spine made an executive decision without consulting me.',
+            "I'd been standing up too long and my brain got jealous.",
+        ],
+    ],
+    'Environmental Factors' => [
+        'description' => 'The room, the lighting, the furniture: anything but me.',
+        'excuses' => [
+            'The lighting in that room has never once told the truth.',
+            'Someone nearby was breathing confidently and I deferred to them.',
+            'The chair was slightly too comfortable and I got sloppy.',
+            'The font was misleading.',
+            "There was a smell I couldn't identify and it consumed all available processing power.",
+            'I was being watched by a plant.',
+            'The room was 0.4 degrees too warm for good judgement.',
+            'There was a fly and it had a plan.',
+            'The button was designed by someone who hates me personally.',
+            'A background noise resolved into a rhythm and I started nodding along.',
+        ],
+    ],
+    'Institutional Failure' => [
+        'description' => 'The process, the documentation, or the org chart set me up to fail.',
+        'excuses' => [
+            'Nobody sent me the memo, because the memo was about the memo.',
+            'The documentation was accurate for a version that never shipped.',
+            'I followed the process. The process was wrong. The process is on annual leave.',
+            'Two systems disagreed and made me the tiebreaker with no context.',
+            'The training was in 2021 and the trainer has since left the industry.',
+            'There was a checklist. Item 4 said "see item 4."',
+            'The requirements changed while I was reading them.',
+            'Someone said "you\'re the expert" and I believed them for eight fatal seconds.',
+            'Legal signed off. Legal has never been to this building.',
+            "I was empowered to make the call, which is management's way of pre-assigning blame.",
+        ],
+    ],
+    'Character Evidence' => [
+        'description' => 'A candid look at long-standing personal flaws, now catching up with me.',
+        'excuses' => [
+            "I was doing an impression of someone who knows what they're doing and it went too well.",
+            'Past me set this trap. Past me is a menace.',
+            'I made the decision in the shower and it did not survive contact with daylight.',
+            'I had a hunch. The hunch had a hunch. Somewhere the hunches got confused.',
+            'I trusted a spreadsheet last touched in March.',
+            'I said "how hard can it be" out loud, which is essentially a summoning.',
+            'I was solving a slightly different problem extremely well.',
+            'Confidence is just a mistake wearing a nice coat, and mine was tailored.',
+            "I've been getting away with it for years and the invoice has arrived.",
+            "Honestly? I just did. It happens. I'll fix it and not do it again.",
+        ],
     ],
 ];
 
@@ -460,6 +539,7 @@ function handle_index(): never
             'GET /excuses/teams'     => 'A reason not to join the call.',
             'GET /excuses/social'    => 'A reason not to attend, with tier.',
             'GET /excuses/social/tiers' => 'The five sub-tiers of social excuse.',
+            'GET /excuses/oops'      => 'A reason it went wrong, with tier explanation.',
             'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies, graded in newtons.',
             'GET /healthz'           => 'Liveness.',
         ],
@@ -661,6 +741,19 @@ function handle_excuses_social_tiers(): never
     ]);
 }
 
+function handle_excuses_oops(): never
+{
+    $tier  = array_rand(OOPS_EXCUSES);
+    $entry = OOPS_EXCUSES[$tier];
+
+    send(200, [
+        'instruction'      => 'Explain yourself.',
+        'reason'           => pick($entry['excuses']),
+        'tier'             => $tier,
+        'tier_explanation' => $entry['description'],
+    ]);
+}
+
 function handle_gentle_correction(): never
 {
     $roll   = mt_rand(1, 6);
@@ -720,6 +813,7 @@ match (true) {
     $method === 'GET' && $path === '/excuses/teams'       => handle_excuses_teams(),
     $method === 'GET' && $path === '/excuses/social'      => handle_excuses_social(),
     $method === 'GET' && $path === '/excuses/social/tiers' => handle_excuses_social_tiers(),
+    $method === 'GET' && $path === '/excuses/oops'         => handle_excuses_oops(),
     $method === 'GET' && $path === '/ministry/gentle-correction' => handle_gentle_correction(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
