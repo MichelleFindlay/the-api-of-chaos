@@ -331,6 +331,33 @@ const GENTLE_CORRECTION_VERDICTS = [
     6 => ['verdict' => 'Consult the warranty first',      'newtons' => 0,   'equivalent' => 'no impact administered; forms filed instead'],
 ];
 
+// Consecutive too-soon pounds against the same pile before the dirt guy quits.
+const RATE_LIMIT_MELTDOWN_STRIKES = 5;
+
+const RATE_LIMIT_RESPONSES = [
+    [
+        'error'         => 'pile_overflow_uwu',
+        'message'       => 'aaa!! (>_<) too much dirt too fast!! the pile is not ready!!',
+        'pile_feelings' => 'overwhelmed',
+        'retry_after'   => 30,
+        'hint'          => 'pls pound gently ｡ﾟ(ﾟ´ω`ﾟ)ﾟ｡',
+    ],
+    [
+        'error'         => 'unsolicited_dirt',
+        'message'       => 'someone is adding to the pile faster than i can pound it (・_・;)',
+        'pile_feelings' => 'betrayed but polite',
+        'offender'      => "you. it's you.",
+        'retry_after'   => 60,
+    ],
+];
+
+const RATE_LIMIT_MELTDOWN = [
+    'error'         => 'dirt_guy_has_left',
+    'message'       => "i quit. you're the dirt guy now. good luck (╥﹏╥)",
+    'pile_feelings' => null,
+    'shovel'        => 'dropped',
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -452,7 +479,7 @@ function pile_read(string $id): ?array
  * Read-modify-write under an exclusive lock, so concurrent pounders
  * do not lose each other's dirt.
  */
-function pile_pound(string $id): array
+function pile_update(string $id, callable $mutate): array
 {
     $fh = fopen(pile_path($id), 'c+');
     if ($fh === false) {
@@ -463,22 +490,10 @@ function pile_pound(string $id): array
     $raw  = stream_get_contents($fh);
     $pile = json_decode((string) $raw, true);
     if (!is_array($pile)) {
-        // owner_ip is fixed at creation, independent of ?pile=/X-Pile-Id,
-        // so a named pile can't later be deleted by anyone who guesses its name.
-        $pile = ['litres' => 0.0, 'blows' => 0, 'since' => gmdate('c'), 'owner_ip' => client_ip()];
+        $pile = [];
     }
 
-    // Each blow adds a random amount that scales with what is already
-    // there, so the pile compounds rather than creeping.
-    $before = (float) $pile['litres'];
-    $growth = frand(0.18, 0.73);
-    $delta  = max(frand(0.4, 2.9), $before * $growth);
-    $after  = min(dirt_max_litres(), $before + $delta);
-
-    $pile['litres'] = $after;
-    $pile['blows']  = (int) $pile['blows'] + 1;
-    $pile['id']     = $id;
-    $delta          = $after - $before;
+    $pile = $mutate($pile);
 
     ftruncate($fh, 0);
     rewind($fh);
@@ -487,8 +502,70 @@ function pile_pound(string $id): array
     flock($fh, LOCK_UN);
     fclose($fh);
 
+    return $pile;
+}
+
+function pile_pound(string $id): array
+{
+    $delta = 0.0;
+
+    $pile = pile_update($id, function (array $pile) use ($id, &$delta): array {
+        if (!isset($pile['litres'])) {
+            // owner_ip is fixed at creation, independent of ?pile=/X-Pile-Id,
+            // so a named pile can't later be deleted by anyone who guesses its name.
+            $pile = ['litres' => 0.0, 'blows' => 0, 'since' => gmdate('c'), 'owner_ip' => client_ip()];
+        }
+
+        // Each blow adds a random amount that scales with what is already
+        // there, so the pile compounds rather than creeping.
+        $before = (float) $pile['litres'];
+        $growth = frand(0.18, 0.73);
+        $add    = max(frand(0.4, 2.9), $before * $growth);
+        $after  = min(dirt_max_litres(), $before + $add);
+        $delta  = $after - $before;
+
+        $pile['litres']       = $after;
+        $pile['blows']        = (int) $pile['blows'] + 1;
+        $pile['id']           = $id;
+        // No more than one pound every 2s per pile, so a script can't hammer it on repeat.
+        $pile['next_allowed'] = microtime(true) + 2.0;
+        $pile['strikes']      = 0;
+
+        return $pile;
+    });
+
     $pile['delta'] = $delta;
     return $pile;
+}
+
+/**
+ * Checks the cooldown set by the previous pound. Returns null if the
+ * pile is free to be pounded again; otherwise [status, body] to send
+ * straight back, escalating from sass to a full meltdown if someone
+ * keeps hammering the same pile through the cooldown.
+ */
+function pile_rate_limited(string $id): ?array
+{
+    $pile = pile_read($id);
+    if ($pile === null) return null;
+
+    $nextAllowed = (float) ($pile['next_allowed'] ?? 0);
+    if (microtime(true) >= $nextAllowed) return null;
+
+    $strikes = pile_update($id, static function (array $pile): array {
+        $pile['strikes'] = (int) ($pile['strikes'] ?? 0) + 1;
+        return $pile;
+    })['strikes'];
+
+    if ($strikes >= RATE_LIMIT_MELTDOWN_STRIKES) {
+        pile_update($id, static function (array $pile): array {
+            $pile['strikes'] = 0;
+            return $pile;
+        });
+        return [503, ['status' => 503] + RATE_LIMIT_MELTDOWN];
+    }
+
+    return [429, ['status' => 429] + pick(RATE_LIMIT_RESPONSES)];
 }
 
 function send(int $status, array $body, array $headers = []): never
@@ -546,6 +623,7 @@ function handle_index(): never
         'notes' => [
             'Piles are files on disk and survive restarts, unlike morale.',
             'Tier 14 is the Moon. There is no tier 15.',
+            'Pounding is rate-limited to once every 2s per pile. Push through it and the dirt guy quits.',
         ],
         'source'  => 'https://github.com/MichelleFindlay/the-api-of-chaos',
         'license' => 'GPL-3.0',
@@ -642,7 +720,14 @@ function handle_leaderboard(): never
 
 function handle_pound_dirt(): never
 {
-    $id   = pile_id();
+    $id = pile_id();
+
+    $limit = pile_rate_limited($id);
+    if ($limit !== null) {
+        [$status, $body] = $limit;
+        send($status, $body);
+    }
+
     $pile = pile_pound($id);
 
     send(200, [
