@@ -15,12 +15,12 @@ declare(strict_types=1);
  *   GET    /                    service index
  *   GET    /kick/rocks          assigns you a rock to kick
  *   GET    /kick/rocks/tiers    the full scale, moon rock -> Moon
- *   GET    /kick/dirt            adds to your pile and returns it
- *   POST   /kick/dirt            same, for the semantically fussy
- *   GET    /kick/dirt/status     peek without pounding
- *   GET    /kick/dirt/tiers      the full scale, fistful -> second moon
- *   GET    /kick/dirt/leaderboard  top 20 piles, IPs partly masked
- *   DELETE /kick/dirt            reset the pile (cowardly)
+ *   GET    /pound/dirt          adds to your pile and returns it
+ *   POST   /pound/dirt          same, for the semantically fussy
+ *   GET    /pound/dirt/status   peek without pounding
+ *   GET    /pound/dirt/tiers    the full scale, fistful -> second moon
+ *   GET    /pound/dirt/leaderboard  top 20 piles, IPs partly masked
+ *   DELETE /pound/dirt          reset the pile (cowardly)
  *   GET    /excuses/teams       a reason not to join the call
  *   GET    /excuses/social      a reason not to attend, drawn from a tier
  *   GET    /excuses/social/tiers  the five sub-tiers of social excuse
@@ -31,7 +31,7 @@ declare(strict_types=1);
  * Query params
  *   /kick/rocks?tier=7          request a specific tier (1-14)
  *   /kick/rocks?min=9&max=12    constrain the random range
- *   /kick/dirt?pile=michelle    named pile; also honours X-Pile-Id header
+ *   /pound/dirt?pile=michelle   named pile; also honours X-Pile-Id header
  *
  * Piles persist as JSON files under sys_get_temp_dir()/jar
  * (override with KRAAS_DIR), because PHP forgets everything between
@@ -531,11 +531,11 @@ function handle_index(): never
         'endpoints' => [
             'GET /kick/rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
             'GET /kick/rocks/tiers'  => 'The full scale, tier 1 through 14.',
-            'GET|POST /kick/dirt'    => 'Adds to your pile. Optional: ?pile=name',
-            'GET /kick/dirt/status'  => 'Peek at the pile without pounding it.',
-            'GET /kick/dirt/tiers'   => 'The full scale, fistful through second moon.',
-            'GET /kick/dirt/leaderboard' => 'Top 20 piles, ranked. IPs shown with the final octet removed.',
-            'DELETE /kick/dirt'      => 'Reset the pile. Only from the IP that raised it.',
+            'GET|POST /pound/dirt'    => 'Adds to your pile. Optional: ?pile=name',
+            'GET /pound/dirt/status'  => 'Peek at the pile without pounding it.',
+            'GET /pound/dirt/tiers'   => 'The full scale, fistful through second moon.',
+            'GET /pound/dirt/leaderboard' => 'Top 20 piles, ranked. IPs shown with the final octet removed.',
+            'DELETE /pound/dirt'      => 'Reset the pile. Only from the IP that raised it.',
             'GET /excuses/teams'     => 'A reason not to join the call.',
             'GET /excuses/social'    => 'A reason not to attend, with tier.',
             'GET /excuses/social/tiers' => 'The five sub-tiers of social excuse.',
@@ -805,11 +805,11 @@ match (true) {
     $method === 'GET' && $path === '/kick/rocks'          => handle_kick_rocks(),
     $method === 'GET' && $path === '/kick/rocks/tiers'    => handle_tiers(),
     in_array($method, ['GET', 'POST'], true)
-        && $path === '/kick/dirt'                         => handle_pound_dirt(),
-    $method === 'DELETE' && $path === '/kick/dirt'        => handle_pile_reset(),
-    $method === 'GET' && $path === '/kick/dirt/status'    => handle_pile_status(),
-    $method === 'GET' && $path === '/kick/dirt/tiers'     => handle_dirt_tiers(),
-    $method === 'GET' && $path === '/kick/dirt/leaderboard' => handle_leaderboard(),
+        && $path === '/pound/dirt'                         => handle_pound_dirt(),
+    $method === 'DELETE' && $path === '/pound/dirt'        => handle_pile_reset(),
+    $method === 'GET' && $path === '/pound/dirt/status'    => handle_pile_status(),
+    $method === 'GET' && $path === '/pound/dirt/tiers'     => handle_dirt_tiers(),
+    $method === 'GET' && $path === '/pound/dirt/leaderboard' => handle_leaderboard(),
     $method === 'GET' && $path === '/excuses/teams'       => handle_excuses_teams(),
     $method === 'GET' && $path === '/excuses/social'      => handle_excuses_social(),
     $method === 'GET' && $path === '/excuses/social/tiers' => handle_excuses_social_tiers(),
