@@ -672,6 +672,7 @@ match (true) {
     $method === 'GET' && $path === '/kick/dirt/tiers'     => handle_dirt_tiers(),
     $method === 'GET' && $path === '/kick/dirt/leaderboard' => handle_leaderboard(),
     $method === 'GET' && $path === '/excuses/teams'       => handle_excuses_teams(),
+    $method === 'GET' && $path === '/excuses/social'      => handle_excuses_social(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
         'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
