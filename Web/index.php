@@ -244,12 +244,12 @@ const SOCIAL_EXCUSES = [
 ];
 
 const GENTLE_CORRECTION_VERDICTS = [
-    1 => 'Reassuring pat',
-    2 => 'Firm tap',
-    3 => 'The Fonz',
-    4 => 'Dad-fixing-the-telly',
-    5 => 'Percussive maintenance (formal)',
-    6 => 'Consult the warranty first',
+    1 => ['verdict' => 'Reassuring pat',                'newtons' => 2,   'equivalent' => 'a supportive shoulder squeeze'],
+    2 => ['verdict' => 'Firm tap',                       'newtons' => 15,  'equivalent' => "knocking on a neighbour's door"],
+    3 => ['verdict' => 'The Fonz',                       'newtons' => 40,  'equivalent' => 'a jukebox, thumped just right'],
+    4 => ['verdict' => 'Dad-fixing-the-telly',           'newtons' => 85,  'equivalent' => 'a fist to a CRT, decisively'],
+    5 => ['verdict' => 'Percussive maintenance (formal)', 'newtons' => 250, 'equivalent' => 'a rubber mallet, no longer messing about'],
+    6 => ['verdict' => 'Consult the warranty first',      'newtons' => 0,   'equivalent' => 'no impact administered; forms filed instead'],
 ];
 
 /* ------------------------------------------------------------------ *
@@ -460,7 +460,7 @@ function handle_index(): never
             'GET /excuses/teams'     => 'A reason not to join the call.',
             'GET /excuses/social'    => 'A reason not to attend, with tier.',
             'GET /excuses/social/tiers' => 'The five sub-tiers of social excuse.',
-            'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies.',
+            'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies, graded in newtons.',
             'GET /healthz'           => 'Liveness.',
         ],
         'notes' => [
@@ -663,12 +663,17 @@ function handle_excuses_social_tiers(): never
 
 function handle_gentle_correction(): never
 {
-    $roll = mt_rand(1, 6);
+    $roll   = mt_rand(1, 6);
+    $result = GENTLE_CORRECTION_VERDICTS[$roll];
 
     send(200, [
         'instruction' => 'When in doubt, apply gentle correction.',
         'roll'        => $roll,
-        'verdict'     => GENTLE_CORRECTION_VERDICTS[$roll],
+        'verdict'     => $result['verdict'],
+        'impact' => [
+            'newtons'    => $result['newtons'],
+            'equivalent' => $result['equivalent'],
+        ],
     ]);
 }
 
