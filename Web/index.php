@@ -25,6 +25,8 @@ declare(strict_types=1);
  *   GET    /excuses/social      a reason not to attend, drawn from a tier
  *   GET    /excuses/social/tiers  the five sub-tiers of social excuse
  *   GET    /excuses/oops        a reason it went wrong, with tier explanation
+ *   GET    /excuses/ring-ring   a reason you didn't pick up
+ *   GET    /excuses/late        a reason you're late
  *   GET    /ministry/gentle-correction  rolls a d6 against approved remedies
  *   GET    /healthz             liveness
  *
@@ -179,6 +181,112 @@ const NO_TEAMS_TODAY_REASONS = [
     'My kettle has boiled and I have a duty of care.',
     "I RSVP'd yes purely out of politeness and I regret to inform you the politeness has worn off.",
     "I'll be there in spirit, which is arguably the most I've contributed to any of the last six.",
+];
+
+const RING_RING_EXCUSES = [
+    'My thumbs are currently load-bearing.',
+    "The phone rang and I ascended briefly. I'm back now but different.",
+    'I only answer calls that begin with a drum fill.',
+    'I was in a Faraday cage of my own construction and design.',
+    "A pigeon made eye contact with me and we're still negotiating.",
+    'My ringtone summoned something and I had to un-summon it.',
+    "I was being haunted, but professionally, so I couldn't step away.",
+    "Answering would've broken the seal on the fridge and the fridge knows.",
+    'I was mid-way through a very important lie down.',
+    'My phone is currently being used as a coaster and I respect the role.',
+    "I don't have service in the emotional sense.",
+    'I was underwater, spiritually.',
+    "My hands were covered in a substance I'd rather not name in a text.",
+    'I was in a queue and leaving would have cost me everything.',
+    'The call arrived at a numerologically hostile time.',
+    'I was being followed by a man who might have been me.',
+    'I saw your name and needed a moment to prepare a personality.',
+    'My phone rang and I panicked and threw it, as one does.',
+    'I was inside a wall. Long story. Fine now.',
+    'I only take calls on days ending in a vowel.',
+    "A wasp had claimed the room and I was a guest in its home.",
+    'I was helping a stranger assemble furniture out of guilt.',
+    'My battery was at 1% and I was saving it for a more dramatic moment.',
+    'I was mid-bite of something that would not survive an interruption.',
+    'The universe expanded and I got further from the phone.',
+    "I was rehearsing an argument I'll never have with someone I'll never see.",
+    'My phone was on silent because it was in trouble with me.',
+    'I was watching a bird do something suspicious.',
+    "I had just committed to a nap and I'm a man of my word.",
+    'Answering the phone requires a running start and I had no room.',
+    'I was in a lift with a man eating a full roast dinner.',
+    'The call came through while I was between selves.',
+    "I was frozen in place because a cat sat on me and that's law.",
+    'My arms were both occupied doing symmetrical tasks.',
+    'I heard it ring but assumed it was a hallucination and stayed strong.',
+    'I was in a shop and could not risk being perceived speaking aloud.',
+    'I was 40 minutes into a documentary about eels.',
+    'The phone was upstairs and the stairs were being difficult.',
+    'I was in the middle of a stretch that had gone too far to abandon.',
+    'I owed the phone money.',
+    'My reflection did something odd and I had to investigate.',
+    "It was raining and I don't answer calls in weather.",
+    'I was pretending not to be home, and it worked so well I believed it.',
+    'I was carrying too many bags to be a person, let alone a caller.',
+    'I answered but only in my head, and I thought that counted.',
+    'I was in a lift, then out of the lift, then somehow back in the lift.',
+    'My phone rang and my body chose flight.',
+    'I was mid-existential episode and it seemed rude to multitask.',
+    'I dropped my phone in a bag and it became unreachable, like a shipwreck.',
+    'Honestly? I saw it ring, made direct eye contact with it, and chose violence.',
+];
+
+const LATE_EXCUSES = [
+    'Time moved normally for everyone but me.',
+    'I left on time and then the road did something.',
+    "A swan blocked the path and swans don't negotiate.",
+    'I got in the car and immediately needed to lie down in it.',
+    'My shoes betrayed me at the last possible second.',
+    'I was held hostage by a very slow conversation with a neighbour.',
+    'I had to go back for a thing, then back again for the thing I forgot going back for the thing.',
+    'A man on the bus told me a story and it had no exit ramp.',
+    'I got stuck behind a horse. In town. On purpose, apparently.',
+    'I was ready 20 minutes early and that killed all momentum.',
+    'My phone gave me a route that was clearly a prank.',
+    'I stepped outside, felt the air, and needed a different jacket, a different mood, a different life.',
+    'A bin lorry and I were bound together for 15 minutes.',
+    'I sat down to put one sock on and lost consciousness of time.',
+    'I couldn\'t find my keys, which were in my hand.',
+    'There was a queue for the door of the building I live in.',
+    "I got trapped in the self-checkout's disapproval.",
+    'Every single traffic light knew my name and hated it.',
+    'I was mid-parking and someone made it emotional.',
+    'I saw a dog and had to complete the interaction properly.',
+    'I misjudged how long "a quick shower" is by a factor of four.',
+    'I had to wait for my toast, and toast has no urgency in it.',
+    'Roadworks appeared that were not there yesterday and will not be there tomorrow.',
+    'I walked confidently in the wrong direction for eleven minutes.',
+    'A train was cancelled by a force I can only describe as spite.',
+    'I got on the right bus going the wrong way, which felt like a comment on my life.',
+    'I was waiting for a lift that was busy having a personal crisis on floor 6.',
+    'I had to reverse out of a car park designed by someone who hates cars.',
+    "Someone parked me in with the confidence of a man who's never been late.",
+    'I stopped for petrol and the pump and I had a disagreement.',
+    "I was mid-sentence in a text and couldn't leave it unfinished, ethically.",
+    'I got distracted by a shop window and lost a chunk of the morning.',
+    'I underestimated the stairs at that station and had to renegotiate with my knees.',
+    'It started raining and I refused to accept it for several minutes.',
+    'My sat nav sent me down a lane that became a field.',
+    'I put the wrong postcode in and briefly committed to a different town.',
+    'I got caught in the wake of a very slow group of people walking six abreast.',
+    'There was an incident with a revolving door.',
+    'I had to wait for a level crossing that took a full geological era.',
+    'I got in the wrong car for a moment and had to leave with dignity.',
+    "I couldn't find the entrance and did one full lap of the building.",
+    'I was outside for ten minutes convinced it was the wrong building.',
+    'My coffee spilled and the whole schedule collapsed downstream from that.',
+    'I got in the lift and it went up instead of down and I let it happen.',
+    "I had to explain to someone why I couldn't stop and talk, which took longer than stopping to talk.",
+    'I was following someone who I thought worked here and they did not.',
+    "I did the maths on the journey time using yesterday's version of the world.",
+    'I stood still on the pavement for a while for reasons unavailable to me now.',
+    "I left the house, got to the end of the road, and knew I'd left something on.",
+    'I was on time. Then I got here and it turns out "on time" meant something else to everyone else.',
 ];
 
 const SOCIAL_EXCUSES = [
@@ -617,6 +725,8 @@ function handle_index(): never
             'GET /excuses/social'    => 'A reason not to attend, with tier.',
             'GET /excuses/social/tiers' => 'The five sub-tiers of social excuse.',
             'GET /excuses/oops'      => 'A reason it went wrong, with tier explanation.',
+            'GET /excuses/ring-ring' => 'A reason you did not pick up.',
+            'GET /excuses/late'      => "A reason you're late.",
             'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies, graded in newtons.',
             'GET /healthz'           => 'Liveness.',
         ],
@@ -630,8 +740,58 @@ function handle_index(): never
     ]);
 }
 
+function handle_mine_turtle(): never
+{
+    $id   = pile_id();
+    $path = pile_path($id);
+    if (is_file($path)) {
+        unlink($path);
+    }
+
+    http_response_code(200);
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: no-store');
+    header('X-Powered-By: spite');
+
+    echo <<<'ART'
+You have found mine turtle.
+
+                     .-"""-.
+                    /  o o  \
+                    \  ---  /
+                     '-._.-'
+                        |
+          _____________________________
+    __   /                             \   __
+   (__)-|    .-----------------------.   |-(__)
+        |    |                       |   |
+        |    |      ( ●  MINE )       |   |
+        |    |                       |   |
+        |    '-----------------------'   |
+   __   \                             /   __
+  (__)-  '---------------------------'  -(__)
+                     |     |
+                     |     |
+                  .--'-----'--.
+                 (    FOOT     )
+                  '-----------'
+                        ^
+                        |
+                   a foot. yes.
+
+P.S. You just reset any dirt pounding progress from your IP.
+
+ART;
+    exit;
+}
+
 function handle_kick_rocks(): never
 {
+    $tier = filter_input(INPUT_GET, 'tier', FILTER_VALIDATE_INT);
+    if ($tier !== null && $tier !== false && $tier >= 15) {
+        handle_mine_turtle();
+    }
+
     $rock = choose_rock();
     $boot = max(0.01, min(0.99, 1 - $rock['tier'] / 15));
 
@@ -800,6 +960,22 @@ function handle_excuses_teams(): never
     ]);
 }
 
+function handle_excuses_ring_ring(): never
+{
+    send(200, [
+        'instruction' => 'You did not pick up.',
+        'reason'      => pick(RING_RING_EXCUSES),
+    ]);
+}
+
+function handle_excuses_late(): never
+{
+    send(200, [
+        'instruction' => "You're late.",
+        'reason'      => pick(LATE_EXCUSES),
+    ]);
+}
+
 function handle_excuses_social(): never
 {
     $tier = array_rand(SOCIAL_EXCUSES);
@@ -899,6 +1075,8 @@ match (true) {
     $method === 'GET' && $path === '/excuses/social'      => handle_excuses_social(),
     $method === 'GET' && $path === '/excuses/social/tiers' => handle_excuses_social_tiers(),
     $method === 'GET' && $path === '/excuses/oops'         => handle_excuses_oops(),
+    $method === 'GET' && $path === '/excuses/ring-ring'    => handle_excuses_ring_ring(),
+    $method === 'GET' && $path === '/excuses/late'          => handle_excuses_late(),
     $method === 'GET' && $path === '/ministry/gentle-correction' => handle_gentle_correction(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
