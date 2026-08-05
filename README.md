@@ -2,6 +2,8 @@
 
 **v1.0.0** — Dismissal, at scale, with an SLA of none.
 
+**Base URL** - https://api.dumpsterfire.uk
+
 ## Endpoints
 
 | Method | Path | Description |
