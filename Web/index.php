@@ -18,7 +18,9 @@ declare(strict_types=1);
  *   GET    /pound-dirt          adds to your pile and returns it
  *   POST   /pound-dirt          same, for the semantically fussy
  *   GET    /pound-dirt/status   peek without pounding
+ *   GET    /pound-dirt/tiers    the full scale, fistful -> second moon
  *   DELETE /pound-dirt          reset the pile (cowardly)
+ *   GET    /no-teams-today      a reason not to join the call
  *   GET    /healthz             liveness
  *
  * Query params
@@ -120,6 +122,59 @@ const POUND_REMARKS = [
     'The pile grows. The pile always grows.',
 ];
 
+const NO_TEAMS_TODAY_REASONS = [
+    "My camera works, but my face doesn't today.",
+    "Teams updated overnight and has developed a personality I'm not ready to meet.",
+    'Someone in this building is drilling directly into my will to live.',
+    "I'm being held hostage by a cat who has claimed my keyboard as sovereign territory.",
+    'Outlook told me it was in a different timezone and I chose to believe it.',
+    'My "mute" button broke in the on position, which honestly feels like a sign.',
+    'I have a conflicting meeting with a sandwich.',
+    'The meeting has no agenda and I have no coping mechanisms.',
+    'My headphones only connect to devices that spark joy.',
+    "I'm currently trapped in a Teams call from 2023 that nobody ever left.",
+    'My laptop fan is making a noise usually associated with takeoff.',
+    "I promised my houseplant I'd be present for it today.",
+    'There are 14 people on this call and 13 of them are decorative.',
+    'My internet is fine but my emotional bandwidth is not.',
+    'I clicked "Join" and it opened Skype. I\'m scared.',
+    "I'm at that stage of the day where I can hear colours.",
+    'Someone forwarded the invite to me with "FYI" and I\'ve chosen to interpret that literally.',
+    "My background blur can't blur what's happening back here.",
+    "I'm on a train that goes through eleven tunnels and one of them is spiritual.",
+    "My chair broke and I'm currently at desk-height for a much smaller person.",
+    "I already know what's going to be said and I'd rather be surprised later.",
+    'The calendar invite had a "(tentative)" in it and I\'ve committed fully to the tentative.',
+    'I have to physically restrain my dog from joining and outperforming me.',
+    'My microphone picks up my thoughts and that\'s a liability.',
+    "I'm waiting in for a delivery between 8am and the heat death of the universe.",
+    "I've been double-booked with an identical meeting and I'm attending the more attractive one.",
+    'My smoke alarm has chosen violence.',
+    "I've read the deck. I've absorbed the deck. I've become the deck. There's nothing left for me here.",
+    "I'm currently locked out of my own house by my own front door.",
+    "There's a wasp in here and only one of us is leaving.",
+    "My laptop battery is at 3% and the charger is in a room I'm not emotionally ready to enter.",
+    "I'm on annual leave, which I know because I booked it, and also because I'm in a swimming pool.",
+    'Someone said "let\'s take this offline" three meetings ago and I took it very seriously.',
+    'My VPN has decided I live in Ohio now.',
+    'I have a dentist appointment. The dentist is fictional but my commitment is real.',
+    "I'm currently in a queue on the phone to an energy supplier and I'm not losing my place for anyone.",
+    'The neighbours are having an argument with better content than this agenda.',
+    "My webcam makes me look like a Victorian ghost and I'd hate to distract everyone.",
+    'I can only attend meetings that could not have been an email, and this one could.',
+    "I'm in the middle of a very intense staring contest with a spreadsheet.",
+    "I've caught something. Nothing serious. Just a general reluctance.",
+    'My cat is on a call of her own and we only have the one desk.',
+    "I tried to join but Teams asked me to sign in as an account I've never heard of, and I've decided that account can attend instead.",
+    'I\'m halfway up a ladder and the ladder has opinions.',
+    'There\'s roadworks outside and the drill is in the key of my soul.',
+    "I'm doing my bit for the environment by not adding to the video-conferencing carbon load.",
+    'My child has taken my mouse and hidden it somewhere only she knows.',
+    'My kettle has boiled and I have a duty of care.',
+    "I RSVP'd yes purely out of politeness and I regret to inform you the politeness has worn off.",
+    "I'll be there in spirit, which is arguably the most I've contributed to any of the last six.",
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -171,13 +226,27 @@ function pile_path(string $id): string
     return pile_dir() . '/' . sha1($id) . '.json';
 }
 
+/**
+ * When served behind Cloudflare, REMOTE_ADDR is Cloudflare's own edge IP,
+ * not the visitor's. CF-Connecting-IP carries the real one; trust it only
+ * if it is actually shaped like an IP address.
+ */
+function client_ip(): string
+{
+    $cf = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null;
+    if (is_string($cf) && filter_var($cf, FILTER_VALIDATE_IP) !== false) {
+        return $cf;
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? 'anonymous';
+}
+
 function pile_id(): string
 {
     $q = $_GET['pile'] ?? null;
     if (is_string($q) && $q !== '') return substr($q, 0, 128);
     $h = $_SERVER['HTTP_X_PILE_ID'] ?? null;
     if (is_string($h) && $h !== '') return substr($h, 0, 128);
-    return $_SERVER['REMOTE_ADDR'] ?? 'anonymous';
+    return client_ip();
 }
 
 function pile_read(string $id): ?array
@@ -268,7 +337,9 @@ function handle_index(): never
             'GET /kick-rocks/tiers'  => 'The full scale, tier 1 through 14.',
             'GET|POST /pound-dirt'   => 'Adds to your pile. Optional: ?pile=name',
             'GET /pound-dirt/status' => 'Peek at the pile without pounding it.',
+            'GET /pound-dirt/tiers'  => 'The full scale, fistful through second moon.',
             'DELETE /pound-dirt'     => 'Reset the pile. Noted on your permanent record.',
+            'GET /no-teams-today'    => 'A reason not to join the call.',
             'GET /healthz'           => 'Liveness.',
         ],
         'notes' => [
@@ -312,6 +383,26 @@ function handle_tiers(): never
             'mass_human' => human_mass($r['mass_kg']),
             'location'   => $r['location'],
         ], ROCKS),
+    ]);
+}
+
+function handle_dirt_tiers(): never
+{
+    $tiers = [];
+    $from  = 0.0;
+    foreach (DIRT_STAGES as $i => [$upTo, $label]) {
+        $tiers[] = [
+            'tier'  => $i + 1,
+            'label' => $label,
+            'from'  => human_volume($from),
+            'up_to' => is_infinite($upTo) ? 'no upper bound' : human_volume($upTo),
+        ];
+        $from = $upTo;
+    }
+
+    send(200, [
+        'scale' => 'a disappointing fistful -> a second moon, of dirt, in a decaying orbit',
+        'tiers' => $tiers,
     ]);
 }
 
@@ -373,6 +464,14 @@ function handle_pile_reset(): never
     ]);
 }
 
+function handle_no_teams_today(): never
+{
+    send(200, [
+        'instruction' => 'Do not join the call.',
+        'reason'      => pick(NO_TEAMS_TODAY_REASONS),
+    ]);
+}
+
 /* ------------------------------------------------------------------ *
  * Router
  * ------------------------------------------------------------------ */
@@ -411,9 +510,10 @@ match (true) {
         && $path === '/pound-dirt'                        => handle_pound_dirt(),
     $method === 'DELETE' && $path === '/pound-dirt'       => handle_pile_reset(),
     $method === 'GET' && $path === '/pound-dirt/status'   => handle_pile_status(),
+    $method === 'GET' && $path === '/pound-dirt/tiers'    => handle_dirt_tiers(),
+    $method === 'GET' && $path === '/no-teams-today'      => handle_no_teams_today(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
-        'php'           => PHP_VERSION,
         'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
     ]),
     default => send(404, [
