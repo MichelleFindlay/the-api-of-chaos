@@ -47,6 +47,9 @@ declare(strict_types=1);
  * Piles persist as JSON files under sys_get_temp_dir()/jar
  * (override with KRAAS_DIR), because PHP forgets everything between
  * requests. Much like the people you are sending here.
+ *
+ * Any request, on any endpoint, has a 1-in-10 chance of falling into
+ * the void instead of getting a normal response. Try again.
  */
 
 /* ------------------------------------------------------------------ *
@@ -1233,6 +1236,7 @@ function handle_index(): never
             'Piles are files on disk and survive restarts, unlike morale.',
             'Tier 14 is the Moon. There is no tier 15.',
             'Pounding is rate-limited to once every 2s per pile. Push through it and the dirt guy quits.',
+            'Any request has a 1-in-10 chance of falling into the void instead. Just try again.',
         ],
         'source'  => 'https://github.com/MichelleFindlay/the-api-of-chaos',
         'license' => 'GPL-3.0',
@@ -1279,6 +1283,66 @@ You have found mine turtle.
                    a foot. yes.
 
 P.S. You just reset any dirt pounding progress from your IP.
+
+ART;
+    exit;
+}
+
+/**
+ * One request in ten falls through, is dropped, and reappears elsewhere.
+ * Called before the router dispatches, so it can intercept any endpoint.
+ */
+function void_check(): void
+{
+    if (mt_rand(1, 10) !== 1) {
+        return;
+    }
+
+    http_response_code(418);
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: no-store');
+    header('X-Powered-By: spite');
+
+    echo <<<'ART'
+.            '                  .           `
+        `              .              '                 .         '
+
+                     ::::::::::::::::::::::::::::::
+                ::::::----------------------------::::::
+             ::::------==========================------::::
+          ::::----======++++++++++++++++++++++++======----::::
+        :::----=====++++++********************++++++=====----:::
+       ::----====+++++*****##################*****+++++====----::
+     ::---=====++++****####%%%%%%%%%%%%%%%%%%####****++++=====---::
+    ::---====++++****####%%%%@@@@@@@@@@@@@@%%%%####****++++====---::
+   ::---====++++****####%%%@@@@@@      @@@@@@%%%####****++++====---::
+  ::---====++++****####%%%@@@@@          @@@@@%%%####****++++====---::
+ ::---====++++****####%%%@@@@              @@@@%%%####****++++====---::
+::---====++++****####%%%%@@@                @@@@@%%####****++++====---::
+::---====++++****####%%%@@@@                @@@@%%%####****++++====---::
+::---====++++****####%%@@@@@                @@@%%%%####****++++====---::
+ ::---====++++****####%%%@@@@              @@@@%%%####****++++====---::
+  ::---====++++****####%%%@@@@@          @@@@@%%%####****++++====---::
+   ::---====++++****####%%%@@@@@@      @@@@@@%%%####****++++====---::
+    ::---====++++****####%%%%@@@@@@@@@@@@@@%%%%####****++++====---::
+     ::---=====++++****####%%%%%%%%%%%%%%%%%%####****++++=====---::
+       ::----====+++++*****##################*****+++++====----::
+        :::----=====++++++********************++++++=====----:::
+          ::::----======++++++++++++++++++++++++======----::::
+             ::::------==========================------::::
+                ::::::----------------------------::::::
+                     ::::::::::::::::::::::::::::::
+
+         '                .          `                 .
+                 .              '            .                '
+
+You fell into the void.
+
+It held you for a while, upside down, and said nothing. Then it got
+bored and burped you out somewhere else in the universe, roughly
+where you started, probably fine.
+
+Try again.
 
 ART;
     exit;
@@ -1742,6 +1806,9 @@ if ($path === '' || $path === '/index.php' || $path === '/kick-rocks.php') {
 
 // Every request counts towards lifetime stats, surfaced at GET /healthz.
 stats_record(client_ip());
+
+// One request in ten never makes it to a handler.
+void_check();
 
 match (true) {
     $method === 'GET' && $path === '/'                    => handle_index(),
