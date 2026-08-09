@@ -37,7 +37,7 @@ declare(strict_types=1);
  *   GET    /unhinged/pessimism  an unearned dose of dread
  *   GET    /unhinged/advice     advice for almost every situation
  *   GET    /unhinged/non-committal  a refusal to answer, fifty ways
- *   GET    /healthz             liveness, plus lifetime request/unique-IP counts
+ *   GET    /healthz             liveness, plus lifetime request/unique-IP/rocks-kicked counts
  *
  * Query params
  *   /kick/rocks?tier=7          request a specific tier (1-14)
@@ -939,16 +939,31 @@ function stats_record(string $ip): void
     });
 }
 
+/**
+ * Bumps a named lifetime counter (e.g. rocks kicked) by one.
+ */
+function stats_increment(string $counter): void
+{
+    json_file_update(stats_path(), static function (array $data) use ($counter): array {
+        $counters = is_array($data['counters'] ?? null) ? $data['counters'] : [];
+        $counters[$counter] = (int) ($counters[$counter] ?? 0) + 1;
+        $data['counters'] = $counters;
+        return $data;
+    });
+}
+
 function stats_snapshot(): array
 {
     $path = stats_path();
     $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
     if (!is_array($data)) {
-        return ['total_requests' => 0, 'unique_ips' => 0];
+        return ['total_requests' => 0, 'unique_ips' => 0, 'counters' => []];
     }
+    $counters = is_array($data['counters'] ?? null) ? $data['counters'] : [];
     return [
         'total_requests' => (int) ($data['total_requests'] ?? 0),
         'unique_ips'     => count(is_array($data['ips'] ?? null) ? $data['ips'] : []),
+        'counters'       => array_map('intval', $counters),
     ];
 }
 
@@ -1212,7 +1227,7 @@ function handle_index(): never
             'GET /unhinged/pessimism' => 'An unearned, unsupported dose of dread.',
             'GET /unhinged/advice'   => 'Advice that applies to almost every situation.',
             'GET /unhinged/non-committal' => 'A refusal to answer, dressed up fifty different ways.',
-            'GET /healthz'           => 'Liveness, plus lifetime request and unique-IP counts.',
+            'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
         'notes' => [
             'Piles are files on disk and survive restarts, unlike morale.',
@@ -1278,6 +1293,8 @@ function handle_kick_rocks(): never
 
     $rock = choose_rock();
     $boot = max(0.01, min(0.99, 1 - $rock['tier'] / 15));
+
+    stats_increment('rocks_kicked');
 
     send(200, [
         'instruction' => 'Kick rocks.',
@@ -1688,6 +1705,7 @@ function handle_healthz(): never
         'lifetime'      => [
             'total_requests' => $stats['total_requests'],
             'unique_ips'     => $stats['unique_ips'],
+            'rocks_kicked'   => $stats['counters']['rocks_kicked'] ?? 0,
         ],
     ]);
 }
