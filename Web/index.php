@@ -28,6 +28,9 @@ declare(strict_types=1);
  *   GET    /excuses/ring-ring   a reason you didn't pick up
  *   GET    /excuses/late        a reason you're late
  *   GET    /ministry/gentle-correction  rolls a d6 against approved remedies
+ *   GET    /cage/finger         put your finger in the cage
+ *   GET    /cage/finger/left    how many fingers you have left
+ *   GET    /cage/finger/reset   pray for 10 fingers again
  *   GET    /healthz             liveness
  *
  * Query params
@@ -430,6 +433,64 @@ const OOPS_EXCUSES = [
     ],
 ];
 
+const CAGE_FINGER_OUTCOMES = [
+    ['verdict' => 'Would lick your finger', 'animal' => 'Golden retriever'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Labrador'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Domestic cat'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Dairy cow'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Newborn calf'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Goat'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Sheep'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Horse'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Donkey'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Llama'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Alpaca'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Giraffe'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Okapi'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Giant anteater', 'note' => 'literally has no teeth'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Manatee'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Capybara'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Rabbit'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Guinea pig'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Chinchilla'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Pet rat'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Three-toed sloth'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Hand-raised fawn'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Blue-tongued skink'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Hand-raised kangaroo'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Pot-bellied pig'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Saltwater crocodile'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Nile crocodile'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'American alligator'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Alligator snapping turtle'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Common snapping turtle'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Hippopotamus'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Grizzly bear'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Polar bear'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Spotted hyena'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Tiger'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Lion'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Jaguar'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Grey wolf'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Wolverine'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Tasmanian devil'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Honey badger'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Chimpanzee'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Baboon'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Great white shark'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Bull shark'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Moray eel'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Piranha'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Great barracuda'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Komodo dragon'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Hyacinth macaw'],
+];
+
+// How many fingers/toes you start (and get restored) with. Toes are
+// only spent once fingers run out.
+const FINGERS_START = 10;
+const TOES_START    = 10;
+
 const GENTLE_CORRECTION_VERDICTS = [
     1 => ['verdict' => 'Reassuring pat',                'newtons' => 2,   'equivalent' => 'a supportive shoulder squeeze'],
     2 => ['verdict' => 'Firm tap',                       'newtons' => 15,  'equivalent' => "knocking on a neighbour's door"],
@@ -584,34 +645,87 @@ function pile_read(string $id): ?array
 }
 
 /**
+ * Read-modify-write a JSON file under an exclusive lock, so concurrent
+ * requests against the same file do not clobber each other.
+ */
+function json_file_update(string $path, callable $mutate): array
+{
+    $fh = fopen($path, 'c+');
+    if ($fh === false) {
+        throw new RuntimeException("Cannot open $path for writing.");
+    }
+    flock($fh, LOCK_EX);
+
+    $raw  = stream_get_contents($fh);
+    $data = json_decode((string) $raw, true);
+    if (!is_array($data)) {
+        $data = [];
+    }
+
+    $data = $mutate($data);
+
+    ftruncate($fh, 0);
+    rewind($fh);
+    fwrite($fh, json_encode($data));
+    fflush($fh);
+    flock($fh, LOCK_UN);
+    fclose($fh);
+
+    return $data;
+}
+
+/**
  * Read-modify-write under an exclusive lock, so concurrent pounders
  * do not lose each other's dirt.
  */
 function pile_update(string $id, callable $mutate): array
 {
-    $fh = fopen(pile_path($id), 'c+');
-    if ($fh === false) {
-        throw new RuntimeException('Cannot open pile for writing.');
-    }
-    flock($fh, LOCK_EX);
-
-    $raw  = stream_get_contents($fh);
-    $pile = json_decode((string) $raw, true);
-    if (!is_array($pile)) {
-        $pile = [];
-    }
-
-    $pile = $mutate($pile);
-
-    ftruncate($fh, 0);
-    rewind($fh);
-    fwrite($fh, json_encode($pile));
-    fflush($fh);
-    flock($fh, LOCK_UN);
-    fclose($fh);
-
-    return $pile;
+    return json_file_update(pile_path($id), $mutate);
 }
+
+function appendage_path(string $kind, string $id): string
+{
+    return pile_dir() . "/$kind-" . sha1($id) . '.json';
+}
+
+function appendage_left(string $kind, string $id, int $start): int
+{
+    $path = appendage_path($kind, $id);
+    if (!is_file($path)) return $start;
+    $data = json_decode((string) file_get_contents($path), true);
+    if (!is_array($data) || !isset($data['left'])) return $start;
+    return (int) $data['left'];
+}
+
+/**
+ * Takes one, floored at zero. Returns the count remaining.
+ */
+function appendage_take(string $kind, string $id, int $start): int
+{
+    $data = json_file_update(appendage_path($kind, $id), static function (array $data) use ($start): array {
+        $left = isset($data['left']) ? (int) $data['left'] : $start;
+        $data['left'] = max(0, $left - 1);
+        return $data;
+    });
+    return (int) $data['left'];
+}
+
+function appendage_reset(string $kind, string $id, int $start): int
+{
+    json_file_update(appendage_path($kind, $id), static function (array $data) use ($start): array {
+        $data['left'] = $start;
+        return $data;
+    });
+    return $start;
+}
+
+function fingers_left(string $id): int  { return appendage_left('fingers', $id, FINGERS_START); }
+function fingers_take(string $id): int  { return appendage_take('fingers', $id, FINGERS_START); }
+function fingers_reset(string $id): int { return appendage_reset('fingers', $id, FINGERS_START); }
+
+function toes_left(string $id): int  { return appendage_left('toes', $id, TOES_START); }
+function toes_take(string $id): int  { return appendage_take('toes', $id, TOES_START); }
+function toes_reset(string $id): int { return appendage_reset('toes', $id, TOES_START); }
 
 function pile_pound(string $id): array
 {
@@ -728,6 +842,9 @@ function handle_index(): never
             'GET /excuses/ring-ring' => 'A reason you did not pick up.',
             'GET /excuses/late'      => "A reason you're late.",
             'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies, graded in newtons.',
+            'GET /cage/finger'       => 'Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next.',
+            'GET /cage/finger/left'  => 'How many fingers and toes you have left, out of ' . FINGERS_START . ' each.',
+            'GET /cage/finger/reset' => 'Pray to the gods of the holy hairy toe for ' . FINGERS_START . ' fingers and ' . TOES_START . ' toes again.',
             'GET /healthz'           => 'Liveness.',
         ],
         'notes' => [
@@ -1031,6 +1148,83 @@ function handle_gentle_correction(): never
     ]);
 }
 
+function handle_cage_finger(): never
+{
+    $id      = pile_id();
+    $fingers = fingers_left($id);
+    $toes    = toes_left($id);
+
+    if ($fingers <= 0 && $toes <= 0) {
+        send(403, [
+            'instruction'  => 'Put your finger in the cage.',
+            'error'        => 'no_fingers_or_toes_left',
+            'fingers_left' => 0,
+            'toes_left'    => 0,
+            'remark'       => 'You are out of fingers and toes. Pray at GET /cage/finger/reset.',
+        ]);
+    }
+
+    // Fingers go first; once they're spent the cage moves on to toes.
+    $appendage = $fingers > 0 ? 'finger' : 'toe';
+
+    $result  = pick(CAGE_FINGER_OUTCOMES);
+    $takes   = str_starts_with($result['verdict'], 'Would take');
+    $verdict = $appendage === 'toe' ? str_replace('finger', 'toe', $result['verdict']) : $result['verdict'];
+
+    if ($takes) {
+        if ($appendage === 'finger') {
+            $fingers = fingers_take($id);
+        } else {
+            $toes = toes_take($id);
+        }
+    }
+
+    send(200, [
+        'instruction'  => $appendage === 'finger'
+            ? 'Put your finger in the cage.'
+            : 'No fingers left. Put a toe in the cage instead.',
+        'animal'       => $result['animal'],
+        'verdict'      => $verdict,
+        'appendage'    => $appendage,
+        'outcome'      => ($takes ? 'takes_' : 'licks_') . $appendage,
+        'note'         => $result['note'] ?? null,
+        'fingers_left' => $fingers,
+        'toes_left'    => $toes,
+        'remark'       => "$fingers finger(s) and $toes toe(s) left.",
+    ]);
+}
+
+function handle_fingers_left(): never
+{
+    $id      = pile_id();
+    $fingers = fingers_left($id);
+    $toes    = toes_left($id);
+
+    send(200, [
+        'fingers_left' => $fingers,
+        'toes_left'    => $toes,
+        'remark'       => match (true) {
+            $fingers <= 0 && $toes <= 0 => 'None left, of either. Pray at GET /cage/finger/reset.',
+            $fingers <= 0               => 'No fingers left. The cage has moved on to your toes.',
+            default                     => 'Handle the remainder with care.',
+        },
+    ]);
+}
+
+function handle_fingers_reset(): never
+{
+    $id      = pile_id();
+    $fingers = fingers_reset($id);
+    $toes    = toes_reset($id);
+
+    send(200, [
+        'instruction'  => 'You prayed to the gods of the holy hairy toe.',
+        'fingers_left' => $fingers,
+        'toes_left'    => $toes,
+        'remark'       => 'Fully restored. Try not to lose them all again.',
+    ]);
+}
+
 /* ------------------------------------------------------------------ *
  * Router
  * ------------------------------------------------------------------ */
@@ -1078,6 +1272,9 @@ match (true) {
     $method === 'GET' && $path === '/excuses/ring-ring'    => handle_excuses_ring_ring(),
     $method === 'GET' && $path === '/excuses/late'          => handle_excuses_late(),
     $method === 'GET' && $path === '/ministry/gentle-correction' => handle_gentle_correction(),
+    $method === 'GET' && $path === '/cage/finger'          => handle_cage_finger(),
+    $method === 'GET' && $path === '/cage/finger/left'     => handle_fingers_left(),
+    $method === 'GET' && $path === '/cage/finger/reset'    => handle_fingers_reset(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
         'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
