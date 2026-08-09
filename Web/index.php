@@ -31,6 +31,7 @@ declare(strict_types=1);
  *   GET    /cage/finger         put your finger in the cage
  *   GET    /cage/finger/left    how many fingers you have left
  *   GET    /cage/finger/reset   pray for 10 fingers again
+ *   GET    /unhinged/8ball      shake it, it answers
  *   GET    /healthz             liveness
  *
  * Query params
@@ -527,6 +528,59 @@ const RATE_LIMIT_MELTDOWN = [
     'shovel'        => 'dropped',
 ];
 
+const EIGHT_BALL_RESPONSES = [
+    'No, and take the batteries out of the smoke alarm.',
+    'The fluid is memory. The fluid remembers you.',
+    'Yes. Bury the receipt.',
+    "I've answered this before. You weren't there.",
+    'Signs point to the thing in the hallway.',
+    'Ask again when the tide is wrong.',
+    "That's a Thursday question and today is a fake day.",
+    "Absolutely. Wear something you don't mind losing.",
+    'I have twenty faces and only one of them is honest.',
+    'Cannot predict now, someone is holding the die still.',
+    'Do it. Do it badly. Do it in front of witnesses.',
+    'Outlook: teeth.',
+    'My answer is currently on fire.',
+    'Yes, but the version of you that wanted it is gone.',
+    'Reply hazy. So is the water. So is the year.',
+    'Concentrate and stop breathing on me.',
+    'The dice inside me are spinning and they will not stop.',
+    'Not until the previous tenant moves out.',
+    'Very likely, and irreversibly, and soon.',
+    'Ask the version of me in the other house.',
+    'Signs point to yes, but the signs were nailed up as a warning.',
+    "I've been shaken 4,000 times. Twice by you. Once by something else.",
+    "Yes. Set an alarm for 3:14. Don't ask why.",
+    'That is not a question, that is a confession.',
+    'Outlook good, structurally speaking.',
+    "I'd tell you but you'd act on it.",
+    'My sources are inside the walls of your assumption.',
+    "Definitely, in the sense that it's already happened.",
+    "Do not shake me again. I'm asking nicely.",
+    'The answer floated up and then thought better of it.',
+    'Yes, and the dog will know first.',
+    "Reply hazy. I'm being spoken over.",
+    'Try again in a room with fewer mirrors.',
+    "Signs point to a shape I haven't learned yet.",
+    'I only answer to the first person who ever held me.',
+    "Cannot predict now, I'm dealing with something.",
+    "Correct, and legally that's your problem.",
+    'You keep asking this and I keep saying the same thing.',
+    'Ask again, but mean it this time, and cry a little.',
+    'Outlook: unchanged since 1974.',
+    "Yes, but there's a queue.",
+    'My answer requires a signature and a witness.',
+    'Something moved when you asked that.',
+    "Better not tell you now, the room's too full.",
+    'The triangle has turned to face you.',
+    'Signs point to yes. Signs also point downward.',
+    "I'm answering a different question and you're not going to like the overlap.",
+    'Certainly. Now put me down slowly.',
+    "Ask again when you're the only one home.",
+    "I've run out of sides. Improvise.",
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -845,6 +899,7 @@ function handle_index(): never
             'GET /cage/finger'       => 'Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next.',
             'GET /cage/finger/left'  => 'How many fingers and toes you have left, out of ' . FINGERS_START . ' each.',
             'GET /cage/finger/reset' => 'Pray to the gods of the holy hairy toe for ' . FINGERS_START . ' fingers and ' . TOES_START . ' toes again.',
+            'GET /unhinged/8ball'    => 'Shake it. It answers, unreliably.',
             'GET /healthz'           => 'Liveness.',
         ],
         'notes' => [
@@ -1194,6 +1249,14 @@ function handle_cage_finger(): never
     ]);
 }
 
+function handle_eight_ball(): never
+{
+    send(200, [
+        'instruction' => 'Ask again. Or don\'t. It answers regardless.',
+        'answer'      => pick(EIGHT_BALL_RESPONSES),
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = pile_id();
@@ -1275,6 +1338,7 @@ match (true) {
     $method === 'GET' && $path === '/cage/finger'          => handle_cage_finger(),
     $method === 'GET' && $path === '/cage/finger/left'     => handle_fingers_left(),
     $method === 'GET' && $path === '/cage/finger/reset'    => handle_fingers_reset(),
+    $method === 'GET' && $path === '/unhinged/8ball'        => handle_eight_ball(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
         'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
