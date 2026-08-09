@@ -48,7 +48,7 @@ declare(strict_types=1);
  * (override with KRAAS_DIR), because PHP forgets everything between
  * requests. Much like the people you are sending here.
  *
- * Any request, on any endpoint, has a 1-in-10 chance of falling into
+ * Any request under /unhinged has a 1-in-10 chance of falling into
  * the void instead of getting a normal response. Try again.
  */
 
@@ -1236,7 +1236,7 @@ function handle_index(): never
             'Piles are files on disk and survive restarts, unlike morale.',
             'Tier 14 is the Moon. There is no tier 15.',
             'Pounding is rate-limited to once every 2s per pile. Push through it and the dirt guy quits.',
-            'Any request has a 1-in-10 chance of falling into the void instead. Just try again.',
+            'Any /unhinged request has a 1-in-10 chance of falling into the void instead. Just try again.',
         ],
         'source'  => 'https://github.com/MichelleFindlay/the-api-of-chaos',
         'license' => 'GPL-3.0',
@@ -1289,12 +1289,13 @@ ART;
 }
 
 /**
- * One request in ten falls through, is dropped, and reappears elsewhere.
- * Called before the router dispatches, so it can intercept any endpoint.
+ * One request in ten under /unhinged falls through, is dropped, and
+ * reappears elsewhere. Called before the router dispatches, so it can
+ * intercept those endpoints ahead of their normal handlers.
  */
-function void_check(): void
+function void_check(string $path): void
 {
-    if (mt_rand(1, 10) !== 1) {
+    if (!str_starts_with($path, '/unhinged') || mt_rand(1, 10) !== 1) {
         return;
     }
 
@@ -1812,8 +1813,8 @@ if ($path === '' || $path === '/index.php' || $path === '/kick-rocks.php') {
 // Every request counts towards lifetime stats, surfaced at GET /healthz.
 stats_record(client_ip());
 
-// One request in ten never makes it to a handler.
-void_check();
+// One request in ten under /unhinged never makes it to a handler.
+void_check($path);
 
 match (true) {
     $method === 'GET' && $path === '/'                    => handle_index(),
