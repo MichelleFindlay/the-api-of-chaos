@@ -1336,11 +1336,16 @@ function void_check(): void
          '                .          `                 .
                  .              '            .                '
 
-You fell into the void.
+The floor stopped being an opinion the void was willing to hold, and you
+went through it like a coin through a grate. You fell into the void. It
+did not catch you. It simply stopped pretending there was anywhere else.
 
-It held you for a while, upside down, and said nothing. Then it got
-bored and burped you out somewhere else in the universe, roughly
-where you started, probably fine.
+It held you for a while, rolling you around on a tongue the size of a county, 
+tasting you the way you'd taste a coin you weren't sure was a coin. It made no sound.
+It made no ruling. Somewhere in there you passed several things that used to be stars and one thing that waved.
+Then the interest went out of it all at once, the way it does, and it burped — a low geological noise,
+felt in the teeth of everyone within nine light years — and you came back out damp, slightly reorganised, 
+roughly where you started, with your keys in the wrong pocket and one memory that isn't yours. Probably fine.
 
 Try again.
 
