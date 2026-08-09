@@ -32,6 +32,8 @@ declare(strict_types=1);
  *   GET    /cage/finger/left    how many fingers you have left
  *   GET    /cage/finger/reset   pray for 10 fingers again
  *   GET    /unhinged/8ball      shake it, it answers
+ *   GET    /unhinged/optimism   an unearned dose of positivity
+ *   GET    /unhinged/pessimism  an unearned dose of dread
  *   GET    /healthz             liveness
  *
  * Query params
@@ -581,6 +583,112 @@ const EIGHT_BALL_RESPONSES = [
     "I've run out of sides. Improvise.",
 ];
 
+const OPTIMISM_RESPONSES = [
+    'Everything is going to work out and I have no evidence for this whatsoever.',
+    "Today is the day. Not for anything specific. Just generally.",
+    'The bread rose. Civilisation is fine.',
+    "Something good is coming and it doesn't even know it yet.",
+    "I've decided the bad news was a typo.",
+    "Statistically, someone has to have a great day, and I've volunteered.",
+    'My future self is thriving and slightly smug about it.',
+    'Every closed door was a wall I was going to walk into anyway.',
+    'The universe is not out to get me. The universe has bigger projects.',
+    "This is the worst it will ever be, and it's honestly fine.",
+    "I'm one nap away from being a completely different person.",
+    'Nothing is ruined. Things are simply seasoning.',
+    "The plants are alive. That's a functioning ecosystem under my care.",
+    "I'm going to be so good at this eventually that today doesn't count.",
+    'Somewhere out there a dog is thinking about me fondly.',
+    "The train was late so I could avoid something. I'll never know what.",
+    'Failure is just data and I am becoming extremely well-informed.',
+    'My luck is compounding silently, like interest.',
+    'I have never once died. Perfect record.',
+    "The good years haven't started. That's how much is left.",
+    "Every stranger I pass is quietly rooting for me and doesn't know it.",
+    'This is a low point, which means the graph has nowhere to go.',
+    "I'm being prepared for something. I don't know what. I'm ready.",
+    "The soup was excellent and that's the whole day justified.",
+    'Someone somewhere is building the thing that fixes it.',
+    'I woke up. Outrageous good fortune, if you think about it.',
+    'Time is passing and that is technically progress.',
+    'I refuse to be pessimistic on aesthetic grounds.',
+    'My worst-case scenario is still survivable and mildly funny.',
+    "The sun came up again. It didn't have to. It chose us.",
+    'I am the protagonist and this is act two, which is always the worst one.',
+    'Every mistake I make is one fewer mistake left in the pile.',
+    "I'm going to meet someone next year who changes everything.",
+    'All my plants, pets and houseplants believe in me unconditionally.',
+    'Weather exists. Free. For everyone. Constantly.',
+    "I've never been this old before and I'm nailing it.",
+    'That thing I dread is going to be over in an hour and then never again.',
+    'My inbox is chaos but the sea is still doing its thing.',
+    'Everyone I love is currently, at this second, alive.',
+    "Bad luck comes in threes and I'm on eleven, so I'm owed a payout.",
+    "There is a version of this that's a great story later.",
+    'I can start again on any given Tuesday for free.',
+    'Somebody invented ice cream and never asked for anything in return.',
+    'My standards are high, my expectations are unhinged, and I regret nothing.',
+    "The best meal of my life hasn't happened yet.",
+    "I'm not behind, I'm on a different and superior schedule.",
+    'Cats purr for no reason. Joy is a documented default state.',
+    'Every problem I have is a problem someone else has already solved.',
+    'I have more good mornings ahead of me than I can count.',
+    "It's fine. It's going to be fine. It's already fine and we just haven't been told.",
+];
+
+const PESSIMISM_RESPONSES = [
+    'Everything is going to go wrong and I have no evidence for this whatsoever.',
+    "The good news is a typo. They'll correct it Monday.",
+    "I've peaked. It was a Tuesday in 2019 and I was doing something unremarkable.",
+    'Statistically someone has to have a terrible day and I have seniority.',
+    "That door didn't close, it was never a door.",
+    'My luck is compounding silently, in the wrong direction.',
+    'This is the best it will ever be, and look at it.',
+    "The plants are alive but they're planning something.",
+    "I'm one nap away from being exactly the same person.",
+    'Nothing is ruined yet. Emphasis on yet.',
+    'Every stranger I pass is quietly indifferent and correct to be.',
+    "I'll be good at this eventually, which is to say after it stops mattering.",
+    "The train was on time. Suspicious. Something's being saved up.",
+    'Failure is just data and I have a truly comprehensive dataset.',
+    'Somewhere out there a dog has forgotten me completely.',
+    'This is a low point, which means the graph is still going.',
+    'I\'m being prepared for something. I do not want to know what.',
+    "The soup was fine and that's the whole day accounted for.",
+    'Someone somewhere is building the thing that makes it worse.',
+    'I woke up. Again. Unasked.',
+    'Time is passing and that is technically the entire problem.',
+    "My best-case scenario is mildly disappointing and I'm bracing for it.",
+    "I'm the protagonist and this is act two, and there is no act three.",
+    'Every mistake I make unlocks a slightly more advanced mistake.',
+    "I'm going to meet someone next year who ruins everything.",
+    'All my plants and pets are dependents, not allies.',
+    'Weather exists. Free. For everyone. Constantly. Relentlessly.',
+    "I've never been this old before and it shows.",
+    'That thing I dread is in an hour and then again forever.',
+    'My inbox is chaos and the sea is rising to meet it.',
+    'Everyone I love is currently, at this second, ageing.',
+    'Bad luck comes in threes and I appear to be a special case.',
+    "There is a version of this that's a cautionary tale later.",
+    'I can start again on any given Tuesday and I have, eleven times.',
+    'Somebody invented ice cream and now I have a body that objects to it.',
+    "My standards are low, my expectations are underground, and I'm still disappointed.",
+    "The worst meal of my life hasn't happened yet.",
+    "I'm not behind, I'm on a schedule nobody else agreed to.",
+    "Cats purr when they're distressed too. Nobody can tell which.",
+    'Every problem I have is a problem someone already failed to solve.',
+    "The sun came up again. It doesn't check whether we're ready.",
+    "I refuse to be optimistic on the grounds that I've read things.",
+    'Confidence is just ignorance with better posture.',
+    "Things could always be worse, and they're taking notes.",
+    'I have more Mondays ahead of me than I can count.',
+    "The bread didn't rise. Draw your own conclusions about civilisation.",
+    "Hope is a subscription and I'm past due.",
+    'Every silver lining is attached to a cloud, structurally.',
+    "I'm fine. I'm going to be fine. Those are two different claims.",
+    "It'll be fine. That's what makes it so alarming.",
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -900,6 +1008,8 @@ function handle_index(): never
             'GET /cage/finger/left'  => 'How many fingers and toes you have left, out of ' . FINGERS_START . ' each.',
             'GET /cage/finger/reset' => 'Pray to the gods of the holy hairy toe for ' . FINGERS_START . ' fingers and ' . TOES_START . ' toes again.',
             'GET /unhinged/8ball'    => 'Shake it. It answers, unreliably.',
+            'GET /unhinged/optimism' => 'An unearned, unsupported dose of positivity.',
+            'GET /unhinged/pessimism' => 'An unearned, unsupported dose of dread.',
             'GET /healthz'           => 'Liveness.',
         ],
         'notes' => [
@@ -1257,6 +1367,22 @@ function handle_eight_ball(): never
     ]);
 }
 
+function handle_optimism(): never
+{
+    send(200, [
+        'instruction' => 'Brace for positivity.',
+        'answer'      => pick(OPTIMISM_RESPONSES),
+    ]);
+}
+
+function handle_pessimism(): never
+{
+    send(200, [
+        'instruction' => 'Brace for the opposite of positivity.',
+        'answer'      => pick(PESSIMISM_RESPONSES),
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = pile_id();
@@ -1339,6 +1465,8 @@ match (true) {
     $method === 'GET' && $path === '/cage/finger/left'     => handle_fingers_left(),
     $method === 'GET' && $path === '/cage/finger/reset'    => handle_fingers_reset(),
     $method === 'GET' && $path === '/unhinged/8ball'        => handle_eight_ball(),
+    $method === 'GET' && $path === '/unhinged/optimism'     => handle_optimism(),
+    $method === 'GET' && $path === '/unhinged/pessimism'    => handle_pessimism(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
         'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
