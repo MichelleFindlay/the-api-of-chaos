@@ -31,7 +31,7 @@
 | GET | /unhinged/pessimism | An unearned, unsupported dose of dread. |
 | GET | /unhinged/advice | Advice that applies to almost every situation. |
 | GET | /unhinged/non-committal | A refusal to answer, fifty ways
-| GET | /healthz | Liveness, plus lifetime request/unique-IP counts. |
+| GET | /healthz | Liveness, plus lifetime request, unique-IP, and rocks-kicked counts. |
 
 ## Notes
 
