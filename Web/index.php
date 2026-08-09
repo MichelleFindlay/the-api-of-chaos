@@ -36,7 +36,7 @@ declare(strict_types=1);
  *   GET    /unhinged/optimism   an unearned dose of positivity
  *   GET    /unhinged/pessimism  an unearned dose of dread
  *   GET    /unhinged/advice     advice for almost every situation
- *   GET    /healthz             liveness
+ *   GET    /healthz             liveness, plus lifetime request/unique-IP counts
  *
  * Query params
  *   /kick/rocks?tier=7          request a specific tier (1-14)
@@ -862,6 +862,43 @@ function pile_path(string $id): string
 }
 
 /**
+ * Lifetime stats live outside the *.json glob used for pile bookkeeping
+ * (leaderboard, piles_tracked) so counting them doesn't skew those.
+ */
+function stats_path(): string
+{
+    return pile_dir() . '/_lifetime_stats';
+}
+
+/**
+ * Records one API request against the lifetime counters. IPs are stored
+ * hashed, only to dedupe for the unique count, never in the clear.
+ */
+function stats_record(string $ip): void
+{
+    json_file_update(stats_path(), static function (array $data) use ($ip): array {
+        $data['total_requests'] = (int) ($data['total_requests'] ?? 0) + 1;
+        $ips = is_array($data['ips'] ?? null) ? $data['ips'] : [];
+        $ips[sha1($ip)] = true;
+        $data['ips'] = $ips;
+        return $data;
+    });
+}
+
+function stats_snapshot(): array
+{
+    $path = stats_path();
+    $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+    if (!is_array($data)) {
+        return ['total_requests' => 0, 'unique_ips' => 0];
+    }
+    return [
+        'total_requests' => (int) ($data['total_requests'] ?? 0),
+        'unique_ips'     => count(is_array($data['ips'] ?? null) ? $data['ips'] : []),
+    ];
+}
+
+/**
  * When served behind Cloudflare, REMOTE_ADDR is Cloudflare's own edge IP,
  * not the visitor's. CF-Connecting-IP carries the real one; trust it only
  * if it is actually shaped like an IP address.
@@ -1120,7 +1157,7 @@ function handle_index(): never
             'GET /unhinged/optimism' => 'An unearned, unsupported dose of positivity.',
             'GET /unhinged/pessimism' => 'An unearned, unsupported dose of dread.',
             'GET /unhinged/advice'   => 'Advice that applies to almost every situation.',
-            'GET /healthz'           => 'Liveness.',
+            'GET /healthz'           => 'Liveness, plus lifetime request and unique-IP counts.',
         ],
         'notes' => [
             'Piles are files on disk and survive restarts, unlike morale.',
@@ -1578,6 +1615,20 @@ function handle_fingers_reset(): never
     ]);
 }
 
+function handle_healthz(): never
+{
+    $stats = stats_snapshot();
+
+    send(200, [
+        'ok'            => true,
+        'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
+        'lifetime'      => [
+            'total_requests' => $stats['total_requests'],
+            'unique_ips'     => $stats['unique_ips'],
+        ],
+    ]);
+}
+
 /* ------------------------------------------------------------------ *
  * Router
  * ------------------------------------------------------------------ */
@@ -1608,6 +1659,9 @@ if ($path === '' || $path === '/index.php' || $path === '/kick-rocks.php') {
     $path = '/';
 }
 
+// Every request counts towards lifetime stats, surfaced at GET /healthz.
+stats_record(client_ip());
+
 match (true) {
     $method === 'GET' && $path === '/'                    => handle_index(),
     $method === 'GET' && $path === '/kick/rocks'          => handle_kick_rocks(),
@@ -1633,10 +1687,7 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/optimism'     => handle_optimism(),
     $method === 'GET' && $path === '/unhinged/pessimism'    => handle_pessimism(),
     $method === 'GET' && $path === '/unhinged/advice'       => handle_advice(),
-    $method === 'GET' && $path === '/healthz'             => send(200, [
-        'ok'            => true,
-        'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
-    ]),
+    $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',
         'remark' => 'There is, however, a rock. See GET /kick/rocks.',
