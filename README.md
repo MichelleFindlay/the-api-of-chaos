@@ -21,7 +21,7 @@
 | GET | /excuses/oops | A reason it went wrong, with tier explanation. |
 | GET | /excuses/ring-ring | A reason you did not pick up. |
 | GET | /excuses/late | A reason you're late. |
-| GET | /excuses/alibis :  A reason you weren't there.
+| GET | /excuses/alibis | A reason you weren't there.
 | GET | /ministry/gentle-correction | Rolls a d6 against the Ministry's approved remedies, graded in newtons. |
 | GET | /cage/finger | Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next. |
 | GET | /cage/fictional/finger | Put your finger in the cage. 50 fictional creatures this time. Shares your finger/toe count with /cage/finger. |
