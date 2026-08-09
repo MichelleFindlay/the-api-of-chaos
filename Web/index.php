@@ -27,6 +27,7 @@ declare(strict_types=1);
  *   GET    /excuses/oops        a reason it went wrong, with tier explanation
  *   GET    /excuses/ring-ring   a reason you didn't pick up
  *   GET    /excuses/late        a reason you're late
+ *   GET    /excuses/alibis      a reason you weren't there
  *   GET    /ministry/gentle-correction  rolls a d6 against approved remedies
  *   GET    /cage/finger         put your finger in the cage
  *   GET    /cage/fictional/finger  same, but fictional creatures; shares your finger/toe count
@@ -801,6 +802,59 @@ const ADVICE_RESPONSES = [
     'Whatever you decide, be able to live with it on a Sunday afternoon.',
 ];
 
+const ALIBI_EXCUSES = [
+    'I was being held as evidence in an unrelated bin.',
+    "I was three miles inland, arguing with a swan I'd already forgiven.",
+    'Physically I was there. Legally I was a draught.',
+    'I was at the dentist. Not mine. Someone\'s.',
+    'I was underwater on purpose, in a suit, for reasons that made sense at the time.',
+    'I was being slowly issued from a vending machine.',
+    'I was in the loft, and the loft does not have an alibi, which is the loft\'s problem.',
+    'I was helping a man named Gerald move a piano that turned out to be a horse.',
+    'I was on a train that has since been decommissioned and denies ever running.',
+    'I was inside a mattress in an entirely professional capacity.',
+    'I was being pounded into dirt at the time, ask the leaderboard.',
+    "I was mid-burp, and you cannot commit a crime mid-burp, it's physics.",
+    'I was standing very still in a garden centre pretending to be for sale.',
+    'I was in a queue that had no front and I did not want to lose my place.',
+    'I was asleep, and I have witnesses, and they were also me.',
+    'I was in the walls, but recreationally.',
+    'I was busy being the reason a smoke alarm went off in another postcode.',
+    "I was watching a kettle and it hadn't boiled yet, so no time had passed.",
+    'I was on the roof, on a technicality.',
+    'I was at a wedding for two people who have since stopped existing.',
+    'I was being carried, unwillingly, by the tide and a small dog.',
+    'I was in the fridge. Not the fridge. A fridge.',
+    'I was having my photograph taken by a machine that only photographs the innocent.',
+    'I was six hours into a bath and time down there runs differently.',
+    "I was giving a talk to an empty room about how I'd never do such a thing.",
+    'I was stuck in a turnstile in a spiritual sense.',
+    "I was at the cinema watching a film that hasn't come out yet.",
+    "I was banned from the area, so obviously I wasn't in it.",
+    "I was rendering slowly and hadn't fully arrived.",
+    'I was at the bottom of the stairs waiting for the stairs to finish.',
+    'I was on hold. I am still on hold. This is a recording.',
+    'I was in a hedge, but as a guest of the hedge.',
+    'I was hosting a wasp.',
+    'I was being lightly digested elsewhere.',
+    'I was at the coast pointing at the sea for a local charity.',
+    "I was in a lift between two floors that don't exist in the same building.",
+    'I was participating in a sponsored silence that I have now broken, so this doesn\'t count.',
+    'I was doing the thing with the spoons. You know the thing with the spoons.',
+    'I was on the moon. Tier 14. Ask the rocks.',
+    'I was inside a costume and the costume has an alibi.',
+    'I was hiding from an owl that never came, which proves how well I hid.',
+    'I was several people at the time and none of us can be held responsible.',
+    'I was busy dying down and would not have had the energy.',
+    'I was in a field being counted by a farmer as one of the sheep.',
+    'I was en route, permanently, in a way that never resolves into arrival.',
+    'I was under strict instructions from a voice I have since disconnected.',
+    'I was mid-transformation and it would have been rude to interrupt myself.',
+    'I was up a ladder with no ladder, which is worse and takes longer.',
+    'I was being buried in a friendly way.',
+    "I was standing directly behind you the entire time, which is why you didn't see me.",
+];
+
 const NON_COMMITTAL_RESPONSES = [
     'Ask the wall. The wall knows.',
     "My answer is currently in a jar and I've lost the jar.",
@@ -1220,6 +1274,7 @@ function handle_index(): never
             'GET /excuses/oops'      => 'A reason it went wrong, with tier explanation.',
             'GET /excuses/ring-ring' => 'A reason you did not pick up.',
             'GET /excuses/late'      => "A reason you're late.",
+            'GET /excuses/alibis'    => "A reason you weren't there.",
             'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies, graded in newtons.',
             'GET /cage/finger'       => 'Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next.',
             'GET /cage/fictional/finger' => 'Put your finger in the cage. 50 fictional creatures this time. Shares your finger/toe count with /cage/finger.',
@@ -1547,6 +1602,14 @@ function handle_excuses_late(): never
     ]);
 }
 
+function handle_excuses_alibis(): never
+{
+    send(200, [
+        'instruction' => 'Account for your whereabouts.',
+        'reason'      => pick(ALIBI_EXCUSES),
+    ]);
+}
+
 function handle_excuses_social(): never
 {
     $tier = array_rand(SOCIAL_EXCUSES);
@@ -1832,6 +1895,7 @@ match (true) {
     $method === 'GET' && $path === '/excuses/oops'         => handle_excuses_oops(),
     $method === 'GET' && $path === '/excuses/ring-ring'    => handle_excuses_ring_ring(),
     $method === 'GET' && $path === '/excuses/late'          => handle_excuses_late(),
+    $method === 'GET' && $path === '/excuses/alibis'        => handle_excuses_alibis(),
     $method === 'GET' && $path === '/ministry/gentle-correction' => handle_gentle_correction(),
     $method === 'GET' && $path === '/cage/finger'          => handle_cage_finger(),
     $method === 'GET' && $path === '/cage/fictional/finger' => handle_cage_finger_fictional(),
