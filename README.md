@@ -36,6 +36,7 @@
 
 - Piles are files on disk and survive restarts, unlike morale.
 - Tier 14 is the Moon. There is no tier 15.
+- Pounding is rate-limited to once every 2s per pile. Push through it and the dirt guy quits.
 
 ## License
 
