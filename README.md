@@ -30,7 +30,7 @@
 | GET | /unhinged/optimism | An unearned, unsupported dose of positivity. |
 | GET | /unhinged/pessimism | An unearned, unsupported dose of dread. |
 | GET | /unhinged/advice | Advice that applies to almost every situation. |
-| GET | /healthz | Liveness. |
+| GET | /healthz | Liveness, plus lifetime request/unique-IP counts. |
 
 ## Notes
 
