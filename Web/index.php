@@ -36,6 +36,7 @@ declare(strict_types=1);
  *   GET    /unhinged/optimism   an unearned dose of positivity
  *   GET    /unhinged/pessimism  an unearned dose of dread
  *   GET    /unhinged/advice     advice for almost every situation
+ *   GET    /unhinged/non-committal  a refusal to answer, fifty ways
  *   GET    /healthz             liveness, plus lifetime request/unique-IP counts
  *
  * Query params
@@ -797,6 +798,59 @@ const ADVICE_RESPONSES = [
     'Whatever you decide, be able to live with it on a Sunday afternoon.',
 ];
 
+const NON_COMMITTAL_RESPONSES = [
+    'Ask the wall. The wall knows.',
+    "My answer is currently in a jar and I've lost the jar.",
+    "I'll answer that the moment my hands stop being hands.",
+    'That question has been forwarded to a man named Gerald. Gerald is not real.',
+    'Yes, but only on Thursdays, and only in a language I refuse to learn.',
+    'I have consulted the pigeons. The pigeons abstained.',
+    'Not while the moon is watching.',
+    "I answered that already, in a dream, to someone who wasn't you.",
+    "Let me check with my other self. He's asleep. He's always asleep.",
+    "The answer is beneath the floorboards and I've promised not to disturb it.",
+    "I'd tell you, but the bees have a policy.",
+    'That depends entirely on what the fridge decides tonight.',
+    'My position on this is stored in a tooth I no longer have.',
+    "Ask me again once I've finished digesting the last question.",
+    "I'm legally three raccoons and we haven't reached quorum.",
+    'Consult the tide. The tide is more informed than I am.',
+    "I'll answer when the correct number of spoons are present.",
+    'My answer is technically outdoors right now.',
+    'The Ministry has advised me to hum instead.',
+    "Yes. No. Also a third one I'm not allowed to say out loud.",
+    'I have buried my opinion and I will not be telling you where.',
+    "That's between me and the man who lives in the loft.",
+    'I answered, but the answer arrived before the question and got confused.',
+    "Let's wait until something worse happens and then decide together.",
+    "I've delegated this to a rock. The rock is thinking.",
+    'My answer is currently being pounded into the dirt. Give it a moment.',
+    'Not until the second moon, and possibly not then.',
+    "I don't answer questions on days that contain a 'y'.",
+    'The council of me has adjourned without a decision, again.',
+    "That's a question for whoever I become at 3am.",
+    'Ask the version of me that had a normal childhood.',
+    "I've written the answer down and eaten the paper. Standard procedure.",
+    "My commitment is in a cage and I'm not putting my finger in.",
+    'Let me consult the gods of the holy hairy toe.',
+    "The answer lives in a drawer that only opens for people I don't like.",
+    "I've decided to become weather instead of answering that.",
+    "Yes, provisionally, pending the outcome of a fight I'm having with a door.",
+    'That information is classified by an organisation I invented ten seconds ago.',
+    "I'll answer once someone explains what a Tuesday is actually for.",
+    "I've sent my answer by owl. There is no owl. There has never been an owl.",
+    'Currently I am mostly soup and soup does not commit.',
+    "Ask me when I'm taller.",
+    "My answer got out and it's living wild now. Best not to approach it.",
+    "Let's revisit this after the ceiling and I have finished our disagreement.",
+    "I'd love to commit, but I'm contractually obliged to shimmer instead.",
+    "That one's going straight into the hole with the others.",
+    "I'll tell you, but only in the correct order, and I've forgotten the order.",
+    'My spine says yes. My spine is not a reliable narrator.',
+    'Please leave your question at the tone. There is no tone. There never was.',
+    "I've answered. You simply weren't the right shape to receive it.",
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -1157,6 +1211,7 @@ function handle_index(): never
             'GET /unhinged/optimism' => 'An unearned, unsupported dose of positivity.',
             'GET /unhinged/pessimism' => 'An unearned, unsupported dose of dread.',
             'GET /unhinged/advice'   => 'Advice that applies to almost every situation.',
+            'GET /unhinged/non-committal' => 'A refusal to answer, dressed up fifty different ways.',
             'GET /healthz'           => 'Liveness, plus lifetime request and unique-IP counts.',
         ],
         'notes' => [
@@ -1584,6 +1639,14 @@ function handle_advice(): never
     ]);
 }
 
+function handle_non_committal(): never
+{
+    send(200, [
+        'instruction' => 'You asked for a straight answer.',
+        'answer'      => pick(NON_COMMITTAL_RESPONSES),
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = pile_id();
@@ -1687,6 +1750,7 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/optimism'     => handle_optimism(),
     $method === 'GET' && $path === '/unhinged/pessimism'    => handle_pessimism(),
     $method === 'GET' && $path === '/unhinged/advice'       => handle_advice(),
+    $method === 'GET' && $path === '/unhinged/non-committal' => handle_non_committal(),
     $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',
