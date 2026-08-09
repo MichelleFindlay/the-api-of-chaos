@@ -29,11 +29,13 @@ declare(strict_types=1);
  *   GET    /excuses/late        a reason you're late
  *   GET    /ministry/gentle-correction  rolls a d6 against approved remedies
  *   GET    /cage/finger         put your finger in the cage
+ *   GET    /cage/fictional/finger  same, but fictional creatures; shares your finger/toe count
  *   GET    /cage/finger/left    how many fingers you have left
  *   GET    /cage/finger/reset   pray for 10 fingers again
  *   GET    /unhinged/8ball      shake it, it answers
  *   GET    /unhinged/optimism   an unearned dose of positivity
  *   GET    /unhinged/pessimism  an unearned dose of dread
+ *   GET    /unhinged/advice     advice for almost every situation
  *   GET    /healthz             liveness
  *
  * Query params
@@ -489,6 +491,59 @@ const CAGE_FINGER_OUTCOMES = [
     ['verdict' => 'Would take the finger with them', 'animal' => 'Hyacinth macaw'],
 ];
 
+const CAGE_FICTIONAL_OUTCOMES = [
+    ['verdict' => 'Would lick your finger', 'animal' => "Falkor (The NeverEnding Story)", 'note' => "enthusiastically, and you'd be soaked"],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Appa (Avatar)', 'note' => 'six-ton tongue, entire head coated'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Totoro', 'note' => 'a slow, considered lick, then back to sleep'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Ludo (Labyrinth)', 'note' => 'gentle giant, questionable hygiene'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Clifford the Big Red Dog', 'note' => "one lick, you're airborne"],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Bolt', 'note' => 'very normal dog behaviour'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Sven (Frozen)', 'note' => 'will lick you for a carrot'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Chewbacca', 'note' => 'grooms you affectionately, you have no say'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Toothless (How to Train Your Dragon)', 'note' => 'lick, then refuse to let it dry'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Puff the Magic Dragon'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Fizzgig (The Dark Crystal)', 'note' => 'mostly noise, minimal teeth'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Kirby', 'note' => 'technically swallows, but affectionately'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Baby Yoda / Grogu', 'note' => 'would try, then get distracted'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Stitch (post-reform)', 'note' => 'chaotic lick'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Jake the Dog (Adventure Time)'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Yoshi', 'note' => "long tongue, you'll definitely be tasted"],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Slimer (Ghostbusters)', 'note' => 'full-body slime, not just the finger'],
+    ['verdict' => 'Would lick your finger', 'animal' => "Wilbur (Charlotte's Web)"],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Hedwig', 'note' => 'well, a nibble, but an affectionate one'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Bambi'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'E.T.', 'note' => 'one glowing finger to another'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Ponyo', 'note' => 'lick, then ham'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Buckbeak (Harry Potter)', 'note' => 'after you bow. Only after you bow.'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'Nessie', 'note' => 'friendly Loch Ness variants'],
+    ['verdict' => 'Would lick your finger', 'animal' => 'The Iron Giant', 'note' => 'no tongue, but would gently hold your hand'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Xenomorph (Alien)', 'note' => 'inner jaw, no negotiation'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Facehugger', 'note' => 'different appendage, same outcome'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Sarlacc', 'note' => "thousand-year digestion"],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Rancor'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Wampa'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Graboid (Tremors)'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Velociraptor (Jurassic Park)'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'T. rex (Jurassic Park)'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Mosasaurus'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Shelob (LOTR)'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Balrog', 'note' => "you won't get close enough to lose just a finger"],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Smaug', 'note' => 'the finger is the appetiser'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Hungarian Horntail'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Basilisk (Harry Potter)', 'note' => 'the eyes get you first'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Aragog and family'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'The Kraken'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Demogorgon (Stranger Things)', 'note' => 'face opens, finger gone'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Cloverfield monster'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Godzilla', 'note' => 'technically too big to notice you had fingers'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Chestburster (Alien)'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'The Blob'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Audrey II (Little Shop)', 'note' => '"Feed me"'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Gremlins', 'note' => 'post-midnight'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Cerberus', 'note' => 'three chances to lose it'],
+    ['verdict' => 'Would take the finger with them', 'animal' => 'Langoliers', 'note' => 'will take the finger, the hand, and the past tense'],
+];
+
 // How many fingers/toes you start (and get restored) with. Toes are
 // only spent once fingers run out.
 const FINGERS_START = 10;
@@ -687,6 +742,59 @@ const PESSIMISM_RESPONSES = [
     'Every silver lining is attached to a cloud, structurally.',
     "I'm fine. I'm going to be fine. Those are two different claims.",
     "It'll be fine. That's what makes it so alarming.",
+];
+
+const ADVICE_RESPONSES = [
+    'Sit down before you decide anything.',
+    'Drink a glass of water and see if you still mean it.',
+    "Whatever it is, it's smaller when written down.",
+    "Go outside. Not for long. Just to check it's still there.",
+    "Say the sentence out loud. Bad ideas can't survive being heard.",
+    'Wait until Wednesday. Wednesday is honest.',
+    'Ask what a slightly braver version of you would do, then do 60% of that.',
+    'Nobody is watching as closely as you think. Not even the people watching.',
+    'Do the boring part first. The boring part is the whole thing.',
+    "If you're this tired, it isn't a decision, it's a symptom.",
+    'Put it in a drawer. If you forget it, that was your answer.',
+    'Assume the other person is having a much worse day than you know about.',
+    "Don't send it tonight.",
+    'Halve it. Whatever it is. Halve it.',
+    'The version where you just ask is almost always available.',
+    'Give it one more day than feels necessary.',
+    'Eat something. Genuinely. This has resolved entire crises.',
+    'Do the thing badly rather than not at all.',
+    "If you're rehearsing the argument, you've already lost it.",
+    'Tell one person. Not everyone. One.',
+    'Leave the room. The room is contributing.',
+    "You're allowed to change your mind at any point, including now, including twice.",
+    'Write the furious version. Delete the furious version.',
+    'Notice whether you want the outcome or just the ending.',
+    "If it takes under two minutes, it doesn't get to be a thought.",
+    "Bet on the boring explanation. It's usually right.",
+    "Ask what you'd tell a friend, then be that unbearably reasonable to yourself.",
+    'Sleep on it. Sleep is a free consultant.',
+    'Start with the smallest possible version and see if it survives.',
+    "Whatever you're avoiding is the task.",
+    'Nothing needs to be decided before breakfast.',
+    "Check whether you're solving the problem or just performing concern about it.",
+    "If everyone agrees, someone hasn't spoken yet.",
+    "Take the money. Or don't. But decide on purpose.",
+    'The second attempt is always cheaper than the first.',
+    "If you're this bothered, it matters. Act accordingly.",
+    'Stop optimising and just pick one.',
+    'Assume you\'ll have to explain this to someone you respect.',
+    'Do it before you\'re ready. You will not become ready.',
+    "Ask what happens if you do nothing. Sometimes that's the plan.",
+    'Take the stairs, take the long way, take the pause.',
+    'Clean something adjacent to the problem. It helps and nobody knows why.',
+    'Say "I don\'t know" earlier than feels comfortable.',
+    'Set a timer. Panic expands to fill available time.',
+    'Get it in writing. Kindly, but get it in writing.',
+    "If you'd regret not trying more than failing, that's the answer.",
+    'Everyone is improvising. Everyone. Including the confident ones.',
+    'Give it a name. Named problems are smaller than unnamed ones.',
+    'Leave earlier than you need to. It buys back the entire day.',
+    'Whatever you decide, be able to live with it on a Sunday afternoon.',
 ];
 
 /* ------------------------------------------------------------------ *
@@ -1005,11 +1113,13 @@ function handle_index(): never
             'GET /excuses/late'      => "A reason you're late.",
             'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies, graded in newtons.',
             'GET /cage/finger'       => 'Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next.',
+            'GET /cage/fictional/finger' => 'Put your finger in the cage. 50 fictional creatures this time. Shares your finger/toe count with /cage/finger.',
             'GET /cage/finger/left'  => 'How many fingers and toes you have left, out of ' . FINGERS_START . ' each.',
             'GET /cage/finger/reset' => 'Pray to the gods of the holy hairy toe for ' . FINGERS_START . ' fingers and ' . TOES_START . ' toes again.',
             'GET /unhinged/8ball'    => 'Shake it. It answers, unreliably.',
             'GET /unhinged/optimism' => 'An unearned, unsupported dose of positivity.',
             'GET /unhinged/pessimism' => 'An unearned, unsupported dose of dread.',
+            'GET /unhinged/advice'   => 'Advice that applies to almost every situation.',
             'GET /healthz'           => 'Liveness.',
         ],
         'notes' => [
@@ -1359,6 +1469,52 @@ function handle_cage_finger(): never
     ]);
 }
 
+function handle_cage_finger_fictional(): never
+{
+    $id      = pile_id();
+    $fingers = fingers_left($id);
+    $toes    = toes_left($id);
+
+    if ($fingers <= 0 && $toes <= 0) {
+        send(403, [
+            'instruction'  => 'Put your finger in the cage.',
+            'error'        => 'no_fingers_or_toes_left',
+            'fingers_left' => 0,
+            'toes_left'    => 0,
+            'remark'       => 'You are out of fingers and toes. Pray at GET /cage/finger/reset.',
+        ]);
+    }
+
+    // Fingers go first; once they're spent the cage moves on to toes.
+    $appendage = $fingers > 0 ? 'finger' : 'toe';
+
+    $result  = pick(CAGE_FICTIONAL_OUTCOMES);
+    $takes   = str_starts_with($result['verdict'], 'Would take');
+    $verdict = $appendage === 'toe' ? str_replace('finger', 'toe', $result['verdict']) : $result['verdict'];
+
+    if ($takes) {
+        if ($appendage === 'finger') {
+            $fingers = fingers_take($id);
+        } else {
+            $toes = toes_take($id);
+        }
+    }
+
+    send(200, [
+        'instruction'  => $appendage === 'finger'
+            ? 'Put your finger in the cage. This time, something fictional is in there.'
+            : 'No fingers left. Put a toe in the cage instead.',
+        'creature'     => $result['animal'],
+        'verdict'      => $verdict,
+        'appendage'    => $appendage,
+        'outcome'      => ($takes ? 'takes_' : 'licks_') . $appendage,
+        'note'         => $result['note'] ?? null,
+        'fingers_left' => $fingers,
+        'toes_left'    => $toes,
+        'remark'       => "$fingers finger(s) and $toes toe(s) left.",
+    ]);
+}
+
 function handle_eight_ball(): never
 {
     send(200, [
@@ -1380,6 +1536,14 @@ function handle_pessimism(): never
     send(200, [
         'instruction' => 'Brace for the opposite of positivity.',
         'answer'      => pick(PESSIMISM_RESPONSES),
+    ]);
+}
+
+function handle_advice(): never
+{
+    send(200, [
+        'instruction' => 'This applies to almost every situation.',
+        'answer'      => pick(ADVICE_RESPONSES),
     ]);
 }
 
@@ -1462,11 +1626,13 @@ match (true) {
     $method === 'GET' && $path === '/excuses/late'          => handle_excuses_late(),
     $method === 'GET' && $path === '/ministry/gentle-correction' => handle_gentle_correction(),
     $method === 'GET' && $path === '/cage/finger'          => handle_cage_finger(),
+    $method === 'GET' && $path === '/cage/fictional/finger' => handle_cage_finger_fictional(),
     $method === 'GET' && $path === '/cage/finger/left'     => handle_fingers_left(),
     $method === 'GET' && $path === '/cage/finger/reset'    => handle_fingers_reset(),
     $method === 'GET' && $path === '/unhinged/8ball'        => handle_eight_ball(),
     $method === 'GET' && $path === '/unhinged/optimism'     => handle_optimism(),
     $method === 'GET' && $path === '/unhinged/pessimism'    => handle_pessimism(),
+    $method === 'GET' && $path === '/unhinged/advice'       => handle_advice(),
     $method === 'GET' && $path === '/healthz'             => send(200, [
         'ok'            => true,
         'piles_tracked' => count(glob(pile_dir() . '/*.json') ?: []),
