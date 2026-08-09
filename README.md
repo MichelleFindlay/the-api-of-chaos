@@ -8,21 +8,29 @@
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/kick/rocks` | Assigns a rock. Optional: `?tier=n`, `?min=&max=` |
-| `GET` | `/kick/rocks/tiers` | The full scale, tier 1 through 14. |
-| `GET` `POST` | `/pound/dirt` | Adds to your pile. Optional: `?pile=name` |
-| `GET` | `/pound/dirt/status` | Peek at the pile without pounding it. |
-| `GET` | `/pound/dirt/tiers` | The full scale, fistful through second moon. |
-| `GET` | `/pound/dirt/leaderboard` | Top 20 piles, ranked. IPs shown with the final octet removed. |
-| `DELETE` | `/pound/dirt` | Reset the pile. Only from the IP that raised it. |
-| `GET` | `/excuses/teams` | A reason not to join the call. |
-| `GET` | `/excuses/social` | A reason not to attend, with tier. |
-| `GET` | `/excuses/social/tiers` | The five sub-tiers of social excuse. |
-| `GET` | `/excuses/oops` | A reason it went wrong, with tier explanation. |
-| `GET` | `/excuses/ring-ring` | A reason you did not pick up |
-| `GET` | `/excuses/late` | A reason you're late |
-| `GET` | `/ministry/gentle-correction` | Rolls a d6 against the Ministry's approved remedies, graded in newtons. |
-| `GET` | `/healthz` | Liveness. |
+| GET | /kick/rocks | Assigns a rock. Optional: ?tier=n, ?min=&max= |
+| GET | /kick/rocks/tiers | The full scale, tier 1 through 14. |
+| GET\|POST | /pound/dirt | Adds to your pile. Optional: ?pile=name |
+| GET | /pound/dirt/status | Peek at the pile without pounding it. |
+| GET | /pound/dirt/tiers | The full scale, fistful through second moon. |
+| GET | /pound/dirt/leaderboard | Top 20 piles, ranked. IPs shown with the final octet removed. |
+| DELETE | /pound/dirt | Reset the pile. Only from the IP that raised it. |
+| GET | /excuses/teams | A reason not to join the call. |
+| GET | /excuses/social | A reason not to attend, with tier. |
+| GET | /excuses/social/tiers | The five sub-tiers of social excuse. |
+| GET | /excuses/oops | A reason it went wrong, with tier explanation. |
+| GET | /excuses/ring-ring | A reason you did not pick up. |
+| GET | /excuses/late | A reason you're late. |
+| GET | /ministry/gentle-correction | Rolls a d6 against the Ministry's approved remedies, graded in newtons. |
+| GET | /cage/finger | Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next. |
+| GET | /cage/fictional/finger | Put your finger in the cage. 50 fictional creatures this time. Shares your finger/toe count with /cage/finger. |
+| GET | /cage/finger/left | How many fingers and toes you have left, out of 10 each. |
+| GET | /cage/finger/reset | Pray to the gods of the holy hairy toe for 10 fingers and 10 toes again. |
+| GET | /unhinged/8ball | Shake it. It answers, unreliably. |
+| GET | /unhinged/optimism | An unearned, unsupported dose of positivity. |
+| GET | /unhinged/pessimism | An unearned, unsupported dose of dread. |
+| GET | /unhinged/advice | Advice that applies to almost every situation. |
+| GET | /healthz | Liveness. |
 
 ## Notes
 
