@@ -9,6 +9,7 @@ declare(strict_types=1);
  *   /index.php                              the page
  *   /index.php?path=/kick/rocks&tier=9      proxied JSON envelope
  *   /index.php?path=/healthz&raw=1          verbatim upstream status + body
+ *   /index.php?debug=1                      what the proxy resolved, no upstream call
  *
  * Requests are proxied server side and the caller's IP is forwarded upstream,
  * so /pound/dirt still attributes piles to the right person.
@@ -77,9 +78,7 @@ const CLIENT_IP_HEADER = 'X-Chaos-Client-IP';
 /**
  * Optional shared secret sent as X-Chaos-Frontend-Key. Set it here and in the
  * API so the API only believes CLIENT_IP_HEADER when it came from this
- * frontend. Leave empty to skip. Better still, read it from the environment:
- * getenv('CHAOS_FRONTEND_KEY') — constants can't call functions, so set it in
- * the line below if you go that route.
+ * frontend. Leave empty to skip.
  */
 const FRONTEND_KEY = '';
 
@@ -364,7 +363,8 @@ function chaos_pile_id(): string
     return $ip;
 }
 
-/** Cloudflare's two-letter country code for this visitor, when present. */function chaos_client_country(): ?string
+/** Cloudflare's two-letter country code for this visitor, when present. */
+function chaos_client_country(): ?string
 {
     $remote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
     $country = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
@@ -703,9 +703,26 @@ a:hover { color: var(--amber); }
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--amber);
-  text-shadow: 0 0 22px rgba(255, 180, 84, 0.28);
 }
-.banner__title::before { content: "$ "; color: var(--dim); }
+.banner__title::before { content: "🗑️🔥 "; -webkit-text-fill-color: initial; text-shadow: none; }
+
+/* cool on the left, fully alight by the right */
+.banner__grad {
+  background-image: linear-gradient(100deg,
+    #6fc36b 0%,
+    #b8cf5c 22%,
+    #ffb454 48%,
+    #ff8034 72%,
+    #ef3d21 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 20px rgba(255, 110, 50, 0.22));
+}
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .banner__grad { color: var(--amber); -webkit-text-fill-color: var(--amber); }
+}
 
 .caret {
   display: inline-block;
@@ -713,7 +730,7 @@ a:hover { color: var(--amber); }
   height: 1.05em;
   margin-left: 0.15em;
   vertical-align: -0.16em;
-  background: var(--amber);
+  background: #ef3d21;
   animation: blink 1.1s steps(1) infinite;
 }
 @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
@@ -827,7 +844,7 @@ a:hover { color: var(--amber); }
 
 .entry { margin: 0 0 1.15rem; }
 .entry__cmd { color: var(--fg); word-break: break-all; }
-.entry__cmd::before { content: "$ "; color: var(--amber); }
+.entry__cmd::before { content: "🗑️🔥 "; font-size: 0.9em; }
 .entry__out {
   margin: 0.35rem 0 0;
   padding-left: 0.9rem;
@@ -884,7 +901,7 @@ footer.foot {
 <div class="term">
 
   <header class="banner">
-    <h1 class="banner__title">the api of chaos<span class="caret" aria-hidden="true"></span></h1>
+    <h1 class="banner__title"><span class="banner__grad">the api of chaos</span><span class="caret" aria-hidden="true"></span></h1>
     <p class="banner__lines">
       <span>v1.0.0 &mdash; GPL-3.0 &mdash; <a href="https://github.com/MichelleFindlay/the-api-of-chaos">github.com/MichelleFindlay/the-api-of-chaos</a></span>
       <span>click a command on the left, or type a path below (<b>DELETE /pound/dirt</b> works too). <b>help</b> lists everything, <b>clear</b> wipes the session.</span>
@@ -932,7 +949,7 @@ footer.foot {
         <p class="log__hint">no calls yet. pick something on the left, or type a path and hit enter.</p>
       </div>
       <div class="prompt">
-        <span class="prompt__sigil">chaos&nbsp;$</span>
+        <span class="prompt__sigil" aria-hidden="true">chaos&nbsp;🗑️🔥</span>
         <label for="cli" class="sr-only" hidden>command</label>
         <input id="cli" type="text" autocomplete="off" spellcheck="false" placeholder="/unhinged/8ball">
       </div>
