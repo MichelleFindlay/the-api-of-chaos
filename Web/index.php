@@ -15,6 +15,8 @@ declare(strict_types=1);
  *   GET    /                    service index
  *   GET    /kick/rocks          assigns you a rock to kick
  *   GET    /kick/rocks/tiers    the full scale, moon rock -> Moon
+ *   GET    /kick/munitions      assigns you an unintentionally-lost munition, with tier and arc
+ *   GET    /kick/munitions/tiers  the full scale, tier 1-50, in five arcs
  *   GET    /pound/dirt          adds to your pile and returns it
  *   POST   /pound/dirt          same, for the semantically fussy
  *   GET    /pound/dirt/status   peek without pounding
@@ -111,6 +113,125 @@ const KICK_REMARKS = [
     'Complaints about the assignment are handled by kicking a second rock.',
     'Others have kicked this rock. None have returned satisfied.',
     'The rock is unbothered. Be more like the rock.',
+];
+
+/**
+ * Five ten-item arcs, escalating from "harmless clutter" to "forfeit
+ * tier". Ranges are inclusive tier bounds into MUNITIONS below.
+ */
+const MUNITION_ARCS = [
+    ['from' => 1,  'to' => 10, 'name' => 'the "I fear nothing" arc'],
+    ['from' => 11, 'to' => 20, 'name' => 'the fuze wakes up'],
+    ['from' => 21, 'to' => 30, 'name' => 'designed, specifically, for exactly this'],
+    ['from' => 31, 'to' => 40, 'name' => 'older than everyone in the room'],
+    ['from' => 41, 'to' => 50, 'name' => 'where the result is measured in treaties'],
+];
+
+const MUNITIONS = [
+    ['tier' => 1,  'name' => 'Spent brass casing',
+     'remark' => 'Ting. You are Beckham. The tarmac remembers you. Nobody else does.'],
+    ['tier' => 2,  'name' => 'Airsoft BB',
+     'remark' => 'It does not move. It has more mass than your entire kicking technique. The BB has won and the BB knows it.'],
+    ['tier' => 3,  'name' => 'Percussion cap',
+     'remark' => 'Pop. One duck, forty metres out, opens a single eye and files it under "not my problem."'],
+    ['tier' => 4,  'name' => 'Loose .22 round',
+     'remark' => 'Nothing. Cartridges need a chamber; unconfined the brass just splits like a disappointed grape. You have kicked a small metal grape.'],
+    ['tier' => 5,  'name' => 'Shotgun shell',
+     'remark' => 'Rolls away. Contains shot, powder, and absolutely no personal ambition.'],
+    ['tier' => 6,  'name' => 'Belt of blanks',
+     'remark' => 'Best sound on this entire list. Sleigh bells for people with problems. Rate this tier five stars, would kick again.'],
+    ['tier' => 7,  'name' => 'Unlit signal flare',
+     'remark' => "Clatters. Someone across the yard shouts DON'T KICK THAT, which is both correct and roughly one second too late to be useful to anybody."],
+    ['tier' => 8,  'name' => 'Signal flare that lights',
+     'remark' => 'There is now a red star cluster living in your trouser cuff. You have twenty urgent minutes and one leg that has joined a rave.'],
+    ['tier' => 9,  'name' => 'Smoke grenade, pin in',
+     'remark' => 'Heavier than it looks. Your toe files a formal complaint. Denied.'],
+    ['tier' => 10, 'name' => 'Smoke grenade going off',
+     'remark' => 'You are purple. Not "a bit purple." Purple. Your GP will ask. Your wedding photos will ask.'],
+
+    ['tier' => 11, 'name' => 'CS canister',
+     'remark' => 'You have run the experiment, you are the control group, the test group, and the crying peer reviewer.'],
+    ['tier' => 12, 'name' => 'Flashbang',
+     'remark' => 'Everyone is fine and everyone says WHAT for a week. Marriages have ended over less. Marriages have ended over exactly this.'],
+    ['tier' => 13, 'name' => 'Thermite',
+     'remark' => 'Goes through the road. Then your boot. Then the drainage. Then it considers Australia and decides not today, but soon.'],
+    ['tier' => 14, 'name' => 'White phosphorus',
+     'remark' => 'No. Not a joke tier. Genuinely, sincerely, please no.'],
+    ['tier' => 15, 'name' => 'Grenade, pin in',
+     'remark' => 'It bounces. The fuze wanted the spoon released, not a football trial. You have won a coin flip you did not know you had entered and were not invited to.'],
+    ['tier' => 16, 'name' => 'Grenade, spoon pinned by gravel',
+     'remark' => 'The gravel was doing all the work. The gravel was the only adult present. You have kicked the adult.'],
+    ['tier' => 17, 'name' => '40mm, unarmed',
+     'remark' => "It needs a barrel's worth of spin to arm. It goes clunk. Two coin flips in a row now. Statistically you should be doing the lottery instead of this."],
+    ['tier' => 18, 'name' => '40mm dud, armed',
+     'remark' => 'This one already tried once. It has been lying there for months rehearsing. It would love another go.'],
+    ['tier' => 19, 'name' => 'Rifle grenade',
+     'remark' => 'Tips over gently. Then the nose fuze notices it has tipped over. The pause between those two sentences is the longest of your life.'],
+    ['tier' => 20, 'name' => 'RPG-7 warhead',
+     'remark' => 'Piezoelectric fuze in the tip. Kicking the tip is not "kicking a munition," it is operating it. You are not a bystander. You are crew.'],
+
+    ['tier' => 21, 'name' => '60mm mortar dud, nose-down in mud',
+     'remark' => 'It was promised an impact. It has waited. You are keeping a promise made by someone else, badly.'],
+    ['tier' => 22, 'name' => '81mm',
+     'remark' => 'Same physics, bigger crater, shorter obituary, same font.'],
+    ['tier' => 23, 'name' => 'PMN mine',
+     'remark' => "Trips at about 8 kg. A kick is about 8 kg. You have not defeated the mine. You have completed it. Somewhere a Soviet engineer's ghost nods."],
+    ['tier' => 24, 'name' => 'PFM-1 butterfly mine',
+     'remark' => 'Green, wing-shaped, looks like something from a cereal box. That resemblance is not a joke and never was. Skip the punchline on this one.'],
+    ['tier' => 25, 'name' => 'S-mine',
+     'remark' => 'Bouncing Betty jumps to waist height first. It came all this way to look you in the eye.'],
+    ['tier' => 26, 'name' => 'Claymore facing away',
+     'remark' => 'Backblast only. A genuinely terrible day, but a day that has an evening.'],
+    ['tier' => 27, 'name' => 'Claymore facing you',
+     'remark' => '700 ball bearings, 60° arc, and the word FRONT stamped on it in capital letters by a manufacturer who anticipated you specifically.'],
+    ['tier' => 28, 'name' => 'TM-62 anti-tank mine',
+     'remark' => 'Needs 150 kg. You bring eight. It does not acknowledge the kick. It does not acknowledge you. Humiliation tier. You lose to a disc.'],
+    ['tier' => 29, 'name' => 'BLU-97 submunition',
+     'remark' => "Bright yellow, drink-can shaped, arms on release. Worst injury-per-gram ratio on the list and every word of that sentence is somebody's actual childhood."],
+    ['tier' => 30, 'name' => 'Bangalore torpedo',
+     'remark' => 'A pipe of explosive built to clear obstacles from a path. You are, briefly, an obstacle on a path.'],
+
+    ['tier' => 31, 'name' => 'WWI 18-pounder in a Belgian beet field',
+     'remark' => 'The Iron Harvest coughs up hundreds of tonnes a year. Farmers stack them at the field edge like firewood and do not kick them, because farmers are smarter than this list.'],
+    ['tier' => 32, 'name' => 'WWI gas shell',
+     'remark' => 'Century-old chemistry in a casing that has been rusting since your great-grandparents were flirting. This is why nobody kicks the beet-field stack.'],
+    ['tier' => 33, 'name' => 'WWII 1 kg incendiary stick',
+     'remark' => 'Pops, burns like a small furious sun, takes the hedge with it, and puts you on regional news under the caption "MAN, 34."'],
+    ['tier' => 34, 'name' => 'SC250 under a Berlin building site',
+     'remark' => "Germany defuses thousands a year. Your kick evacuates a district, cancels the S-Bahn, and gets you a nickname in a language you don't speak."],
+    ['tier' => 35, 'name' => 'Tallboy in a Polish canal',
+     'remark' => 'They tried to burn one out in 2020 and it detonated instead. Every human survived. The fish did not. Pour one out for the fish.'],
+    ['tier' => 36, 'name' => 'Naval contact mine, horns intact',
+     'remark' => 'The horns are the button. There is no "kicking near" a contact mine. There is only pressing.'],
+    ['tier' => 37, 'name' => 'Beached depth charge',
+     'remark' => "Hydrostatic fuze wants water pressure, not shins. Total anticlimax, immediately followed by a cordon, a helicopter, and the worst Saturday of eleven people's lives."],
+    ['tier' => 38, 'name' => 'Washed-up heavyweight torpedo',
+     'remark' => "Several hundred kilos of explosive engineered to break a ship's spine. Your foot is not the intended interface. Your foot is not an interface."],
+    ['tier' => 39, 'name' => 'Unexploded V-1',
+     'remark' => 'A tonne of Amatol, still fuzed, still cross about 1944. Kicking was never in the flight plan and yet here we are.'],
+    ['tier' => 40, 'name' => 'V-2 warhead',
+     'remark' => 'You kick history. History, famously, kicks back, and history does not observe the offside rule.'],
+
+    ['tier' => 41, 'name' => 'Sidewinder shed off a pylon',
+     'remark' => "Safety-armed, needs flight time, goes clunk. Absolutely nothing happens and somebody's twenty-year career ends anyway."],
+    ['tier' => 42, 'name' => 'Hellfire hang-fire',
+     'remark' => "The event has not been cancelled. The event has been deferred. You have just RSVP'd."],
+    ['tier' => 43, 'name' => 'Cruise missile in a field',
+     'remark' => 'You have kicked a small aeroplane whose entire personality is high explosive and grievance.'],
+    ['tier' => 44, 'name' => 'External fuel tank',
+     'remark' => 'Not a munition at all. You are soaked, you smell of Jet A-1, and you have to explain this to a real human being with a clipboard.'],
+    ['tier' => 45, 'name' => 'Six years of neglected ammonium nitrate in a warehouse',
+     'remark' => 'Not lost. Ignored. Beirut, 2020, and the result is a crater you can see from orbit. Not a bit. Never a bit.'],
+    ['tier' => 46, 'name' => 'Thermobaric warhead',
+     'remark' => 'The overpressure finds every enclosed space in the neighbourhood, including several you are personally made of. Your kick is the least significant event of that second by an enormous margin.'],
+    ['tier' => 47, 'name' => 'MOAB',
+     'remark' => '8,500 kg. Immovable. You bounce off it like a sparrow off a window. It does not detonate. It just sits there, judging you, and it is correct to.'],
+    ['tier' => 48, 'name' => 'Binary chemical shell, agents unmixed',
+     'remark' => 'They were kept apart on purpose by careful people. Your kick performs the mixing step. Congratulations, you are now the subject of an international inspection regime with your name in the annex.'],
+    ['tier' => 49, 'name' => 'Recovered Broken Arrow',
+     'remark' => 'No nuclear yield — but the conventional charges scatter plutonium across the landscape. Result: a treaty, a multi-decade cleanup, and topsoil shipped across an ocean in barrels because of you and your stupid foot.'],
+    ['tier' => 50, 'name' => 'The hydrogen bomb lost off Tybee Island in 1958 and never recovered',
+     'remark' => 'You cannot kick it. Nobody knows where it is. It has been winning this game, undefeated, since Eisenhower, and it will still be winning it long after you and I are gone. Forfeit tier. The bomb takes the trophy home.'],
 ];
 
 const DIRT_STAGES = [
@@ -1250,6 +1371,16 @@ function choose_rock(): array
     return ROCKS[mt_rand($min, $max) - 1];
 }
 
+function munition_arc(int $tier): string
+{
+    foreach (MUNITION_ARCS as $arc) {
+        if ($tier >= $arc['from'] && $tier <= $arc['to']) {
+            return $arc['name'];
+        }
+    }
+    return 'unclassified';
+}
+
 /* ------------------------------------------------------------------ *
  * Handlers
  * ------------------------------------------------------------------ */
@@ -1263,6 +1394,8 @@ function handle_index(): never
         'endpoints' => [
             'GET /kick/rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
             'GET /kick/rocks/tiers'  => 'The full scale, tier 1 through 14.',
+            'GET /kick/munitions'    => 'Assigns an unintentionally-lost munition. Tells you the tier and the arc.',
+            'GET /kick/munitions/tiers' => 'The full scale, tier 1 through 50, in five ten-tier arcs.',
             'GET|POST /pound/dirt'    => 'Adds to your pile. Optional: ?pile=name',
             'GET /pound/dirt/status'  => 'Peek at the pile without pounding it.',
             'GET /pound/dirt/tiers'   => 'The full scale, fistful through second moon.',
@@ -1450,6 +1583,38 @@ function handle_tiers(): never
             'mass_human' => human_mass($r['mass_kg']),
             'location'   => $r['location'],
         ], ROCKS),
+    ]);
+}
+
+function handle_kick_munitions(): never
+{
+    $item = pick(MUNITIONS);
+
+    send(200, [
+        'instruction' => 'Kick unintentionally-lost munitions. This was your idea.',
+        'munition' => [
+            'tier'   => $item['tier'],
+            'of'     => count(MUNITIONS),
+            'name'   => $item['name'],
+            'remark' => $item['remark'],
+        ],
+        'arc' => munition_arc($item['tier']),
+    ], ['X-Kick-Munitions' => 'tier-' . $item['tier']]);
+}
+
+function handle_munitions_tiers(): never
+{
+    send(200, [
+        'scale' => 'spent brass casing -> the fuze wakes up -> designed for exactly this -> older than everyone in the room -> measured in treaties',
+        'arcs' => array_map(static fn (array $arc): array => [
+            'range' => $arc['from'] . '-' . $arc['to'],
+            'name'  => $arc['name'],
+        ], MUNITION_ARCS),
+        'tiers' => array_map(static fn (array $m): array => [
+            'tier' => $m['tier'],
+            'name' => $m['name'],
+            'arc'  => munition_arc($m['tier']),
+        ], MUNITIONS),
     ]);
 }
 
@@ -1883,6 +2048,8 @@ match (true) {
     $method === 'GET' && $path === '/'                    => handle_index(),
     $method === 'GET' && $path === '/kick/rocks'          => handle_kick_rocks(),
     $method === 'GET' && $path === '/kick/rocks/tiers'    => handle_tiers(),
+    $method === 'GET' && $path === '/kick/munitions'      => handle_kick_munitions(),
+    $method === 'GET' && $path === '/kick/munitions/tiers' => handle_munitions_tiers(),
     in_array($method, ['GET', 'POST'], true)
         && $path === '/pound/dirt'                         => handle_pound_dirt(),
     $method === 'DELETE' && $path === '/pound/dirt'        => handle_pile_reset(),
