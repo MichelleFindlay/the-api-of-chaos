@@ -92,6 +92,8 @@ const ALLOWED_PATHS = [
     '#^/healthz$#',
     '#^/kick/rocks$#',
     '#^/kick/rocks/tiers$#',
+    '#^/kick/munitions$#',
+    '#^/kick/munitions/tiers$#',
     '#^/pound/dirt$#',
     '#^/pound/dirt/(status|tiers|leaderboard)$#',
     '#^/excuses/(teams|social|oops|ring-ring|late|alibis)$#',
@@ -126,6 +128,20 @@ $CATALOGUE = [
             [
                 'path' => '/kick/rocks/tiers', 'method' => 'GET',
                 'note' => 'the full scale, 1 through 14', 'fields' => [],
+            ],
+        ],
+    ],
+    [
+        'group'   => 'Munitions',
+        'caption' => 'unintentionally lost',
+        'items'   => [
+            [
+                'path' => '/kick/munitions', 'method' => 'GET',
+                'note' => 'assigns one. tells you the tier and the arc', 'fields' => [],
+            ],
+            [
+                'path' => '/kick/munitions/tiers', 'method' => 'GET',
+                'note' => '1 through 50, in five ten-tier arcs', 'fields' => [],
             ],
         ],
     ],
