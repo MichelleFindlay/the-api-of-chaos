@@ -110,6 +110,33 @@ const DELETE_PATHS = [
     '#^/pound/dirt$#',
 ];
 
+/**
+ * Piles are keyed by the visitor rather than by this server.
+ *
+ * On these paths the frontend fills ?pile in with an ID derived from the
+ * visitor's Cloudflare-resolved address, so pound, status and reset all agree
+ * on whose pile is whose. On DELETE the ID is forced, ignoring anything the
+ * browser sends — otherwise anyone could level someone else's pile by naming
+ * it. On the others a hand-typed ?pile=name still wins, so named piles work.
+ */
+const PILE_ID_PATHS = [
+    '#^/pound/dirt$#',
+    '#^/pound/dirt/status$#',
+];
+
+/**
+ * 'ip'   — the pile ID is the visitor's raw address, as asked for. Note that
+ *          the leaderboard's octet stripping applies to IDs the API works out
+ *          for itself; a pile *name* that happens to be an IP may well be
+ *          printed in full, so full visitor addresses could end up on a public
+ *          page. Worth checking against the API before leaving this on.
+ * 'hash' — a short keyed hash of the address instead. Same pile for the same
+ *          visitor every time, nothing personal on the leaderboard. Set
+ *          PILE_ID_SALT to anything long and random if you use this.
+ */
+const PILE_ID_MODE = 'ip';
+const PILE_ID_SALT = 'change-me-if-you-switch-to-hash';
+
 /** What the page offers. Order here is the order on screen. */
 $CATALOGUE = [
     [
@@ -169,8 +196,8 @@ $CATALOGUE = [
             ],
             [
                 'path' => '/pound/dirt', 'method' => 'DELETE',
-                'note' => 'resets the pile. only from the ip that raised it',
-                'fields' => [['name' => 'pile', 'label' => 'Pile', 'type' => 'text', 'placeholder' => 'name']],
+                'note' => 'resets your own pile. pile id is set server side',
+                'fields' => [],
             ],
         ],
     ],
@@ -324,8 +351,20 @@ function chaos_client_ip(): string
     return $chain[0] ?? $remote;
 }
 
-/** Cloudflare's two-letter country code for this visitor, when present. */
-function chaos_client_country(): ?string
+/**
+ * The pile this visitor owns. Same value on every request from the same
+ * address, which is what makes pound, status and reset line up.
+ */
+function chaos_pile_id(): string
+{
+    $ip = chaos_client_ip();
+    if (PILE_ID_MODE === 'hash') {
+        return substr(hash_hmac('sha256', $ip, PILE_ID_SALT), 0, 16);
+    }
+    return $ip;
+}
+
+/** Cloudflare's two-letter country code for this visitor, when present. */function chaos_client_country(): ?string
 {
     $remote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
     $country = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
@@ -382,6 +421,41 @@ function chaos_fail(int $status, string $message): void
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['ok' => false, 'error' => $message], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+// ============================================ debug mode (?debug=1, no call)
+
+if (isset($_GET['debug']) && !isset($_GET['path'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+
+    $remote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $sending = [];
+    foreach (chaos_forward_headers() as $line) {
+        [$key, $value] = array_map('trim', explode(':', $line, 2));
+        $sending[$key] = (strtolower($key) === 'x-chaos-frontend-key') ? '(redacted)' : $value;
+    }
+
+    echo json_encode([
+        'resolved_client_ip' => chaos_client_ip(),
+        'pile_id'            => chaos_pile_id(),
+        'pile_id_mode'       => PILE_ID_MODE,
+        'remote_addr'        => $remote,
+        'remote_is_trusted'  => chaos_ip_trusted($remote),
+        'received_from_edge' => [
+            'CF-Connecting-IP' => $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null,
+            'True-Client-IP'   => $_SERVER['HTTP_TRUE_CLIENT_IP'] ?? null,
+            'CF-IPCountry'     => $_SERVER['HTTP_CF_IPCOUNTRY'] ?? null,
+            'X-Forwarded-For'  => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
+        ],
+        'sending_upstream'   => $sending,
+        'upstream'           => API_BASE,
+        'frontend_key_set'   => FRONTEND_KEY !== '',
+        'note'               => 'The API keys piles by whatever it reads. Compare resolved_client_ip '
+                              . 'with the pile id it returns — if they differ, the API is not reading '
+                              . CLIENT_IP_HEADER . '.',
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
@@ -449,6 +523,18 @@ if (isset($_GET['path'])) {
     }
 
     $target = rtrim(API_BASE, '/') . $path;
+
+    // Key the pile to the visitor, not to this server. Forced on DELETE so a
+    // browser cannot name someone else's pile; a default on the rest.
+    foreach (PILE_ID_PATHS as $pattern) {
+        if (preg_match($pattern, $path) === 1) {
+            if ($method === 'DELETE' || !isset($query['pile'])) {
+                $query['pile'] = chaos_pile_id();
+            }
+            break;
+        }
+    }
+
     if ($query !== []) {
         $target .= '?' . http_build_query($query);
     }
@@ -806,6 +892,7 @@ footer.foot {
     <div class="statusbar">
       <span>upstream <b><?= chaos_h(API_BASE) ?></b></span>
       <span>you <b><?= chaos_h($clientIp) ?></b></span>
+      <span>pile <b><?= chaos_h(chaos_pile_id()) ?></b></span>
       <?php if ($country !== null): ?><span>region <b><?= chaos_h($country) ?></b></span><?php endif; ?>
       <span>date <b><?= chaos_h(gmdate('Y-m-d')) ?></b></span>
     </div>
@@ -996,6 +1083,18 @@ footer.foot {
     }
     if (line === "ip" || line === "whoami") {
       local(line, <?= json_encode($clientIp) ?>);
+      return;
+    }
+    if (line === "debug" || line === "env") {
+      var slot = push(line);
+      fetch("?debug=1", { headers: { "Accept": "application/json" } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          finish(slot, JSON.stringify(d, null, 2), "<span class=\"ok\">exit 0</span> · local", false);
+        })
+        .catch(function () {
+          finish(slot, "debug endpoint unreachable.", "<span class=\"bad\">exit 1</span>", true);
+        });
       return;
     }
 
