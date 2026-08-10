@@ -1,0 +1,1004 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * The API of Chaos — single-file frontend.
+ *
+ * Drop this anywhere PHP 8.1+ with curl runs. No other files needed.
+ *
+ *   /index.php                              the page
+ *   /index.php?path=/kick/rocks&tier=9      proxied JSON envelope
+ *   /index.php?path=/healthz&raw=1          verbatim upstream status + body
+ *
+ * Requests are proxied server side and the caller's IP is forwarded upstream,
+ * so /pound/dirt still attributes piles to the right person.
+ */
+
+// ============================================================ configuration
+
+const API_BASE        = 'https://api.dumpsterfire.uk';
+const CONNECT_TIMEOUT = 4;
+const TIMEOUT         = 10;
+const MAX_BYTES       = 262144;
+const FORWARD_CLIENT_IP = true;
+
+/**
+ * Proxies in front of *this* page whose forwarding headers we believe.
+ *
+ * Cloudflare's edge ranges, from https://www.cloudflare.com/ips-v4 and
+ * https://www.cloudflare.com/ips-v6. CF-Connecting-IP is only trusted when the
+ * connection genuinely came from one of these, so nobody can spoof it by
+ * hitting the origin directly. Refresh occasionally:
+ *
+ *   curl -s https://www.cloudflare.com/ips-v4 https://www.cloudflare.com/ips-v6 \
+ *     | sed "s/^/    '/;s/$/',/"
+ *
+ * If nginx, Caddy or php-fpm behind a local proxy also sits between Cloudflare
+ * and this file, REMOTE_ADDR will be that proxy rather than Cloudflare — add it
+ * here too, or CF-Connecting-IP gets ignored and everyone looks like 127.0.0.1.
+ */
+const TRUSTED_PROXIES = [
+    // Cloudflare IPv4
+    '173.245.48.0/20',
+    '103.21.244.0/22',
+    '103.22.200.0/22',
+    '103.31.4.0/22',
+    '141.101.64.0/18',
+    '108.162.192.0/18',
+    '190.93.240.0/20',
+    '188.114.96.0/20',
+    '197.234.240.0/22',
+    '198.41.128.0/17',
+    '162.158.0.0/15',
+    '104.16.0.0/13',
+    '104.24.0.0/14',
+    '172.64.0.0/13',
+    '131.0.72.0/22',
+    // Cloudflare IPv6
+    '2400:cb00::/32',
+    '2606:4700::/32',
+    '2803:f800::/32',
+    '2405:b500::/32',
+    '2405:8100::/32',
+    '2a06:98c0::/29',
+    '2c0f:f248::/32',
+    // Your own reverse proxy, if there is one between Cloudflare and PHP
+    // '127.0.0.1',
+    // '::1',
+];
+
+/**
+ * The API sits behind Cloudflare too, which overwrites CF-Connecting-IP with
+ * *this* server's address on the way through. So the real visitor is sent
+ * upstream in a header Cloudflare leaves alone. Read this one in the API.
+ */
+const CLIENT_IP_HEADER = 'X-Chaos-Client-IP';
+
+/**
+ * Optional shared secret sent as X-Chaos-Frontend-Key. Set it here and in the
+ * API so the API only believes CLIENT_IP_HEADER when it came from this
+ * frontend. Leave empty to skip. Better still, read it from the environment:
+ * getenv('CHAOS_FRONTEND_KEY') — constants can't call functions, so set it in
+ * the line below if you go that route.
+ */
+const FRONTEND_KEY = '';
+
+/** Query parameters allowed through to the API. Everything else is dropped. */
+const ALLOWED_PARAMS = ['tier', 'min', 'max', 'pile'];
+
+/** Paths the proxy will forward, as anchored regexes. */
+const ALLOWED_PATHS = [
+    '#^/$#',
+    '#^/healthz$#',
+    '#^/kick/rocks$#',
+    '#^/kick/rocks/tiers$#',
+    '#^/pound/dirt$#',
+    '#^/pound/dirt/(status|tiers|leaderboard)$#',
+    '#^/excuses/(teams|social|oops|ring-ring|late|alibis)$#',
+    '#^/excuses/social/tiers$#',
+    '#^/ministry/gentle-correction$#',
+    '#^/cage/finger$#',
+    '#^/cage/finger/(left|reset)$#',
+    '#^/cage/fictional/finger$#',
+    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal)$#',
+];
+
+/** Paths that may be called with DELETE. Everything else is GET or POST. */
+const DELETE_PATHS = [
+    '#^/pound/dirt$#',
+];
+
+/** What the page offers. Order here is the order on screen. */
+$CATALOGUE = [
+    [
+        'group'   => 'Rocks',
+        'caption' => 'assigned, not chosen',
+        'items'   => [
+            [
+                'path' => '/kick/rocks', 'method' => 'GET',
+                'note' => 'assigns a rock. tier, or a min/max range',
+                'fields' => [
+                    ['name' => 'tier', 'label' => 'Tier', 'type' => 'number', 'min' => 1, 'max' => 14, 'placeholder' => 'n'],
+                    ['name' => 'min',  'label' => 'Min',  'type' => 'number', 'min' => 1, 'max' => 14, 'placeholder' => '1'],
+                    ['name' => 'max',  'label' => 'Max',  'type' => 'number', 'min' => 1, 'max' => 14, 'placeholder' => '14'],
+                ],
+            ],
+            [
+                'path' => '/kick/rocks/tiers', 'method' => 'GET',
+                'note' => 'the full scale, 1 through 14', 'fields' => [],
+            ],
+        ],
+    ],
+    [
+        'group'   => 'Dirt',
+        'caption' => 'piles persist on disk',
+        'items'   => [
+            [
+                'path' => '/pound/dirt', 'method' => 'GET',
+                'note' => 'adds to your pile. post works too',
+                'fields' => [['name' => 'pile', 'label' => 'Pile', 'type' => 'text', 'placeholder' => 'name']],
+            ],
+            [
+                'path' => '/pound/dirt/status', 'method' => 'GET',
+                'note' => 'peek without pounding',
+                'fields' => [['name' => 'pile', 'label' => 'Pile', 'type' => 'text', 'placeholder' => 'name']],
+            ],
+            [
+                'path' => '/pound/dirt/tiers', 'method' => 'GET',
+                'note' => 'fistful through second moon', 'fields' => [],
+            ],
+            [
+                'path' => '/pound/dirt/leaderboard', 'method' => 'GET',
+                'note' => 'top 20. final octet removed', 'fields' => [],
+            ],
+            [
+                'path' => '/pound/dirt', 'method' => 'DELETE',
+                'note' => 'resets the pile. only from the ip that raised it',
+                'fields' => [['name' => 'pile', 'label' => 'Pile', 'type' => 'text', 'placeholder' => 'name']],
+            ],
+        ],
+    ],
+    [
+        'group'   => 'Excuses',
+        'caption' => 'seven ways out',
+        'items'   => [
+            ['path' => '/excuses/teams',        'method' => 'GET', 'note' => 'not joining the call',        'fields' => []],
+            ['path' => '/excuses/social',       'method' => 'GET', 'note' => 'not attending, with tier',    'fields' => []],
+            ['path' => '/excuses/social/tiers', 'method' => 'GET', 'note' => 'the five sub-tiers',          'fields' => []],
+            ['path' => '/excuses/oops',         'method' => 'GET', 'note' => 'why it went wrong, with tier','fields' => []],
+            ['path' => '/excuses/ring-ring',    'method' => 'GET', 'note' => 'why you did not pick up',     'fields' => []],
+            ['path' => '/excuses/late',         'method' => 'GET', 'note' => 'why you are late',            'fields' => []],
+            ['path' => '/excuses/alibis',       'method' => 'GET', 'note' => 'why you were not there',      'fields' => []],
+        ],
+    ],
+    [
+        'group'   => 'The Ministry',
+        'caption' => 'graded in newtons',
+        'items'   => [
+            ['path' => '/ministry/gentle-correction', 'method' => 'GET', 'note' => 'a d6 against the approved remedies', 'fields' => []],
+        ],
+    ],
+    [
+        'group'   => 'The cage',
+        'caption' => '50/50, fingers first',
+        'items'   => [
+            ['path' => '/cage/finger',           'method' => 'GET', 'note' => '50 animals. costs a finger if taken', 'fields' => []],
+            ['path' => '/cage/fictional/finger', 'method' => 'GET', 'note' => '50 fictional creatures, same count',  'fields' => []],
+            ['path' => '/cage/finger/left',      'method' => 'GET', 'note' => 'what remains, out of 10 each',        'fields' => []],
+            ['path' => '/cage/finger/reset',     'method' => 'GET', 'note' => 'pray to the holy hairy toe',          'fields' => []],
+        ],
+    ],
+    [
+        'group'   => 'Unhinged',
+        'caption' => 'no supervision',
+        'items'   => [
+            ['path' => '/unhinged/8ball',         'method' => 'GET', 'note' => 'answers, unreliably',        'fields' => []],
+            ['path' => '/unhinged/optimism',      'method' => 'GET', 'note' => 'unearned positivity',        'fields' => []],
+            ['path' => '/unhinged/pessimism',     'method' => 'GET', 'note' => 'unearned dread',             'fields' => []],
+            ['path' => '/unhinged/advice',        'method' => 'GET', 'note' => 'applies to almost anything', 'fields' => []],
+            ['path' => '/unhinged/non-committal', 'method' => 'GET', 'note' => 'fifty ways to not answer',   'fields' => []],
+        ],
+    ],
+    [
+        'group'   => 'Vitals',
+        'caption' => 'is anything on fire',
+        'items'   => [
+            ['path' => '/healthz', 'method' => 'GET', 'note' => 'liveness, plus lifetime counters', 'fields' => []],
+        ],
+    ],
+];
+
+// ================================================================= helpers
+
+function chaos_h(?string $value): string
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+/** Does an IP fall inside a single IP or CIDR range? Handles v4 and v6. */
+function chaos_ip_matches(string $ip, string $range): bool
+{
+    $bin = @inet_pton($ip);
+    if ($bin === false) {
+        return false;
+    }
+    if (strpos($range, '/') === false) {
+        $target = @inet_pton($range);
+        return $target !== false && $target === $bin;
+    }
+    [$subnet, $bits] = explode('/', $range, 2);
+    $subnetBin = @inet_pton($subnet);
+    if ($subnetBin === false || strlen($subnetBin) !== strlen($bin)) {
+        return false;
+    }
+    $bits    = (int) $bits;
+    $maxBits = strlen($bin) * 8;
+    if ($bits < 0 || $bits > $maxBits) {
+        return false;
+    }
+    $whole = intdiv($bits, 8);
+    $rest  = $bits % 8;
+    if ($whole > 0 && strncmp($bin, $subnetBin, $whole) !== 0) {
+        return false;
+    }
+    if ($rest === 0) {
+        return true;
+    }
+    $mask = chr((0xFF << (8 - $rest)) & 0xFF);
+    return ($bin[$whole] & $mask) === ($subnetBin[$whole] & $mask);
+}
+
+function chaos_ip_trusted(string $ip): bool
+{
+    foreach (TRUSTED_PROXIES as $range) {
+        if (chaos_ip_matches($ip, $range)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Valid IPs from the inbound X-Forwarded-For header, left to right. */
+function chaos_forwarded_chain(): array
+{
+    $raw = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+    if ($raw === '') {
+        return [];
+    }
+    $out = [];
+    foreach (explode(',', $raw) as $hop) {
+        $hop = trim($hop);
+        if ($hop !== '' && filter_var($hop, FILTER_VALIDATE_IP)) {
+            $out[] = $hop;
+        }
+    }
+    return $out;
+}
+
+/**
+ * The IP of the person actually clicking buttons.
+ *
+ * When the connection came from Cloudflare, CF-Connecting-IP is the answer —
+ * Cloudflare rewrites it on every request, so it cannot be spoofed from
+ * outside. True-Client-IP is the Enterprise equivalent. Failing both we walk
+ * the X-Forwarded-For chain from the right and take the first hop we did not
+ * put there ourselves. If the connection did not come from a trusted proxy,
+ * REMOTE_ADDR is the only thing worth believing.
+ */
+function chaos_client_ip(): string
+{
+    $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    if ($remote === '' || !chaos_ip_trusted($remote)) {
+        return $remote !== '' ? $remote : '0.0.0.0';
+    }
+
+    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_TRUE_CLIENT_IP'] as $header) {
+        $candidate = trim((string) ($_SERVER[$header] ?? ''));
+        if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_IP)) {
+            return $candidate;
+        }
+    }
+
+    $chain = chaos_forwarded_chain();
+    for ($i = count($chain) - 1; $i >= 0; $i--) {
+        if (!chaos_ip_trusted($chain[$i])) {
+            return $chain[$i];
+        }
+    }
+    return $chain[0] ?? $remote;
+}
+
+/** Cloudflare's two-letter country code for this visitor, when present. */
+function chaos_client_country(): ?string
+{
+    $remote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $country = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
+    if ($remote === '' || !chaos_ip_trusted($remote) || !preg_match('/^[A-Z]{2}$|^XX$|^T1$/', $country)) {
+        return null;
+    }
+    return $country;
+}
+
+/** Forwarding headers to send upstream, behaving like a polite reverse proxy. */
+function chaos_forward_headers(): array
+{
+    $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $client = chaos_client_ip();
+
+    $chain = chaos_ip_trusted($remote) ? chaos_forwarded_chain() : [];
+    if ($remote !== '' && filter_var($remote, FILTER_VALIDATE_IP)) {
+        $chain[] = $remote;
+    }
+    if ($chain === []) {
+        $chain = [$client];
+    }
+
+    $forFor = strpos($client, ':') !== false ? '"[' . $client . ']"' : $client;
+    $proto  = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
+    $host   = (string) ($_SERVER['HTTP_HOST'] ?? '');
+
+    $headers = [
+        // Survives Cloudflare in front of the API. This is the one to read upstream.
+        CLIENT_IP_HEADER . ': ' . $client,
+        'X-Forwarded-For: ' . implode(', ', $chain),
+        'X-Real-IP: ' . $client,
+        'X-Forwarded-Proto: ' . $proto,
+        'Forwarded: for=' . $forFor . ';proto=' . $proto . ($host !== '' ? ';host=' . $host : ''),
+    ];
+
+    if (FRONTEND_KEY !== '') {
+        $headers[] = 'X-Chaos-Frontend-Key: ' . FRONTEND_KEY;
+    }
+
+    $country = chaos_client_country();
+    if ($country !== null) {
+        $headers[] = 'X-Chaos-Client-Country: ' . $country;
+    }
+
+    if ($host !== '') {
+        $headers[] = 'X-Forwarded-Host: ' . $host;
+    }
+    return $headers;
+}
+
+function chaos_fail(int $status, string $message): void
+{
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => false, 'error' => $message], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+// =================================================== proxy mode (?path=...)
+
+if (isset($_GET['path'])) {
+
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: no-store');
+    header('Referrer-Policy: no-referrer');
+
+    $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if (!in_array($method, ['GET', 'POST', 'DELETE'], true)) {
+        header('Allow: GET, POST, DELETE');
+        chaos_fail(405, 'This proxy speaks GET, POST and DELETE only.');
+    }
+
+    $path = (string) $_GET['path'];
+    if ($path === '' || $path[0] !== '/') {
+        chaos_fail(400, 'Path must start with a slash. Try ?path=/healthz');
+    }
+    if (strlen($path) > 256) {
+        chaos_fail(400, 'That path is far too long.');
+    }
+    if (strpos($path, '//') === 0 || strpos($path, '..') !== false || strpos($path, "\0") !== false) {
+        chaos_fail(400, 'Path contains something it should not.');
+    }
+    if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $path)) {
+        chaos_fail(400, 'Absolute URLs are not forwarded.');
+    }
+
+    $allowed = false;
+    foreach (ALLOWED_PATHS as $pattern) {
+        if (preg_match($pattern, $path) === 1) {
+            $allowed = true;
+            break;
+        }
+    }
+    if (!$allowed) {
+        chaos_fail(403, 'That endpoint is not on the list. Add it to ALLOWED_PATHS.');
+    }
+
+    if ($method === 'DELETE') {
+        $deletable = false;
+        foreach (DELETE_PATHS as $pattern) {
+            if (preg_match($pattern, $path) === 1) {
+                $deletable = true;
+                break;
+            }
+        }
+        if (!$deletable) {
+            header('Allow: GET, POST');
+            chaos_fail(405, 'That endpoint does not take DELETE.');
+        }
+    }
+
+    $query = [];
+    foreach ($_GET as $key => $value) {
+        if ($key === 'path' || $key === 'raw' || !in_array($key, ALLOWED_PARAMS, true)) {
+            continue;
+        }
+        if (is_string($value) && $value !== '' && strlen($value) <= 128) {
+            $query[$key] = $value;
+        }
+    }
+
+    $target = rtrim(API_BASE, '/') . $path;
+    if ($query !== []) {
+        $target .= '?' . http_build_query($query);
+    }
+
+    $headers = ['Accept: application/json, text/plain;q=0.9, */*;q=0.8'];
+    if (FORWARD_CLIENT_IP) {
+        $headers = array_merge($headers, chaos_forward_headers());
+    }
+
+    $ua = str_replace(["\r", "\n"], '', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+    $headers[] = 'User-Agent: ' . ($ua !== '' && strlen($ua) < 512 ? $ua . ' (via chaos-frontend)' : 'chaos-frontend/1.0');
+
+    $lang = str_replace(["\r", "\n"], '', (string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''));
+    if ($lang !== '' && strlen($lang) < 128) {
+        $headers[] = 'Accept-Language: ' . $lang;
+    }
+
+    $requestBody = null;
+    if ($method === 'POST') {
+        $requestBody = (string) file_get_contents('php://input');
+        if (strlen($requestBody) > 8192) {
+            chaos_fail(413, 'Request body too large.');
+        }
+        $headers[] = 'Content-Type: ' . str_replace(["\r", "\n"], '', (string) ($_SERVER['CONTENT_TYPE'] ?? 'application/json'));
+    }
+
+    $responseHeaders = [];
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL              => $target,
+        CURLOPT_RETURNTRANSFER   => true,
+        CURLOPT_FOLLOWLOCATION   => false,
+        CURLOPT_CONNECTTIMEOUT   => CONNECT_TIMEOUT,
+        CURLOPT_TIMEOUT          => TIMEOUT,
+        CURLOPT_HTTPHEADER       => $headers,
+        CURLOPT_CUSTOMREQUEST    => $method,
+        CURLOPT_ENCODING         => '',
+        CURLOPT_SSL_VERIFYPEER   => true,
+        CURLOPT_SSL_VERIFYHOST   => 2,
+        CURLOPT_HEADERFUNCTION   => function ($ch, $line) use (&$responseHeaders) {
+            $parts = explode(':', $line, 2);
+            if (count($parts) === 2) {
+                $responseHeaders[strtolower(trim($parts[0]))] = trim($parts[1]);
+            }
+            return strlen($line);
+        },
+        CURLOPT_NOPROGRESS       => false,
+        CURLOPT_PROGRESSFUNCTION => fn($ch, $dlTotal, $dlNow) => $dlNow > MAX_BYTES ? 1 : 0,
+    ]);
+    if ($method === 'POST') {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody ?? '');
+    }
+
+    $started  = microtime(true);
+    $result   = curl_exec($ch);
+    $tookMs   = (int) round((microtime(true) - $started) * 1000);
+    $status   = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    $curlErr  = curl_error($ch);
+    $curlCode = curl_errno($ch);
+    curl_close($ch);
+
+    if ($result === false) {
+        chaos_fail(502, $curlCode === CURLE_ABORTED_BY_CALLBACK
+            ? 'Upstream response exceeded the size limit.'
+            : 'Could not reach the API: ' . $curlErr);
+    }
+
+    if (isset($_GET['raw']) && $_GET['raw'] !== '0') {
+        http_response_code($status ?: 502);
+        header('Content-Type: ' . ($responseHeaders['content-type'] ?? 'application/json; charset=utf-8'));
+        echo $result;
+        exit;
+    }
+
+    $decoded = json_decode($result, true);
+    $isJson  = json_last_error() === JSON_ERROR_NONE;
+
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'ok'        => $status >= 200 && $status < 400,
+        'status'    => $status,
+        'path'      => $path,
+        'method'    => $method,
+        'took_ms'   => $tookMs,
+        'client_ip' => chaos_client_ip(),
+        'headers'   => array_intersect_key($responseHeaders, array_flip(['content-type', 'x-request-id', 'retry-after', 'date'])),
+        'json'      => $isJson ? $decoded : null,
+        'body'      => $isJson ? null : $result,
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// ================================================================== page
+
+$clientIp  = chaos_client_ip();
+$country   = chaos_client_country();
+$sectionNo = 0;
+?>
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>chaos.sh &mdash; the api of chaos</title>
+<meta name="description" content="A terminal for The API of Chaos. Click a command or type a path.">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #05070a;
+  --pane:    #090c11;
+  --line:    #1a212a;
+  --fg:      #b7c1bd;
+  --dim:     #5c6a68;
+  --amber:   #ffb454;
+  --cyan:    #6fb3c0;
+  --red:     #ff6b5e;
+  --green:   #86c17c;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* faint CRT texture, kept low enough to read through */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+a { color: var(--cyan); }
+a:hover { color: var(--amber); }
+
+.term {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.75rem 1.25rem 2.5rem;
+}
+
+/* ------------------------------------------------------------- banner */
+
+.banner__title {
+  margin: 0;
+  font-size: clamp(1.4rem, 4.5vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+  text-shadow: 0 0 22px rgba(255, 180, 84, 0.28);
+}
+.banner__title::before { content: "$ "; color: var(--dim); }
+
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 0.15em;
+  vertical-align: -0.16em;
+  background: var(--amber);
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+.banner__lines { margin: 0.75rem 0 0; color: var(--dim); }
+.banner__lines span { display: block; }
+.banner__lines b { color: var(--fg); font-weight: 400; }
+
+.statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
+  margin: 1.25rem 0 0;
+  padding: 0.35rem 0.75rem;
+  background: #10161d;
+  border: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+.statusbar b { color: var(--amber); font-weight: 400; }
+
+/* -------------------------------------------------------------- panes */
+
+.panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-top: 0;
+}
+@media (max-width: 900px) { .panes { grid-template-columns: 1fr; } }
+
+.pane { background: var(--pane); min-width: 0; }
+
+.pane__bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  background: #0d1218;
+  color: var(--dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pane__bar b { color: var(--fg); font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+.pane__body { padding: 0.85rem 0.75rem 1.1rem; }
+
+/* ----------------------------------------------------------- commands */
+
+.grp { margin: 1.25rem 0 0.35rem; font-size: 0.82rem; font-weight: 400; color: var(--dim); }
+.grp:first-child { margin-top: 0; }
+.grp::before { content: "# "; }
+.grp em { font-style: normal; color: #3f4a49; }
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.5rem;
+  padding: 0.12rem 0.4rem;
+  border-left: 2px solid transparent;
+}
+.row:hover, .row:focus-within { background: #0f151c; border-left-color: var(--amber); }
+
+.run {
+  font: inherit;
+  color: var(--fg);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.run::before { content: "› "; color: var(--dim); }
+.run:hover { color: var(--amber); }
+.run:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
+.run[disabled] { color: var(--dim); cursor: progress; }
+.run .verb { color: var(--cyan); }
+
+.flag { color: var(--dim); font-size: 0.9em; }
+.flag input {
+  width: 4.5rem;
+  font: inherit;
+  color: var(--amber);
+  background: #0d1218;
+  border: 1px solid var(--line);
+  padding: 0 0.3rem;
+  caret-color: var(--amber);
+}
+.flag input:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+.flag input::placeholder { color: #3f4a49; }
+
+.note { color: #465250; font-size: 0.86em; margin-left: auto; }
+@media (max-width: 620px) { .note { display: none; } }
+
+/* ------------------------------------------------------------ session */
+
+.log {
+  padding: 0.85rem 0.75rem 0;
+  height: min(62vh, 34rem);
+  overflow-y: auto;
+  scrollbar-color: var(--line) transparent;
+}
+@media (max-width: 900px) { .log { height: 24rem; } }
+
+.log__hint { color: var(--dim); margin: 0 0 1rem; }
+
+.entry { margin: 0 0 1.15rem; }
+.entry__cmd { color: var(--fg); word-break: break-all; }
+.entry__cmd::before { content: "$ "; color: var(--amber); }
+.entry__out {
+  margin: 0.35rem 0 0;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--line);
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+}
+.entry__out .key { color: var(--cyan); }
+.entry__meta { margin-top: 0.3rem; color: var(--dim); font-size: 0.82em; }
+.entry__meta .ok { color: var(--green); }
+.entry__meta .bad { color: var(--red); }
+.entry--bad .entry__out { border-left-color: var(--red); color: var(--red); }
+
+.prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  background: #0d1218;
+}
+.prompt__sigil { color: var(--amber); white-space: nowrap; }
+.prompt input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--fg);
+  background: none;
+  border: 0;
+  padding: 0;
+  caret-color: var(--amber);
+}
+.prompt input:focus { outline: 0; }
+.prompt input::placeholder { color: #3a4544; }
+
+@media (prefers-reduced-motion: reduce) {
+  .caret { animation: none; }
+}
+
+footer.foot {
+  margin-top: 1.1rem;
+  color: var(--dim);
+  font-size: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.75rem;
+}
+</style>
+</head>
+<body>
+
+<div class="term">
+
+  <header class="banner">
+    <h1 class="banner__title">the api of chaos<span class="caret" aria-hidden="true"></span></h1>
+    <p class="banner__lines">
+      <span>v1.0.0 &mdash; GPL-3.0 &mdash; <a href="https://github.com/MichelleFindlay/the-api-of-chaos">github.com/MichelleFindlay/the-api-of-chaos</a></span>
+      <span>click a command on the left, or type a path below (<b>DELETE /pound/dirt</b> works too). <b>help</b> lists everything, <b>clear</b> wipes the session.</span>
+    </p>
+    <div class="statusbar">
+      <span>upstream <b><?= chaos_h(API_BASE) ?></b></span>
+      <span>you <b><?= chaos_h($clientIp) ?></b></span>
+      <?php if ($country !== null): ?><span>region <b><?= chaos_h($country) ?></b></span><?php endif; ?>
+      <span>date <b><?= chaos_h(gmdate('Y-m-d')) ?></b></span>
+    </div>
+  </header>
+
+  <div class="panes">
+
+    <section class="pane" aria-label="Commands">
+      <div class="pane__bar"><span>endpoints</span><b>chaos.sh</b></div>
+      <div class="pane__body">
+        <?php foreach ($CATALOGUE as $group): $sectionNo++; ?>
+        <h2 class="grp"><?= chaos_h(strtolower($group['group'])) ?> <em>&mdash; <?= chaos_h(strtolower($group['caption'] ?? '')) ?></em></h2>
+        <?php foreach ($group['items'] as $item): ?>
+        <div class="row">
+          <button class="run"
+                  data-path="<?= chaos_h($item['path']) ?>"
+                  data-method="<?= chaos_h($item['method']) ?>"><span class="verb"><?= chaos_h($item['method']) ?></span> <?= chaos_h($item['path']) ?></button>
+          <?php foreach (($item['fields'] ?? []) as $field): ?>
+          <label class="flag">--<?= chaos_h($field['name']) ?>=<input
+              type="<?= chaos_h($field['type'] ?? 'text') ?>"
+              data-param="<?= chaos_h($field['name']) ?>"
+              <?php if (isset($field['min'])): ?>min="<?= (int) $field['min'] ?>"<?php endif; ?>
+              <?php if (isset($field['max'])): ?>max="<?= (int) $field['max'] ?>"<?php endif; ?>
+              placeholder="<?= chaos_h($field['placeholder'] ?? '') ?>"
+              aria-label="<?= chaos_h($field['label']) ?> for <?= chaos_h($item['path']) ?>"></label>
+          <?php endforeach; ?>
+          <span class="note"><?= chaos_h(strtolower($item['note'] ?? '')) ?></span>
+        </div>
+        <?php endforeach; ?>
+        <?php endforeach; ?>
+      </div>
+    </section>
+
+    <section class="pane" aria-label="Session">
+      <div class="pane__bar"><span>session</span><b id="counter">0 calls</b></div>
+      <div class="log" id="log" role="log" aria-live="polite">
+        <p class="log__hint">no calls yet. pick something on the left, or type a path and hit enter.</p>
+      </div>
+      <div class="prompt">
+        <span class="prompt__sigil">chaos&nbsp;$</span>
+        <label for="cli" class="sr-only" hidden>command</label>
+        <input id="cli" type="text" autocomplete="off" spellcheck="false" placeholder="/unhinged/8ball">
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="foot">
+    <span>requests proxied server side</span>
+    <span>caller ip forwarded upstream</span>
+    <span>nothing here is load-bearing</span>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var log     = document.getElementById("log");
+  var hint    = log.querySelector(".log__hint");
+  var cli     = document.getElementById("cli");
+  var counter = document.getElementById("counter");
+
+  var calls   = 0;
+  var history = [];
+  var histAt  = -1;
+
+  var METHODS = ["GET", "POST", "DELETE"];
+
+  var PATHS = Array.prototype.map.call(
+    document.querySelectorAll(".run"),
+    function (b) { return b.dataset.method + " " + b.dataset.path; }
+  );
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function push(commandText) {
+    if (hint) { hint.remove(); hint = null; }
+    var entry = el("div", "entry");
+    entry.appendChild(el("div", "entry__cmd", commandText));
+    var out = el("pre", "entry__out", "…");
+    entry.appendChild(out);
+    var meta = el("div", "entry__meta", "");
+    entry.appendChild(meta);
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+    return { entry: entry, out: out, meta: meta };
+  }
+
+  function finish(slot, text, metaHtml, bad) {
+    slot.out.textContent = text;
+    slot.meta.innerHTML = metaHtml;
+    if (bad) { slot.entry.classList.add("entry--bad"); }
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function request(path, method, params) {
+    var qs  = params && params.length ? "&" + params.join("&") : "";
+    var url = "?path=" + encodeURIComponent(path) + qs;
+    var shown = method + " " + path + (params && params.length ? "?" + params.join("&") : "");
+    var slot = push(shown);
+
+    calls += 1;
+    counter.textContent = calls + (calls === 1 ? " call" : " calls");
+
+    return fetch(url, {
+      method: METHODS.indexOf(method) === -1 ? "GET" : method,
+      headers: { "Accept": "application/json" }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok === false && data.error) {
+          finish(slot, data.error, "<span class=\"bad\">exit 1</span> · refused by proxy", true);
+          return;
+        }
+        var payload = (data.json !== null && data.json !== undefined) ? data.json : data.body;
+        var text = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
+        var status = data.ok
+          ? "<span class=\"ok\">exit 0</span>"
+          : "<span class=\"bad\">exit " + data.status + "</span>";
+        finish(slot, text,
+          status + " · " + data.status + " · " + data.took_ms + "ms · seen as " + data.client_ip,
+          !data.ok);
+      })
+      .catch(function () {
+        finish(slot, "no response from the proxy. check the php error log.",
+          "<span class=\"bad\">exit 1</span> · transport failure", true);
+      });
+  }
+
+  function collect(row) {
+    var params = [];
+    row.querySelectorAll("input[data-param]").forEach(function (input) {
+      var value = input.value.trim();
+      if (value !== "") {
+        params.push(encodeURIComponent(input.dataset.param) + "=" + encodeURIComponent(value));
+      }
+    });
+    return params;
+  }
+
+  document.querySelectorAll(".run").forEach(function (button) {
+    button.addEventListener("click", function () {
+      button.disabled = true;
+      request(button.dataset.path, button.dataset.method, collect(button.closest(".row")))
+        .finally(function () { button.disabled = false; });
+    });
+  });
+
+  function local(commandText, output) {
+    var slot = push(commandText);
+    finish(slot, output, "<span class=\"ok\">exit 0</span> · local", false);
+  }
+
+  cli.addEventListener("keydown", function (event) {
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      if (!history.length) { return; }
+      event.preventDefault();
+      histAt = event.key === "ArrowUp"
+        ? Math.max(0, (histAt === -1 ? history.length : histAt) - 1)
+        : Math.min(history.length, histAt + 1);
+      cli.value = history[histAt] || "";
+      return;
+    }
+    if (event.key !== "Enter") { return; }
+
+    var line = cli.value.trim();
+    if (line === "") { return; }
+    cli.value = "";
+    history.push(line);
+    histAt = -1;
+
+    if (line === "clear") {
+      log.innerHTML = "";
+      calls = 0;
+      counter.textContent = "0 calls";
+      return;
+    }
+    if (line === "help" || line === "ls") {
+      local(line, PATHS.join("\n") + "\n\nflags: --tier, --min, --max on rocks; --pile on dirt.\ntype them as a query string, e.g. /kick/rocks?tier=9");
+      return;
+    }
+    if (line === "ip" || line === "whoami") {
+      local(line, <?= json_encode($clientIp) ?>);
+      return;
+    }
+
+    var method = "GET";
+    var head = line.split(/\s+/)[0].toUpperCase();
+    if (METHODS.indexOf(head) !== -1) {
+      method = head;
+      line = line.slice(line.split(/\s+/)[0].length).trim();
+    }
+    if (line === "") { return; }
+
+    var path  = line.charAt(0) === "/" ? line : "/" + line;
+    var parts = path.split("?");
+    var params = parts[1] ? parts[1].split("&").filter(Boolean) : [];
+    request(parts[0], method, params);
+  });
+
+  cli.focus();
+})();
+</script>
+</body>
+</html>
