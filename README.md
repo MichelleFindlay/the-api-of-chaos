@@ -12,7 +12,7 @@
 | GET | /kick/rocks/tiers | The full scale, tier 1 through 14. |
 | GET | /kick/munitions | Assigns an unintentionally-lost munition. Tells you the tier and the arc.| 
 | GET | /kick/munitions/tiers | The full scale, tier 1 through 50, in five ten-tier arcs.| 
-| GET\|POST | /pound/dirt | Adds to your pile. Optional: ?pile=name |
+| GET\|POST | /pound/dirt | Adds to your pile. |
 | GET | /pound/dirt/status | Peek at the pile without pounding it. |
 | GET | /pound/dirt/tiers | The full scale, fistful through second moon. |
 | GET | /pound/dirt/leaderboard | Top 20 piles, ranked. IPs shown with the final octet removed. |
