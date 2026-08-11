@@ -45,11 +45,11 @@ declare(strict_types=1);
  * Query params
  *   /kick/rocks?tier=7          request a specific tier (1-14)
  *   /kick/rocks?min=9&max=12    constrain the random range
- *   /pound/dirt?pile=michelle   named pile; also honours X-Pile-Id header
  *
- * Piles persist as JSON files under sys_get_temp_dir()/jar
- * (override with KRAAS_DIR), because PHP forgets everything between
- * requests. Much like the people you are sending here.
+ * Piles are one per IP address and persist as JSON files under
+ * sys_get_temp_dir()/jar (override with KRAAS_DIR), because PHP
+ * forgets everything between requests. Much like the people you are
+ * sending here.
  *
  * Any request under /unhinged has a 1-in-10 chance of falling into
  * the void instead of getting a normal response. Try again.
@@ -1160,10 +1160,8 @@ function client_ip(): string
 }
 
 /**
- * Anonymises an identifier for public display: IPs get their final
- * octet (or, for IPv6, final hextet) knocked off. Custom pile names
- * (from ?pile= or X-Pile-Id) are left as-is, since they were chosen
- * to be shown.
+ * Anonymises an IP for public display: the final octet (or, for IPv6,
+ * final hextet) is knocked off.
  */
 function mask_ip(string $id): string
 {
@@ -1178,15 +1176,6 @@ function mask_ip(string $id): string
         return implode(':', $parts);
     }
     return $id;
-}
-
-function pile_id(): string
-{
-    $q = $_GET['pile'] ?? null;
-    if (is_string($q) && $q !== '') return substr($q, 0, 128);
-    $h = $_SERVER['HTTP_X_PILE_ID'] ?? null;
-    if (is_string($h) && $h !== '') return substr($h, 0, 128);
-    return client_ip();
 }
 
 function pile_read(string $id): ?array
@@ -1287,9 +1276,7 @@ function pile_pound(string $id): array
 
     $pile = pile_update($id, function (array $pile) use ($id, &$delta): array {
         if (!isset($pile['litres'])) {
-            // owner_ip is fixed at creation, independent of ?pile=/X-Pile-Id,
-            // so a named pile can't later be deleted by anyone who guesses its name.
-            $pile = ['litres' => 0.0, 'blows' => 0, 'since' => gmdate('c'), 'owner_ip' => client_ip()];
+            $pile = ['litres' => 0.0, 'blows' => 0, 'since' => gmdate('c')];
         }
 
         // Each blow adds a random amount that scales with what is already
@@ -1344,12 +1331,23 @@ function pile_rate_limited(string $id): ?array
     return [429, ['status' => 429] + pick(RATE_LIMIT_RESPONSES)];
 }
 
+/**
+ * Lets the dumpsterfire.uk frontend call this API from the browser.
+ */
+function send_cors_headers(): void
+{
+    header('Access-Control-Allow-Origin: https://dumpsterfire.uk');
+    header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Accept');
+}
+
 function send(int $status, array $body, array $headers = []): never
 {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
     header('X-Powered-By: spite');
+    send_cors_headers();
     foreach ($headers as $k => $v) {
         header("$k: $v");
     }
@@ -1396,11 +1394,11 @@ function handle_index(): never
             'GET /kick/rocks/tiers'  => 'The full scale, tier 1 through 14.',
             'GET /kick/munitions'    => 'Assigns an unintentionally-lost munition. Tells you the tier and the arc.',
             'GET /kick/munitions/tiers' => 'The full scale, tier 1 through 50, in five ten-tier arcs.',
-            'GET|POST /pound/dirt'    => 'Adds to your pile. Optional: ?pile=name',
+            'GET|POST /pound/dirt'    => 'Adds to your pile. One pile per IP.',
             'GET /pound/dirt/status'  => 'Peek at the pile without pounding it.',
             'GET /pound/dirt/tiers'   => 'The full scale, fistful through second moon.',
             'GET /pound/dirt/leaderboard' => 'Top 20 piles, ranked. IPs shown with the final octet removed.',
-            'DELETE /pound/dirt'      => 'Reset the pile. Only from the IP that raised it.',
+            'DELETE /pound/dirt'      => 'Reset your pile.',
             'GET /excuses/teams'     => 'A reason not to join the call.',
             'GET /excuses/social'    => 'A reason not to attend, with tier.',
             'GET /excuses/social/tiers' => 'The five sub-tiers of social excuse.',
@@ -1433,7 +1431,7 @@ function handle_index(): never
 
 function handle_mine_turtle(): never
 {
-    $id   = pile_id();
+    $id   = client_ip();
     $path = pile_path($id);
     if (is_file($path)) {
         unlink($path);
@@ -1443,6 +1441,7 @@ function handle_mine_turtle(): never
     header('Content-Type: text/plain; charset=utf-8');
     header('Cache-Control: no-store');
     header('X-Powered-By: spite');
+    send_cors_headers();
 
     echo <<<'ART'
 You have found mine turtle.
@@ -1491,6 +1490,7 @@ function void_check(string $path): void
     header('Content-Type: text/plain; charset=utf-8');
     header('Cache-Control: no-store');
     header('X-Powered-By: spite');
+    send_cors_headers();
 
     echo <<<'ART'
 .            '                  .           `
@@ -1671,7 +1671,7 @@ function handle_leaderboard(): never
 
 function handle_pound_dirt(): never
 {
-    $id = pile_id();
+    $id = client_ip();
 
     $limit = pile_rate_limited($id);
     if ($limit !== null) {
@@ -1698,7 +1698,7 @@ function handle_pound_dirt(): never
 
 function handle_pile_status(): never
 {
-    $id   = pile_id();
+    $id   = client_ip();
     $pile = pile_read($id);
 
     if ($pile === null) {
@@ -1722,16 +1722,7 @@ function handle_pile_status(): never
 
 function handle_pile_reset(): never
 {
-    $id   = pile_id();
-    $pile = pile_read($id);
-
-    if ($pile !== null && ($pile['owner_ip'] ?? null) !== client_ip()) {
-        send(403, [
-            'pile'   => ['id' => $id],
-            'remark' => 'That pile was not raised from your IP. It stays.',
-        ]);
-    }
-
+    $id      = client_ip();
     $path    = pile_path($id);
     $existed = is_file($path) && unlink($path);
 
@@ -1832,7 +1823,7 @@ function handle_gentle_correction(): never
 
 function handle_cage_finger(): never
 {
-    $id      = pile_id();
+    $id      = client_ip();
     $fingers = fingers_left($id);
     $toes    = toes_left($id);
 
@@ -1878,7 +1869,7 @@ function handle_cage_finger(): never
 
 function handle_cage_finger_fictional(): never
 {
-    $id      = pile_id();
+    $id      = client_ip();
     $fingers = fingers_left($id);
     $toes    = toes_left($id);
 
@@ -1964,7 +1955,7 @@ function handle_non_committal(): never
 
 function handle_fingers_left(): never
 {
-    $id      = pile_id();
+    $id      = client_ip();
     $fingers = fingers_left($id);
     $toes    = toes_left($id);
 
@@ -1981,7 +1972,7 @@ function handle_fingers_left(): never
 
 function handle_fingers_reset(): never
 {
-    $id      = pile_id();
+    $id      = client_ip();
     $fingers = fingers_reset($id);
     $toes    = toes_reset($id);
 
@@ -2036,6 +2027,13 @@ if ($base !== '') {
 $path = rtrim($path, '/');
 if ($path === '' || $path === '/index.php' || $path === '/kick-rocks.php') {
     $path = '/';
+}
+
+// CORS preflight: answered directly, before it touches stats or routing.
+if ($method === 'OPTIONS') {
+    http_response_code(204);
+    send_cors_headers();
+    exit;
 }
 
 // Every request counts towards lifetime stats, surfaced at GET /healthz.
