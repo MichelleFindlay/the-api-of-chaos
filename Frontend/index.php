@@ -9,7 +9,6 @@ declare(strict_types=1);
  *   /index.php                              the page
  *   /index.php?path=/kick/rocks&tier=9      proxied JSON envelope
  *   /index.php?path=/healthz&raw=1          verbatim upstream status + body
- *   /index.php?debug=1                      what the proxy resolved, no upstream call
  *
  * Requests are proxied server side and the caller's IP is forwarded upstream,
  * so /pound/dirt still attributes piles to the right person.
@@ -17,28 +16,70 @@ declare(strict_types=1);
 
 // ============================================================ configuration
 
+/**
+ * Where the API lives.
+ *
+ * Every request carries the visitor's address in CF-Connecting-IP. Be aware
+ * that if this hostname is proxied by Cloudflare (orange cloud), Cloudflare
+ * rewrites CF-Connecting-IP at its edge to whatever address connected — this
+ * server — and the API never sees the visitor. Two ways round it:
+ *
+ *   1. Point this at an origin hostname that bypasses Cloudflare (grey cloud,
+ *      or a direct origin record), so the header arrives untouched.
+ *   2. Have the API read X-Chaos-Client-IP, which nothing rewrites.
+ */
 const API_BASE        = 'https://api.dumpsterfire.uk';
+
+/**
+ * Reach the origin directly, bypassing Cloudflare's edge.
+ *
+ * Leave empty for normal operation. If the API host is stuck behind a
+ * Cloudflare edge error (e.g. 1000 dns_loop) you can point the proxy straight
+ * at the origin server's real IP: requests still send the correct Host and SNI
+ * for API_BASE, but the TCP connection goes to this address instead of the
+ * Cloudflare-resolved one. Set it to the box actually running the API.
+ *
+ *   const API_ORIGIN_IP = '203.0.113.50';
+ */
+const API_ORIGIN_IP   = '';
 const CONNECT_TIMEOUT = 4;
 const TIMEOUT         = 10;
 const MAX_BYTES       = 262144;
 const FORWARD_CLIENT_IP = true;
 
 /**
+ * This site is served only through Cloudflare, so CF-Connecting-IP is taken as
+ * the visitor's address whenever it is present, whatever REMOTE_ADDR says.
+ * That is the header Cloudflare rewrites on every request and it is what the
+ * pile ID, the status bar and everything sent upstream are built from.
+ *
+ * Set this to false only if the origin is also reachable without Cloudflare —
+ * then the header is believed just for connections from the ranges below.
+ * Either way, lock the origin firewall to Cloudflare's ranges so nobody can
+ * connect directly and hand you a header of their choosing.
+ */
+const TRUST_CLOUDFLARE_HEADER = true;
+
+/**
  * Proxies in front of *this* page whose forwarding headers we believe.
  *
  * Cloudflare's edge ranges, from https://www.cloudflare.com/ips-v4 and
- * https://www.cloudflare.com/ips-v6. CF-Connecting-IP is only trusted when the
- * connection genuinely came from one of these, so nobody can spoof it by
- * hitting the origin directly. Refresh occasionally:
+ * https://www.cloudflare.com/ips-v6, plus loopback and private ranges for a
+ * local nginx, Caddy or php-fpm sitting between Cloudflare and this file —
+ * without those, REMOTE_ADDR is 127.0.0.1 and the edge headers get ignored.
+ * Refresh the Cloudflare list occasionally:
  *
  *   curl -s https://www.cloudflare.com/ips-v4 https://www.cloudflare.com/ips-v6 \
  *     | sed "s/^/    '/;s/$/',/"
- *
- * If nginx, Caddy or php-fpm behind a local proxy also sits between Cloudflare
- * and this file, REMOTE_ADDR will be that proxy rather than Cloudflare — add it
- * here too, or CF-Connecting-IP gets ignored and everyone looks like 127.0.0.1.
  */
 const TRUSTED_PROXIES = [
+    // Loopback and private, for a local reverse proxy
+    '127.0.0.0/8',
+    '::1',
+    '10.0.0.0/8',
+    '172.16.0.0/12',
+    '192.168.0.0/16',
+    'fc00::/7',
     // Cloudflare IPv4
     '173.245.48.0/20',
     '103.21.244.0/22',
@@ -63,9 +104,6 @@ const TRUSTED_PROXIES = [
     '2405:8100::/32',
     '2a06:98c0::/29',
     '2c0f:f248::/32',
-    // Your own reverse proxy, if there is one between Cloudflare and PHP
-    // '127.0.0.1',
-    // '::1',
 ];
 
 /**
@@ -78,12 +116,18 @@ const CLIENT_IP_HEADER = 'X-Chaos-Client-IP';
 /**
  * Optional shared secret sent as X-Chaos-Frontend-Key. Set it here and in the
  * API so the API only believes CLIENT_IP_HEADER when it came from this
- * frontend. Leave empty to skip.
+ * frontend. Leave empty to skip. Better still, read it from the environment:
+ * getenv('CHAOS_FRONTEND_KEY') — constants can't call functions, so set it in
+ * the line below if you go that route.
  */
 const FRONTEND_KEY = '';
 
-/** Query parameters allowed through to the API. Everything else is dropped. */
-const ALLOWED_PARAMS = ['tier', 'min', 'max', 'pile'];
+/**
+ * Query parameters allowed through to the API. Everything else is dropped,
+ * including ?pile — the pile is fixed to the visitor's address below and
+ * cannot be named, typed or guessed from the browser.
+ */
+const ALLOWED_PARAMS = ['tier', 'min', 'max'];
 
 /** Paths the proxy will forward, as anchored regexes. */
 const ALLOWED_PATHS = [
@@ -110,13 +154,12 @@ const DELETE_PATHS = [
 ];
 
 /**
- * Piles are keyed by the visitor rather than by this server.
+ * One pile per IP address, no exceptions.
  *
- * On these paths the frontend fills ?pile in with an ID derived from the
- * visitor's Cloudflare-resolved address, so pound, status and reset all agree
- * on whose pile is whose. On DELETE the ID is forced, ignoring anything the
- * browser sends — otherwise anyone could level someone else's pile by naming
- * it. On the others a hand-typed ?pile=name still wins, so named piles work.
+ * On these paths the frontend sets ?pile to an ID derived from the visitor's
+ * Cloudflare-resolved address, always, overwriting anything that arrives with
+ * the request. Named piles are gone: pound, status and reset all act on the
+ * one pile that belongs to the caller, and nobody can touch anyone else's.
  */
 const PILE_ID_PATHS = [
     '#^/pound/dirt$#',
@@ -135,6 +178,12 @@ const PILE_ID_PATHS = [
  */
 const PILE_ID_MODE = 'ip';
 const PILE_ID_SALT = 'change-me-if-you-switch-to-hash';
+
+/**
+ * The query parameter the API reads the pile ID from. Change this one line if
+ * the reset expects something other than ?pile — ?ip, ?id and so on.
+ */
+const PILE_PARAM = 'pile';
 
 /** What the page offers. Order here is the order on screen. */
 $CATALOGUE = [
@@ -173,17 +222,17 @@ $CATALOGUE = [
     ],
     [
         'group'   => 'Dirt',
-        'caption' => 'piles persist on disk',
+        'caption' => 'one pile per address',
         'items'   => [
             [
                 'path' => '/pound/dirt', 'method' => 'GET',
                 'note' => 'adds to your pile. post works too',
-                'fields' => [['name' => 'pile', 'label' => 'Pile', 'type' => 'text', 'placeholder' => 'name']],
+                'fields' => [],
             ],
             [
                 'path' => '/pound/dirt/status', 'method' => 'GET',
                 'note' => 'peek without pounding',
-                'fields' => [['name' => 'pile', 'label' => 'Pile', 'type' => 'text', 'placeholder' => 'name']],
+                'fields' => [],
             ],
             [
                 'path' => '/pound/dirt/tiers', 'method' => 'GET',
@@ -195,7 +244,7 @@ $CATALOGUE = [
             ],
             [
                 'path' => '/pound/dirt', 'method' => 'DELETE',
-                'note' => 'resets your own pile. pile id is set server side',
+                'note' => 'levels your own pile and nobody else\'s',
                 'fields' => [],
             ],
         ],
@@ -320,25 +369,28 @@ function chaos_forwarded_chain(): array
 /**
  * The IP of the person actually clicking buttons.
  *
- * When the connection came from Cloudflare, CF-Connecting-IP is the answer —
- * Cloudflare rewrites it on every request, so it cannot be spoofed from
- * outside. True-Client-IP is the Enterprise equivalent. Failing both we walk
- * the X-Forwarded-For chain from the right and take the first hop we did not
- * put there ourselves. If the connection did not come from a trusted proxy,
- * REMOTE_ADDR is the only thing worth believing.
+ * CF-Connecting-IP first: Cloudflare rewrites it on every request, so when the
+ * site is only reachable through Cloudflare it is the visitor's real address.
+ * True-Client-IP is the Enterprise equivalent. Failing both, we walk the
+ * X-Forwarded-For chain from the right and take the first hop we did not put
+ * there ourselves, and failing that, REMOTE_ADDR.
  */
 function chaos_client_ip(): string
 {
-    $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-    if ($remote === '' || !chaos_ip_trusted($remote)) {
-        return $remote !== '' ? $remote : '0.0.0.0';
+    $remote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $trusted = TRUST_CLOUDFLARE_HEADER || ($remote !== '' && chaos_ip_trusted($remote));
+
+    if ($trusted) {
+        foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_TRUE_CLIENT_IP'] as $header) {
+            $candidate = trim((string) ($_SERVER[$header] ?? ''));
+            if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_IP)) {
+                return $candidate;
+            }
+        }
     }
 
-    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_TRUE_CLIENT_IP'] as $header) {
-        $candidate = trim((string) ($_SERVER[$header] ?? ''));
-        if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_IP)) {
-            return $candidate;
-        }
+    if ($remote === '' || !chaos_ip_trusted($remote)) {
+        return $remote !== '' ? $remote : '0.0.0.0';
     }
 
     $chain = chaos_forwarded_chain();
@@ -351,24 +403,22 @@ function chaos_client_ip(): string
 }
 
 /**
- * The pile this visitor owns. Same value on every request from the same
- * address, which is what makes pound, status and reset line up.
+ * The pile this visitor owns. This is exactly the address shown as "you" and
+ * sent in the IP headers — chaos_client_ip(), nothing added — so the pile the
+ * frontend acts on is always the caller's own.
  */
 function chaos_pile_id(): string
 {
-    $ip = chaos_client_ip();
-    if (PILE_ID_MODE === 'hash') {
-        return substr(hash_hmac('sha256', $ip, PILE_ID_SALT), 0, 16);
-    }
-    return $ip;
+    return chaos_client_ip();
 }
 
 /** Cloudflare's two-letter country code for this visitor, when present. */
 function chaos_client_country(): ?string
 {
     $remote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $trusted = TRUST_CLOUDFLARE_HEADER || ($remote !== '' && chaos_ip_trusted($remote));
     $country = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
-    if ($remote === '' || !chaos_ip_trusted($remote) || !preg_match('/^[A-Z]{2}$|^XX$|^T1$/', $country)) {
+    if (!$trusted || !preg_match('/^[A-Z]{2}$|^XX$|^T1$/', $country)) {
         return null;
     }
     return $country;
@@ -393,7 +443,12 @@ function chaos_forward_headers(): array
     $host   = (string) ($_SERVER['HTTP_HOST'] ?? '');
 
     $headers = [
-        // Survives Cloudflare in front of the API. This is the one to read upstream.
+        // Cloudflare's own header name, carrying the visitor rather than this
+        // server. If the API keys piles off CF-Connecting-IP, this is the one
+        // it reads. See the note on API_BASE about Cloudflare overwriting it.
+        'CF-Connecting-IP: ' . $client,
+        'True-Client-IP: ' . $client,
+        // Same value under our own name, which nothing in the path rewrites.
         CLIENT_IP_HEADER . ': ' . $client,
         'X-Forwarded-For: ' . implode(', ', $chain),
         'X-Real-IP: ' . $client,
@@ -439,8 +494,14 @@ if (isset($_GET['debug']) && !isset($_GET['path'])) {
 
     echo json_encode([
         'resolved_client_ip' => chaos_client_ip(),
+        'resolved_from'      => (trim((string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? '')) !== '')
+                                ? 'CF-Connecting-IP'
+                                : 'REMOTE_ADDR or X-Forwarded-For (no Cloudflare header on this request)',
+        'trust_cf_header'    => TRUST_CLOUDFLARE_HEADER,
         'pile_id'            => chaos_pile_id(),
         'pile_id_mode'       => PILE_ID_MODE,
+        'reset_sends'        => 'DELETE ' . rtrim(API_BASE, '/') . '/pound/dirt?'
+                              . http_build_query([PILE_PARAM => chaos_pile_id()]),
         'remote_addr'        => $remote,
         'remote_is_trusted'  => chaos_ip_trusted($remote),
         'received_from_edge' => [
@@ -524,13 +585,11 @@ if (isset($_GET['path'])) {
 
     $target = rtrim(API_BASE, '/') . $path;
 
-    // Key the pile to the visitor, not to this server. Forced on DELETE so a
-    // browser cannot name someone else's pile; a default on the rest.
+    // One pile per IP. Set here, not by the browser, on every verb including
+    // the DELETE reset, so the API is told which pile to level.
     foreach (PILE_ID_PATHS as $pattern) {
         if (preg_match($pattern, $path) === 1) {
-            if ($method === 'DELETE' || !isset($query['pile'])) {
-                $query['pile'] = chaos_pile_id();
-            }
+            $query[PILE_PARAM] = chaos_pile_id();
             break;
         }
     }
@@ -588,6 +647,17 @@ if (isset($_GET['path'])) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody ?? '');
     }
 
+    // Optional: connect to the origin IP directly, bypassing Cloudflare's edge,
+    // while still presenting the real Host and SNI so TLS and routing work.
+    if (API_ORIGIN_IP !== '') {
+        $hostPart = parse_url(API_BASE, PHP_URL_HOST) ?: '';
+        $portPart = parse_url(API_BASE, PHP_URL_PORT)
+            ?: (parse_url(API_BASE, PHP_URL_SCHEME) === 'http' ? 80 : 443);
+        if ($hostPart !== '') {
+            curl_setopt($ch, CURLOPT_RESOLVE, [$hostPart . ':' . $portPart . ':' . API_ORIGIN_IP]);
+        }
+    }
+
     $started  = microtime(true);
     $result   = curl_exec($ch);
     $tookMs   = (int) round((microtime(true) - $started) * 1000);
@@ -600,6 +670,39 @@ if (isset($_GET['path'])) {
         chaos_fail(502, $curlCode === CURLE_ABORTED_BY_CALLBACK
             ? 'Upstream response exceeded the size limit.'
             : 'Could not reach the API: ' . $curlErr);
+    }
+
+    // Cloudflare answered for the origin rather than the origin answering. This
+    // is a 1xxx edge error — the request never reached the API, so it is not a
+    // pile problem. Error 1000 (dns_loop) means the API's DNS points at a
+    // Cloudflare IP; the fix is in the api.dumpsterfire.uk DNS panel, not here.
+    $isCfEdge = (($responseHeaders['server'] ?? '') === 'cloudflare')
+             && $status >= 400
+             && (preg_match('/error code:\s*(\d{4})/i', $result, $m)
+                 || stripos($result, 'cloudflare') !== false);
+    if ($isCfEdge) {
+        $code = $m[1] ?? null;
+        http_response_code(200);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'ok'          => false,
+            'status'      => $status,
+            'path'        => $path,
+            'method'      => $method,
+            'took_ms'     => $tookMs,
+            'client_ip'   => chaos_client_ip(),
+            'edge_error'  => true,
+            'cf_code'     => $code,
+            'cf_ray'      => $responseHeaders['cf-ray'] ?? null,
+            'error'       => $code === '1000'
+                ? 'Cloudflare error 1000 at the edge: the API DNS record points at a '
+                  . 'Cloudflare IP (dns_loop). The request never reached the API. Fix the '
+                  . 'A/AAAA record for api.dumpsterfire.uk to point at the origin server — '
+                  . 'this is not a frontend or pile problem.'
+                : 'Cloudflare edge error ' . ($code ?? $status) . '. The request was rejected '
+                  . 'at Cloudflare before reaching the API.',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        exit;
     }
 
     if (isset($_GET['raw']) && $_GET['raw'] !== '0') {
@@ -958,8 +1061,8 @@ footer.foot {
   </div>
 
   <footer class="foot">
-    <span>requests proxied server side</span>
-    <span>caller ip forwarded upstream</span>
+    <span>every call goes straight from your browser to the api</span>
+    <span>your ip is your pile</span>
     <span>nothing here is load-bearing</span>
   </footer>
 
@@ -979,6 +1082,12 @@ footer.foot {
   var histAt  = -1;
 
   var METHODS = ["GET", "POST", "DELETE"];
+
+  // Every API call fires straight from the browser to Cloudflare, so the
+  // connection Cloudflare sees is the real visitor's — no server in the middle
+  // to be relabelled. The same-origin PHP proxy is no longer in the path.
+  var API_BASE = <?= json_encode(rtrim(API_BASE, '/')) ?>;
+  var DIRECT_RE = /^\//;
 
   var PATHS = Array.prototype.map.call(
     document.querySelectorAll(".run"),
@@ -1013,35 +1122,58 @@ footer.foot {
   }
 
   function request(path, method, params) {
-    var qs  = params && params.length ? "&" + params.join("&") : "";
-    var url = "?path=" + encodeURIComponent(path) + qs;
-    var shown = method + " " + path + (params && params.length ? "?" + params.join("&") : "");
-    var slot = push(shown);
+    var qs    = params && params.length ? params.join("&") : "";
+    var shown = method + " " + path + (qs ? "?" + qs : "");
+    var slot  = push(shown);
 
     calls += 1;
     counter.textContent = calls + (calls === 1 ? " call" : " calls");
 
+    // Straight to the API. Cloudflare sees the browser's own connection, so the
+    // pile — and everything else — is keyed to whoever is actually clicking.
+    var direct = DIRECT_RE.test(path);
+    var url = direct
+      ? API_BASE + path + (qs ? "?" + qs : "")
+      : "?path=" + encodeURIComponent(path) + (qs ? "&" + qs : "");
+
     return fetch(url, {
       method: METHODS.indexOf(method) === -1 ? "GET" : method,
-      headers: { "Accept": "application/json" }
+      headers: { "Accept": "application/json" },
+      credentials: "omit",
+      mode: "cors"
     })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
+      .then(function (r) {
+        return r.json().then(function (body) { return { status: r.status, ok: r.ok, body: body }; });
+      })
+      .then(function (res) {
+        if (direct) {
+          // Raw API JSON — the pile id in here is the browser's own IP.
+          var text = JSON.stringify(res.body, null, 2);
+          var tag = res.ok
+            ? "<span class=\"ok\">exit 0</span>"
+            : "<span class=\"bad\">exit " + res.status + "</span>";
+          finish(slot, text, tag + " · " + res.status + " · direct to api", !res.ok);
+          return;
+        }
+        var data = res.body;
         if (data.ok === false && data.error) {
           finish(slot, data.error, "<span class=\"bad\">exit 1</span> · refused by proxy", true);
           return;
         }
         var payload = (data.json !== null && data.json !== undefined) ? data.json : data.body;
         var text = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
-        var status = data.ok
+        var tag = data.ok
           ? "<span class=\"ok\">exit 0</span>"
           : "<span class=\"bad\">exit " + data.status + "</span>";
         finish(slot, text,
-          status + " · " + data.status + " · " + data.took_ms + "ms · seen as " + data.client_ip,
+          tag + " · " + data.status + " · " + data.took_ms + "ms · seen as " + data.client_ip,
           !data.ok);
       })
       .catch(function () {
-        finish(slot, "no response from the proxy. check the php error log.",
+        finish(slot,
+          direct
+            ? "could not reach the api directly. the api must allow CORS from this page (Access-Control-Allow-Origin)."
+            : "no response from the proxy. check the php error log.",
           "<span class=\"bad\">exit 1</span> · transport failure", true);
       });
   }
@@ -1095,7 +1227,7 @@ footer.foot {
       return;
     }
     if (line === "help" || line === "ls") {
-      local(line, PATHS.join("\n") + "\n\nflags: --tier, --min, --max on rocks; --pile on dirt.\ntype them as a query string, e.g. /kick/rocks?tier=9");
+      local(line, PATHS.join("\n") + "\n\nflags: --tier, --min, --max on rocks.\ntype them as a query string, e.g. /kick/rocks?tier=9\nthe dirt pile is fixed to your address and cannot be set.");
       return;
     }
     if (line === "ip" || line === "whoami") {
