@@ -267,14 +267,14 @@ $CATALOGUE = [
         'group'   => 'The Ministry',
         'caption' => 'graded in newtons',
         'items'   => [
-            ['path' => '/ministry/gentle-correction', 'method' => 'GET', 'note' => 'd6 against the approved remedies 💪', 'fields' => []],
+            ['path' => '/ministry/gentle-correction', 'method' => 'GET', 'note' => 'd6 against approved remedies 💪', 'fields' => []],
             ['path' => '/ministry/mandatory-pet-adoption', 'new' => true, 'method' => 'GET', 'note' => 'resistance futile 🐻', 'fields' => []],
         ],
     ],
     [
         'group'   => 'The cage',
         'collapsed' => true,
-        'caption' => '50/50, fingers first',
+        'caption' => '50/50, fingers first, toes for the brave',
         'items'   => [
             ['path' => '/cage/finger',           'method' => 'GET', 'note' => '50 animals. costs a 👉 if taken', 'fields' => []],
             ['path' => '/cage/fictional/finger', 'method' => 'GET', 'note' => '50 fictional creatures, same 🫵',  'fields' => []],
@@ -292,9 +292,9 @@ $CATALOGUE = [
             ['path' => '/unhinged/advice',        'method' => 'GET', 'note' => 'applies to almost anything 🫢', 'fields' => []],
             ['path' => '/unhinged/non-committal', 'method' => 'GET', 'note' => 'fifty ways to not answer 😶',   'fields' => []],
             ['path' => '/unhinged/optimistic-dooom', 'method' => 'GET', 'note' => 'the end of everything, as good news 😅', 'fields' => []],
-            ['path' => '/unhinged/turn-it-upside-down', 'display' => '\\unhinged\\turn-it-upside-down', 'method' => 'GET', 'note' => 'flip it and find out 🙃', 'fields' => []],
+            ['path' => '/unhinged/turn-it-upside-down', 'display' => '\\unhinged\\turn-it-upside-down', 'method' => 'GET', 'note' => '🔃 it and find out 🙃', 'fields' => []],
             ['path' => '/unhinged/solid-suddenly-liquid', 'new' => true, 'method' => 'GET', 'note' => 'a solid, liquefied 💦', 'fields' => []],
-            ['path' => '/unhinged/solid-suddenly-gelatinous', 'new' => true, 'method' => 'GET', 'note' => 'solid, a jelly 🍧', 'fields' => []],
+            ['path' => '/unhinged/solid-suddenly-gelatinous', 'new' => true, 'method' => 'GET', 'note' => '🪨, now jelly 🍧', 'fields' => []],
             ['path' => '/unhinged/choose-your-duck', 'new' => true, 'method' => 'GET', 'note' => 'pick your 🛁 buddy', 'fields' => []],
         ],
     ],
