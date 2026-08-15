@@ -273,6 +273,7 @@ $CATALOGUE = [
     ],
     [
         'group'   => 'The cage',
+        'collapsed' => true,
         'caption' => '50/50, fingers first',
         'items'   => [
             ['path' => '/cage/finger',           'method' => 'GET', 'note' => '50 animals. costs a finger if taken', 'fields' => []],
