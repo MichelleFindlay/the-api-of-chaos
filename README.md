@@ -19,7 +19,6 @@
 | DELETE | /pound/dirt | Reset the pile. Only from the IP that raised it. |
 | GET | /excuses/teams | A reason not to join the call. |
 | GET | /excuses/social | A reason not to attend, with tier. |
-| GET | /excuses/social/tiers | The five sub-tiers of social excuse. |
 | GET | /excuses/oops | A reason it went wrong, with tier explanation. |
 | GET | /excuses/ring-ring | A reason you did not pick up. |
 | GET | /excuses/late | A reason you're late. |
