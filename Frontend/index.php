@@ -253,7 +253,7 @@ $CATALOGUE = [
     ],
     [
         'group'   => 'Excuses',
-        'caption' => 'seven ways out',
+        'caption' => 'six ways out',
         'items'   => [
             ['path' => '/excuses/teams',        'method' => 'GET', 'note' => 'not joining the call 👏',        'fields' => []],
             ['path' => '/excuses/social',       'method' => 'GET', 'note' => 'not attending, with tier 👥',    'fields' => []],
