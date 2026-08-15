@@ -30,6 +30,7 @@ declare(strict_types=1);
  *   GET    /excuses/late        a reason you're late
  *   GET    /excuses/alibis      a reason you weren't there
  *   GET    /ministry/gentle-correction  rolls a d6 against approved remedies
+ *   GET    /ministry/mandatory-pet-adoption  assigns you a legally binding pet, with tier and consequences
  *   GET    /cage/finger         put your finger in the cage
  *   GET    /cage/fictional/finger  same, but fictional creatures; shares your finger/toe count
  *   GET    /cage/finger/left    how many fingers you have left
@@ -1312,6 +1313,225 @@ const DUCKS = [
     ['tier' => 'F', 'duck' => 'Supportive Duck',                       'consequence' => 'Believes in you unconditionally. Nobody knows why. Deeply sinister.'],
 ];
 
+/**
+ * Five severity tiers of state-mandated pet, escalating from
+ * "featherweight chaos" to "cosmically ill-advised". Bounds are
+ * rough mass/threat guidance, not enforced anywhere.
+ */
+const PET_TIERS = [
+    1 => ['label' => 'Featherweight chaos',    'range' => 'under 1kg'],
+    2 => ['label' => 'Renovation required',    'range' => '1-20kg'],
+    3 => ['label' => 'Structural & legal',     'range' => '20-200kg'],
+    4 => ['label' => 'Do not',                 'range' => '200kg+ / lethal'],
+    5 => ['label' => 'Cosmically ill-advised', 'range' => 'breaks reality'],
+];
+
+const MANDATORY_PETS = [
+    ['tier' => 1, 'animal' => 'Axolotl', 'consequence' => 'Perpetually smiling gremlin that regenerates its own brain and outlives your relationships by a decade. You will develop deep parasocial feelings for a salamander whose capacity for emotion is exactly \'wet.\' It watches you always. Forever watching.'],
+    ['tier' => 1, 'animal' => 'Tardigrade', 'consequence' => 'Invisible to the naked eye and literally cannot be killed by anything you have access to. You will lose it. You have already lost it. It is in your ventilation, your atmosphere, maybe your cells now. The adoption is permanent and non-consensual. The tardigrade owns you.'],
+    ['tier' => 1, 'animal' => 'Star-nosed mole', 'consequence' => 'Twenty-two writhing pink tentacles erupting from where a face should be. Your guests will never return. Your therapist will have expensive questions. It is blind but can sense your fear and finds it hilarious.'],
+    ['tier' => 1, 'animal' => 'Mantis shrimp', 'consequence' => 'Perceives 16 colour channels you don\'t exist within. Punches at bullet speed with the impact of a .22 caliber. Will destroy the glass repeatedly out of pure contempt for your design choices. Has already calculated precisely where to strike for maximum structural failure.'],
+    ['tier' => 1, 'animal' => 'Bullet ant', 'consequence' => 'Carries the worst pain known to science in its stinger. Researchers describe it as equivalent to being shot in the leg repeatedly. You will find out if they\'re underselling it. Prayer is contractual.'],
+    ['tier' => 1, 'animal' => 'Bombardier beetle', 'consequence' => 'Produces boiling toxic caustic chemicals from its rear end on command and deploys them with surgical precision and warzone mercy. Your house will smell like a chemical weapons facility for months. Guests will call the police.'],
+    ['tier' => 1, 'animal' => 'Blue-ringed octopus', 'consequence' => 'Palm-sized. Kills 26 adults with no known antivenom. Adorable. Smiling. Already looking at you with malice aforethought.'],
+    ['tier' => 1, 'animal' => 'Surinam toad', 'consequence' => 'Babies literally burst explosively from the mother\'s back like a chest-burster scene. You will watch this happen. You will never unsee it. The nightmares are non-refundable.'],
+    ['tier' => 1, 'animal' => 'Immortal jellyfish', 'consequence' => 'Stressed? Just revert to being a baby and start over. You now own a creature that handles trauma through denial and regression. It is gaslit from conception.'],
+    ['tier' => 1, 'animal' => 'Glass frog', 'consequence' => 'Transparent belly shows you every organ at real-time. Therapeutic until you watch in slow motion as each one fails. An existential biology lesson.'],
+    ['tier' => 1, 'animal' => 'Hagfish', 'consequence' => 'Produces litres of self-generated slime in seconds, ties itself into a knot, owns your entire fishing operation. A creature of pure biological chaos.'],
+    ['tier' => 1, 'animal' => 'Pink fairy armadillo', 'consequence' => 'Palm-sized marsupial that screams when stressed, is covered in translucent armor, looks like a cursed marshmallow. Owns distress on a miniature scale.'],
+    ['tier' => 1, 'animal' => 'Jerboa', 'consequence' => 'A spring-loaded wind-up toy that malfunctions and disappears through gaps you didn\'t know existed. Gone forever within the hour. This is not a recovery situation.'],
+    ['tier' => 1, 'animal' => 'Sugar glider', 'consequence' => 'Screams when you leave (CAN be heard three blocks away). Pees mid-glide. Requires a friend (singular failure = existential despair in both). A tiny needy alarm system.'],
+    ['tier' => 1, 'animal' => 'Tarsier', 'consequence' => 'Eyes bigger than its brain. Will literally die of stress if you make eye contact for too long. The guilt of owning it is the actual pet.'],
+    ['tier' => 1, 'animal' => 'Vampire bat', 'consequence' => 'Laps blood from living prey while the prey is still conscious, shares meals regurgitated with its colony, tracks your livestock by ultrasonic echolocation. A communal ghoul.'],
+    ['tier' => 1, 'animal' => 'Goliath birdeater', 'consequence' => 'Dinner-plate-sized tarantula that flicks barbed hairs causing months of itching and rarely eats birds despite the name. Named for lies and hope.'],
+    ['tier' => 1, 'animal' => 'Pistol shrimp', 'consequence' => 'Snaps its claw so violently it cavitates water and produces shockwaves that stun prey. Your tank is now a sonar weapons system. The shrimp is winning a war against its own reflection.'],
+    ['tier' => 1, 'animal' => 'Peacock spider', 'consequence' => 'Tiny male performs an elaborate breakdancing courtship ritual for the female. If unimpressed, she eats him. Every mating is a high-stakes reality show where death is outcome one.'],
+    ['tier' => 1, 'animal' => 'Frilled shark', 'consequence' => 'A living fossil eel-shark with 300 hooked teeth and a body made entirely of \'no.\' Older than trees and meaner than your ex-partner\'s parents.'],
+    ['tier' => 1, 'animal' => 'Deep-sea anglerfish', 'consequence' => 'The male fuses permanently onto the female and dissolves into a sperm sac. The worst relationship outcome documented in biology. Don\'t make me explain further.'],
+    ['tier' => 1, 'animal' => 'Barreleye fish', 'consequence' => 'Transparent head with eyes that swivel inside its own skull. Literally sees through its own face. A creature designed by someone who failed biology and succeeded at nightmare.'],
+    ['tier' => 1, 'animal' => 'Flamboyant cuttlefish', 'consequence' => 'Walks along the seabed flashing hypnotic psychedelic patterns, is extremely toxic, and small enough to hold. A tiny toxic disco that kills with pride.'],
+    ['tier' => 1, 'animal' => 'Bobbit worm', 'consequence' => 'Metre-long buried ambush predator with jaws that snap fish in half. Do not step on the sand. The sand might bite you back.'],
+    ['tier' => 1, 'animal' => 'Giant isopod', 'consequence' => 'A dustbin-lid-sized woodlouse from the deep sea that can fast for literal years without eating. Landlord-level energy in crustacean form.'],
+    ['tier' => 1, 'animal' => 'Whip scorpion', 'consequence' => 'Sprays acetic acid from its rear when threatened. Your home smells like a chip shop at war. A resentful tiny vinegar factory.'],
+    ['tier' => 1, 'animal' => 'Pompeii worm', 'consequence' => 'Lives at deep-sea vents at temperatures that would cook you into molecular soup. Your bathtub is its cold-water resort.'],
+    ['tier' => 1, 'animal' => 'Lampreys', 'consequence' => 'A jawless mouth made of concentric rings of teeth that latch and drain fluids. A nightmare-straw that dates back 360 million years and saw fit to stick around.'],
+    ['tier' => 1, 'animal' => 'Cone snail', 'consequence' => 'Fires a venom harpoon. One sting = respiratory failure and regret. Nicknamed \'cigarette snail\' because that\'s how much time you have left. Decorative death.'],
+    ['tier' => 1, 'animal' => 'Nautilus', 'consequence' => 'Hasn\'t evolved meaningfully in 500 million years. Chambered shell, 90+ tentacles, hunts in the deep. A living fossil that judges your impermanence.'],
+    ['tier' => 1, 'animal' => 'Axolotl\'s cousin, the olm', 'consequence' => 'Blind cave salamander that lives 100 years and can fast for a decade without complaint. Owns patience you will never achieve.'],
+    ['tier' => 1, 'animal' => 'Regal horned lizard', 'consequence' => 'Squirts blood from its own eyes to deter predators. A creature that weaponized its own fluids out of pettiness.'],
+    ['tier' => 1, 'animal' => 'Pinocchio frog', 'consequence' => 'Male has a nose that inflates and deflates with mood. A frog with a mood-ring for a face. Emotional transparency at amphibian scale.'],
+    ['tier' => 1, 'animal' => 'Mexican mole lizard', 'consequence' => 'A pink lizard with exactly two tiny arms and zero legs. Assembled entirely incorrectly on purpose by evolution.'],
+    ['tier' => 1, 'animal' => 'Sarcastic fringehead', 'consequence' => 'Opens its entire face into a gaping threat display over territory. Drama incarnate. Attitude the size of an ocean.'],
+    ['tier' => 1, 'animal' => 'Aye-aye', 'consequence' => 'Taps trees and fishes grubs out with one cartoonishly elongated horror-movie finger. Genuinely considered a curse in its native Madagascar.'],
+    ['tier' => 1, 'animal' => 'Slow loris', 'consequence' => 'Toxic elbows, venomous bite, enormous guilty eyes. Cutest thing that can put you in hospital and make you feel bad about it.'],
+    ['tier' => 1, 'animal' => 'Etruscan shrew', 'consequence' => 'Smallest mammal alive. Heart beats at 1,500 bpm. Must eat constantly or dies within hours. A high-maintenance pebble with murderous drive.'],
+    ['tier' => 1, 'animal' => 'Star-gazer fish', 'consequence' => 'Buries itself with eyes pointed upward. Electrocutes anything that walks over it. A living landmine with ambition.'],
+    ['tier' => 1, 'animal' => 'Springtail', 'consequence' => 'Launches itself with a tail-catapult mechanism. Billions exist in your garden right now. They are watching. They have always been watching.'],
+    ['tier' => 1, 'animal' => 'Rotifer', 'consequence' => 'Can dry out completely for literal decades and rehydrate back to life. Owns immortality through dehydration. Nature\'s copy of a broken save file.'],
+    ['tier' => 1, 'animal' => 'Water flea', 'consequence' => 'Transparent with a visibly beating heart. Reproduces without males when lonely. Does whatever it wants, always.'],
+    ['tier' => 1, 'animal' => 'Satanic leaf-tailed gecko', 'consequence' => 'Perfect dead-leaf camouflage with a demonic name. You will lose it in your own home. It will still be there, watching.'],
+    ['tier' => 1, 'animal' => 'Draco flying lizard', 'consequence' => 'Glides between trees on rib-wings like a tiny dinosaur that got a pass. A lizard that achieved flight without permission.'],
+    ['tier' => 1, 'animal' => 'Velvet ant', 'consequence' => 'Wingless wasp in a fuzzy coat. The nickname \'cow killer\' is not aspiration. It is a résumé. One sting redefines pain.'],
+    ['tier' => 1, 'animal' => 'Assassin bug', 'consequence' => 'Hunts with face-tentacles, wears prey exoskeletons as fashion statements and warnings. Your furniture is now a alien graveyard.'],
+    ['tier' => 1, 'animal' => 'Sea angel', 'consequence' => 'Translucent pteropod that looks like a deceased grandmother ascended to jellyfish form. Obsessed with one single prey species its whole life.'],
+    ['tier' => 1, 'animal' => 'Blue dragon sea slug', 'consequence' => 'Steals venom from prey and concentrates it into its own tentacles. A bioweapons laboratory that moves via ocean currents.'],
+    ['tier' => 1, 'animal' => 'Leaf sheep slug', 'consequence' => 'Steals chloroplasts from plants and photosynthesizes. A slug that became a solar panel. A vegetarian invertebrate exception.'],
+    ['tier' => 1, 'animal' => 'Dumbo octopus', 'consequence' => 'Ear-like fins, lives in the abyss where pressure defies physics. Too cute to deserve its own location.'],
+    ['tier' => 1, 'animal' => 'Giant weta', 'consequence' => 'A cricket the size of your hand. Can be frozen solid and will thaw back to full function. An invertebrate that conquered cryogenics.'],
+    ['tier' => 1, 'animal' => 'Titan beetle', 'consequence' => 'Can snap pencils with its jaws. A beetle with industrial-grade bite force and opinions.'],
+    ['tier' => 1, 'animal' => 'Huntsman spider', 'consequence' => 'Sprints across walls at night. Harmless. Will still stop your heart at 3 AM with its sheer audacity.'],
+    ['tier' => 1, 'animal' => 'Wolf spider', 'consequence' => 'Carries dozens of babies on its back. Adopt one, accidentally adopt a hundred. Motherhood at arachnid scale.'],
+    ['tier' => 1, 'animal' => 'Trapdoor spider', 'consequence' => 'Builds a hinged lid and waits. Pure ambush predator energy. Home invasion specialist.'],
+    ['tier' => 1, 'animal' => 'Diving bell spider', 'consequence' => 'Lives underwater in a bubble of its own air. A spider that went full scuba forever.'],
+    ['tier' => 1, 'animal' => 'Tapeworm', 'consequence' => 'Do not adopt. It adopts you. From the inside. This is the other way around.'],
+    ['tier' => 1, 'animal' => 'Jewel wasp', 'consequence' => 'Zombifies cockroaches with a precise brain sting and walks them to their doom. Mind control via insects.'],
+    ['tier' => 1, 'animal' => 'Tarantula hawk', 'consequence' => 'A wasp whose sting is rated \'lie down and scream continuously.\' Owns your dignity permanently.'],
+    ['tier' => 1, 'animal' => 'Christmas Island red crab', 'consequence' => 'Migrates in tens of millions, closes roads, moves as an unstoppable tide. One is fine. They never come as one.'],
+    ['tier' => 2, 'animal' => 'Fennec fox', 'consequence' => 'Ears bigger than its head. Nocturnal screaming (audible three blocks away). Digs through drywall like it\'s tissue paper.'],
+    ['tier' => 2, 'animal' => 'Serval', 'consequence' => 'Leggy spotted diva that leaps 3m vertically. Needs 6ft fencing. Treats your sofa as a litter statement.'],
+    ['tier' => 2, 'animal' => 'Caracal', 'consequence' => 'Ear-tuft assassin. Leaps 3 metres to snatch birds mid-flight. Your ceiling fan is now prey.'],
+    ['tier' => 2, 'animal' => 'Kinkajou', 'consequence' => 'Honey-loving rainforest noodle with prehensile tail and a bite that comes without warning when hangry (always).'],
+    ['tier' => 2, 'animal' => 'Honey badger', 'consequence' => 'Does not care. Has never cared. Fights creatures ten times its size out of principle. Shrugs off venom and bee swarms. Immovable spite.'],
+    ['tier' => 2, 'animal' => 'Wolverine', 'consequence' => '35 pounds of pure fury that has fought and won against bears. Personality larger than any conceivable passport photo.'],
+    ['tier' => 2, 'animal' => 'Pangolin', 'consequence' => 'A walking artichoke that rolls into an impenetrable ball. Most trafficked mammal on Earth. Deserves infinitely better than you.'],
+    ['tier' => 2, 'animal' => 'Tamandua', 'consequence' => 'Tree anteater that boxes with claws and reeks of fermented insects. Unpaid termite bill.'],
+    ['tier' => 2, 'animal' => 'Three-toed sloth', 'consequence' => 'Moves so slowly algae grows on its fur creating a mobile ecosystem. Owns a rainforest on its back.'],
+    ['tier' => 2, 'animal' => 'Armadillo', 'consequence' => 'Always births identical quadruplets. Carries leprosy. A four-for-one felony package.'],
+    ['tier' => 2, 'animal' => 'Platypus', 'consequence' => 'Lays eggs. Has venom spurs. Senses electricity. Has no stomach. Glows under UV. Assembled by a committee that failed.'],
+    ['tier' => 2, 'animal' => 'Mata mata turtle', 'consequence' => 'Looks like rotting bark. Vacuums fish into its face. Ugly specifically on purpose.'],
+    ['tier' => 2, 'animal' => 'Snapping turtle', 'consequence' => 'Bites through broom handles. Hisses with authority. Will outlive your lease. Do not offer fingers.'],
+    ['tier' => 2, 'animal' => 'Tuatara', 'consequence' => 'Isn\'t a lizard but looks like one. Has a third eye on its head. Lives 100+ years. A reptile older than reptiles.'],
+    ['tier' => 2, 'animal' => 'Gila monster', 'consequence' => 'One of few venomous lizards. Bites and holds on while chewing venom. Grip of commitment, literally.'],
+    ['tier' => 2, 'animal' => 'Monitor lizard (small)', 'consequence' => 'Smart enough to count, destructive enough to renovate your house without permission. A dinosaur intern.'],
+    ['tier' => 2, 'animal' => 'Green iguana', 'consequence' => 'Grows to 1.5m. Whips with its tail. Drops from trees when cold. Falling furniture with a heartbeat.'],
+    ['tier' => 2, 'animal' => 'Tokay gecko', 'consequence' => 'Screams words that sound like swearing. Bites and refuses to release. Foul-mouthed lodger.'],
+    ['tier' => 2, 'animal' => 'Olm', 'consequence' => 'Blind cave salamander living 100 years in total darkness. Can fast for a decade. Owns patience.'],
+    ['tier' => 2, 'animal' => 'Hellbender', 'consequence' => 'Giant wrinkly aquatic salamander nicknamed \'snot otter.\' That nickname is the complete review.'],
+    ['tier' => 2, 'animal' => 'Chinese giant salamander', 'consequence' => 'Grows to 2m. Cries like a child. A salamander that sounds like a haunting.'],
+    ['tier' => 2, 'animal' => 'Caecilian', 'consequence' => 'Limbless amphibian whose young peel and eat their mother\'s skin. Family dinner redefined.'],
+    ['tier' => 2, 'animal' => 'Flying fox', 'consequence' => '1.5m wingspan. Hangs like a leathery cloak. Screams at dusk. A gothic curtain that\'s alive.'],
+    ['tier' => 2, 'animal' => 'Pallas\'s cat', 'consequence' => 'Grumpy flat-faced mountain cat that hates you specifically. The face IS the entire personality.'],
+    ['tier' => 2, 'animal' => 'Black-footed cat', 'consequence' => 'Smallest wild cat. Kills more prey per night than a lion. Tiny apex murderer.'],
+    ['tier' => 2, 'animal' => 'Sand cat', 'consequence' => 'Tolerates deserts. Looks like a plush toy. Will maul you regardless. Deceptive floof.'],
+    ['tier' => 2, 'animal' => 'Maned wolf', 'consequence' => 'A fox on stilts that smells of cannabis and isn\'t a wolf. Legs and lies.'],
+    ['tier' => 2, 'animal' => 'Bat-eared fox', 'consequence' => 'Ears that hear termites underground. Listens to all your regrets.'],
+    ['tier' => 2, 'animal' => 'Dhole', 'consequence' => 'Whistling pack-hunting wild dog that brings down prey 10x its size. Team sport.'],
+    ['tier' => 2, 'animal' => 'Tasmanian devil', 'consequence' => 'Screams like the damned. Strongest bite for its size. Sneezes to fight. Loud as hell.'],
+    ['tier' => 2, 'animal' => 'Quokka', 'consequence' => 'Smiles for selfies. Throws its own baby at predators to escape. Cute with caveats.'],
+    ['tier' => 2, 'animal' => 'Wombat', 'consequence' => 'Poops cubes. Has an armoured bum plate. Bulldozes fences. Blocky and unbothered.'],
+    ['tier' => 2, 'animal' => 'Capybara', 'consequence' => 'Zen water potato. Needs a pool, a friend, and turns your garden into a swamp.'],
+    ['tier' => 2, 'animal' => 'Peccary', 'consequence' => 'Wild pig that travels in aggressive herds, stinks defensively, charges without negotiation.'],
+    ['tier' => 2, 'animal' => 'Beaver', 'consequence' => 'Fells your trees, dams your drains, floods your garden. Civil engineer, completely uninvited.'],
+    ['tier' => 2, 'animal' => 'Raccoon', 'consequence' => 'Washes food, picks locks, holds grudges, and remembers your exact face. Smarter than you\'re comfortable with.'],
+    ['tier' => 2, 'animal' => 'Tanuki (raccoon dog)', 'consequence' => 'A real animal, not folklore. Hibernates and screams. Manages both simultaneously.'],
+    ['tier' => 2, 'animal' => 'Binturong', 'consequence' => 'Bearcat that smells strongly of hot buttered popcorn. Cinema-scented household chaos.'],
+    ['tier' => 2, 'animal' => 'Coati', 'consequence' => 'Raccoon with a snorkel nose that opens every latch you own. Anarchy on four paws.'],
+    ['tier' => 2, 'animal' => 'Skunk', 'consequence' => 'One warning, then chemical warfare that clings for weeks. A pet with a nuclear option.'],
+    ['tier' => 2, 'animal' => 'Genet', 'consequence' => 'Spotted cat-weasel that climbs everything and marks with musk. Renovate for smell.'],
+    ['tier' => 2, 'animal' => 'Prairie dog', 'consequence' => 'Has a complex language including a word for you. It has described your shirt to its friends.'],
+    ['tier' => 2, 'animal' => 'Groundhog', 'consequence' => 'Predicts weather badly. Digs under everything you value. Union-protected saboteur.'],
+    ['tier' => 2, 'animal' => 'Muntjac', 'consequence' => 'Tiny deer with fangs that barks like a dog for hours. Confusing on every level.'],
+    ['tier' => 2, 'animal' => 'Chevrotain', 'consequence' => 'Mouse-deer hybrid. Size of a cat. Vampire fangs. The world\'s smallest hoofed liar.'],
+    ['tier' => 2, 'animal' => 'Springbok', 'consequence' => 'Pronks -- bounces straight up for no reason anyone agrees on. Boing without cause.'],
+    ['tier' => 2, 'animal' => 'Meerkat', 'consequence' => 'Adorable but a mob murders rivals\' pups and demands 24/7 sentry duty. HR nightmare.'],
+    ['tier' => 2, 'animal' => 'Mongoose', 'consequence' => 'Fights cobras for fun and wins. Your snake problem becomes a mongoose problem.'],
+    ['tier' => 2, 'animal' => 'Ocelot', 'consequence' => 'Once kept by the rich. Now a wall of legal paperwork with claws.'],
+    ['tier' => 2, 'animal' => 'Clouded leopard', 'consequence' => 'Rotating ankles let it climb down trees head-first. Vertigo hosted at your house.'],
+    ['tier' => 2, 'animal' => 'Domestic pig', 'consequence' => 'Smarter than your dog. Opens your fridge. Holds grudges. Grows to your regret\'s size.'],
+    ['tier' => 2, 'animal' => 'King cobra', 'consequence' => 'Grows to 5m. Eats other snakes. Can rear up to look you in the eye. Do not make that eye contact.'],
+    ['tier' => 2, 'animal' => 'Ball python', 'consequence' => 'Hides its head when scared. Will still outlive your relationships by a decade.'],
+    ['tier' => 2, 'animal' => 'Reticulated python (young)', 'consequence' => 'Grows into tier 4. It\'s already measuring your doorway for fit.'],
+    ['tier' => 3, 'animal' => 'Kangaroo', 'consequence' => 'Boxes you, disembowels with a kick, needs a paddock and a liability waiver from reality itself.'],
+    ['tier' => 3, 'animal' => 'Emu', 'consequence' => 'Won a war against Australia. You will not win this domestic conflict.'],
+    ['tier' => 3, 'animal' => 'Ostrich', 'consequence' => 'Can gut a lion with a kick. Has no chill. Your entire fencing budget is now insufficient.'],
+    ['tier' => 3, 'animal' => 'Cassowary', 'consequence' => 'A dinosaur that ignored its extinction notice. Dagger toes over a dropped grape. Owns zero mercy.'],
+    ['tier' => 3, 'animal' => 'Secretary bird', 'consequence' => 'Stomps snakes to death with karate-level kicks. Owns a martial art you don\'t.'],
+    ['tier' => 3, 'animal' => 'Shoebill stork', 'consequence' => 'Stands motionless for hours, then decapitates lungfish. Stares into your soul silently.'],
+    ['tier' => 3, 'animal' => 'Reticulated python', 'consequence' => 'Escapes any enclosure. Needs whole rabbits. One day it becomes the meal. It\'s been measuring you this whole time.'],
+    ['tier' => 3, 'animal' => 'Green anaconda', 'consequence' => 'Heaviest snake alive. Coils and constricts with physics-defying force. Your bathroom is now a habitat.'],
+    ['tier' => 3, 'animal' => 'African rock python', 'consequence' => 'Aggressive, huge, has swallowed things it shouldn\'t. Structural threat by the metre.'],
+    ['tier' => 3, 'animal' => 'Monitor lizard (large)', 'consequence' => 'Two metres of intelligent lizard that raids nests and hisses at your resolve. Reptilian burglar.'],
+    ['tier' => 3, 'animal' => 'Wild boar', 'consequence' => 'Tusks, temper, a herd. Rototills your property overnight for fun. Thinks your garden is a spa.'],
+    ['tier' => 3, 'animal' => 'Warthog', 'consequence' => 'Kneels to eat. Reverses into burrows tusks-first. Faster than you. Comic until it charges.'],
+    ['tier' => 3, 'animal' => 'Moose', 'consequence' => 'Bigger than a horse. Charges dogs and cars. Unpredictable in rut. A cathedral of antlers and rage.'],
+    ['tier' => 3, 'animal' => 'Bison', 'consequence' => 'Two tonnes that turns on a dime. Gores tourists yearly. The plains are not your paddock.'],
+    ['tier' => 3, 'animal' => 'Grey seal', 'consequence' => 'Blubbery charmer with a mouth full of bacteria that turns septic. Cute infection vector.'],
+    ['tier' => 3, 'animal' => 'Sea lion', 'consequence' => 'Barks, balances balls, males the size of a sofa that will chase you up the beach.'],
+    ['tier' => 3, 'animal' => 'Giant anteater', 'consequence' => 'Two metres of claws that can gut a jaguar. Walks on knuckles. Ant bill enormous, hug ill-advised.'],
+    ['tier' => 3, 'animal' => 'Llama', 'consequence' => 'Spits pre-digested stomach contents when annoyed (often). Aim is professional.'],
+    ['tier' => 3, 'animal' => 'Alpaca', 'consequence' => 'Softer, still spits, needs a companion or despairs. Emotional livestock.'],
+    ['tier' => 3, 'animal' => 'Muskox', 'consequence' => 'Shaggy ice-age tank that forms a horned wall and charges. Structural in truest sense.'],
+    ['tier' => 3, 'animal' => 'Wildebeest', 'consequence' => 'Migrates in millions, panics constantly, drowns in rivers en masse. Chaos with hooves.'],
+    ['tier' => 3, 'animal' => 'Reindeer', 'consequence' => 'Antlers on both sexes. Clicking knees. Eats lichen you cannot supply. Festive and impractical.'],
+    ['tier' => 3, 'animal' => 'Mute swan', 'consequence' => 'Breaks arms with wings. Owns the river. Hates you personally. Elegant assailant.'],
+    ['tier' => 3, 'animal' => 'Canada goose', 'consequence' => 'Hisses, honks, guards nothing with total commitment. Airborne road rage.'],
+    ['tier' => 3, 'animal' => 'Wolf', 'consequence' => 'Not a dog. Needs a pack and square miles. Treats fences as suggestions. Legally impossible.'],
+    ['tier' => 3, 'animal' => 'Coyote', 'consequence' => 'Adapts to anywhere, including your bins and your cat\'s existence. The suburbs are already its habitat.'],
+    ['tier' => 3, 'animal' => 'Dingo', 'consequence' => 'Australia\'s apex canine that famously cannot be tamed. The fence exists for a reason.'],
+    ['tier' => 3, 'animal' => 'Bobcat', 'consequence' => 'Tufted ambush cat that takes down deer. Your garden is now a hunting ground.'],
+    ['tier' => 3, 'animal' => 'Lynx', 'consequence' => 'Snowshoe feet, ear tufts, taste for hares and your resolve. Winter\'s house-guest.'],
+    ['tier' => 4, 'animal' => 'Hippopotamus', 'consequence' => 'Cutest deadliest thing in Africa. Kills more humans than lions. Your pool is now a crime scene.'],
+    ['tier' => 4, 'animal' => 'Cape buffalo', 'consequence' => 'Nicknamed \'Black Death.\' Will remember that you shot it and hunt you personally across continents.'],
+    ['tier' => 4, 'animal' => 'Grizzly bear', 'consequence' => 'You will not survive. The bear will wear your skin. You will be identified by dental records only.'],
+    ['tier' => 4, 'animal' => 'Polar bear', 'consequence' => 'Only bear that actively hunts humans. Sees you as 9,000 calories in a coat. Will wait under ice for you.'],
+    ['tier' => 4, 'animal' => 'Saltwater crocodile', 'consequence' => '3,700 PSI bite. Hasn\'t evolved since dinosaurs because it was already perfect. It will eat you lengthwise.'],
+    ['tier' => 4, 'animal' => 'Nile crocodile', 'consequence' => 'Kills hundreds yearly with infinite patience. Waits at shorelines forever. It has been waiting specifically for you.'],
+    ['tier' => 4, 'animal' => 'Komodo dragon', 'consequence' => 'Three metres of venomous perfection. Eats 80% of its body weight. Reproduces via virgin birth. You are now the prey.'],
+    ['tier' => 4, 'animal' => 'Lion', 'consequence' => 'Sleeps 20 hours. The other four hours? Remembering you exist and hating it. Males are pure aggression. Prides are militias.'],
+    ['tier' => 4, 'animal' => 'Tiger', 'consequence' => 'Largest cat alive. Lone ambush hunter. Swims for fun. Drags prey heavier than motorcycles up trees. It already knows where you sleep.'],
+    ['tier' => 4, 'animal' => 'Leopard', 'consequence' => 'Hauls prey heavier than itself up trees silently. Already watching from inside your attic.'],
+    ['tier' => 4, 'animal' => 'Jaguar', 'consequence' => 'Only big cat that kills by targeting the spine directly. Bites through skulls like tin cans.'],
+    ['tier' => 4, 'animal' => 'Cougar', 'consequence' => 'Leaps 5m vertically. Screams like a woman being murdered (intentional). Ranges half a continent. Not a tabby.'],
+    ['tier' => 4, 'animal' => 'African elephant', 'consequence' => 'Grieves its dead. Remembers your face. Flattens what annoys it. Too smart and too big to own.'],
+    ['tier' => 4, 'animal' => 'Asian elephant', 'consequence' => 'Gentler. Still six tonnes. Still can remove your house. Structural understatement.'],
+    ['tier' => 4, 'animal' => 'White rhino', 'consequence' => 'Near-sighted two-tonne charge. Runs first. Checks what it hit later. Don\'t be the what.'],
+    ['tier' => 4, 'animal' => 'Black rhino', 'consequence' => 'Smaller, meaner, charges vehicles on principle. Owns the concept of grudges.'],
+    ['tier' => 4, 'animal' => 'Giraffe', 'consequence' => 'Kick decapitates lions. Neck swings like a wrecking ball. Tall and terminal.'],
+    ['tier' => 4, 'animal' => 'Gorilla', 'consequence' => 'Ten times your strength. Mostly gentle. Catastrophic when not. Don\'t test the \'mostly.\''],
+    ['tier' => 4, 'animal' => 'Chimpanzee', 'consequence' => 'Shares your DNA and your capacity for violence, with five times strength. Tabloid tragedies exist for a reason.'],
+    ['tier' => 4, 'animal' => 'Walrus', 'consequence' => 'Tonne of tusked blubber that sinks boats and crushes what it flops onto. Do not befriend.'],
+    ['tier' => 4, 'animal' => 'Leopard seal', 'consequence' => 'Hunts penguins and has dragged researchers underwater. A seal with a horror résumé.'],
+    ['tier' => 4, 'animal' => 'Orca', 'consequence' => 'Coordinates hunts, has culture, has never killed humans in wild -- because it\'s letting you off.'],
+    ['tier' => 4, 'animal' => 'Sperm whale', 'consequence' => 'Loudest animal. Clicks vibrate bodies from miles away. Owns sounds that hurt at range.'],
+    ['tier' => 4, 'animal' => 'Great white shark', 'consequence' => '300 teeth. Smells blood for miles. Lineage older than trees. Not bathtub material.'],
+    ['tier' => 4, 'animal' => 'Tiger shark', 'consequence' => 'Eats license plates, tires, and ethics. The ocean\'s stomach with fins.'],
+    ['tier' => 4, 'animal' => 'Bull shark', 'consequence' => 'Swims up rivers into freshwater. It moves into your local canal. Forever.'],
+    ['tier' => 4, 'animal' => 'Oceanic whitetip', 'consequence' => 'Follows shipwrecks and downed pilots patiently. The sailor\'s historical nightmare.'],
+    ['tier' => 4, 'animal' => 'Black mamba', 'consequence' => 'Fastest venomous snake. \'Kiss of death\' for a reason. Chases when cornered. Owns records and obituaries.'],
+    ['tier' => 4, 'animal' => 'Inland taipan', 'consequence' => 'One bite = venom for 100 people. Most toxic snake on land, in your shed.'],
+    ['tier' => 4, 'animal' => 'Gaboon viper', 'consequence' => 'Longest fangs of any snake. Strikes from perfect leaf-litter camouflage. Invisible and fatal.'],
+    ['tier' => 4, 'animal' => 'Fer-de-lance', 'consequence' => 'Most snakebite deaths in its range. Aggressive. Everywhere. Do not clear that brush.'],
+    ['tier' => 4, 'animal' => 'Box jellyfish', 'consequence' => 'Venom stops your heart before you reach shore. 24 eyes and no brain. A drifting off-switch.'],
+    ['tier' => 5, 'animal' => 'Blue whale', 'consequence' => 'Largest animal ever. Heart the size of a car. Blood vessels fit a child. You will never have an ocean. The ocean has a whale. The whale now owns your house.'],
+    ['tier' => 5, 'animal' => 'Colossal squid', 'consequence' => 'Tentacles with rotating teeth-rings, eyes the size of dinner plates, from a depth where pressure destroys skeletons. Your house will become its lair.'],
+    ['tier' => 5, 'animal' => 'Giant Pacific octopus', 'consequence' => 'Nine independent brains distributed across nine tentacles, each with its own hunger and vendetta. Will squirt the specific human who wronged it. It remembers your exact face.'],
+    ['tier' => 5, 'animal' => 'Portuguese man o\' war', 'consequence' => 'Not one animal but four cooperating organisms voting unanimously to sting. Democracy made painful.'],
+    ['tier' => 5, 'animal' => 'Siphonophore', 'consequence' => '40+ metre colonial organism longer than a blue whale made of thousands of coordinated polyps. It is not a pet. It is a *process* that owns you.'],
+    ['tier' => 5, 'animal' => 'Coral reef', 'consequence' => 'Thousands of animals building rock over centuries. Outlasts nations. Will not remember you.'],
+    ['tier' => 5, 'animal' => 'Bootlace worm', 'consequence' => '55+ metres of sentient noodle. Longest animal ever. The head and tail are philosophical concepts now.'],
+    ['tier' => 5, 'animal' => 'Lion\'s mane jellyfish', 'consequence' => '30+ metre tentacles trailing invisible venom like a cape of pain. Silently fills your entire ocean.'],
+    ['tier' => 5, 'animal' => 'Japanese spider crab', 'consequence' => 'Leg span 3.8m, bigger than a car. Claws fit humans inside. Your house is a rounding error.'],
+    ['tier' => 5, 'animal' => 'Whale shark', 'consequence' => 'Bus-sized gentle giant needing six-tonne plankton rations daily and an entire ocean. Impossible.'],
+    ['tier' => 5, 'animal' => 'Basking shark', 'consequence' => 'Swims with cavernous mouth open filtering wholes seas. You are not nutritionally relevant.'],
+    ['tier' => 5, 'animal' => 'Manta ray', 'consequence' => 'Seven-metre wingspan, largest fish brain, glides in perfect silence. Too indifferent to your pet-ownership fantasies.'],
+    ['tier' => 5, 'animal' => 'Ocean sunfish', 'consequence' => 'Looks like a swimming head. Weighs two tonnes. Lays 300 million eggs. Biologically absurd.'],
+    ['tier' => 5, 'animal' => 'Sperm whale (deep)', 'consequence' => 'Dives 2km on one breath to fight giant squid in total darkness. You cannot follow. It doesn\'t want you there.'],
+    ['tier' => 5, 'animal' => 'Greenland shark', 'consequence' => '400+ years old. Older than nations. Still eating things from the 1600s. Meat is toxic. Don\'t befriend immortality.'],
+    ['tier' => 5, 'animal' => 'Tube worms of the vents', 'consequence' => 'Live in boiling vents eating chemicals, no mouth, no gut, indigestible. No way to feed it.'],
+    ['tier' => 5, 'animal' => 'Yeti crab', 'consequence' => 'Farms bacteria on its own claws and harvests it. Solved agriculture before you did on its abdomen.'],
+    ['tier' => 5, 'animal' => 'Immortal jellyfish colony', 'consequence' => 'Not just immortal. A colony of immortals. Divides infinitely. You\'ve signed up for exponential eternity.'],
+    ['tier' => 5, 'animal' => 'Sponge (10,000 years old)', 'consequence' => 'Predates agriculture, civilization, writing. Will outlast you and your species.'],
+    ['tier' => 5, 'animal' => 'Hydra', 'consequence' => 'Doesn\'t age. Regenerates from fragments. Owns immortality casually. Cut it in half and you\'ve doubled infinity.'],
+    ['tier' => 5, 'animal' => 'Planarian flatworm', 'consequence' => 'Cut it and both halves become complete worms. Cut it into ten pieces and you own ten. Failure multiplies.'],
+    ['tier' => 5, 'animal' => 'Tardigrade', 'consequence' => 'Survived space, radiation, vacuum. You cannot kill it. You cannot lose it. Already on Mars and in your DNA.'],
+    ['tier' => 5, 'animal' => 'Nematode (10^18)', 'consequence' => 'Four out of five animals on Earth are roundworms. You already own uncountable billions. Congratulations.'],
+    ['tier' => 5, 'animal' => 'Antarctic krill (400 trillion)', 'consequence' => 'Hold up the entire Southern Ocean food web. The swarm owns the ocean. The ocean owns you.'],
+    ['tier' => 5, 'animal' => 'Locust swarm', 'consequence' => 'Single swarm covers hundreds of square km, eats entire countries\' crops. Don\'t start one. If one starts, go underground.'],
+    ['tier' => 5, 'animal' => 'Army ant colony', 'consequence' => 'Millions acting as one predatory flood eating everything. A genocide made of mandibles. It will eat your house.'],
+    ['tier' => 5, 'animal' => 'Coral polyp\'s cousin, the Venus flower basket', 'consequence' => 'Two shrimp live sealed inside for life in eternal married imprisonment. You\'d be intruding. The shrimp will judge you.'],
+    ['tier' => 5, 'animal' => 'Blue whale\'s heartbeat', 'consequence' => 'Audible from two miles away. Frequencies you shouldn\'t hear vibrating organs you didn\'t know existed. A reminder that you are insignificant and will never escape this knowledge.'],
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -1619,9 +1839,9 @@ function pile_rate_limited(string $id): ?array
  */
 function send_cors_headers(): void
 {
-    header('Access-Control-Allow-Origin: https://dumpsterfire.uk');
+    header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Accept');
+    header('Access-Control-Allow-Headers: *');
 }
 
 function send(int $status, array $body, array $headers = []): never
@@ -1662,6 +1882,11 @@ function munition_arc(int $tier): string
     return 'unclassified';
 }
 
+function pet_tier(int $tier): array
+{
+    return PET_TIERS[$tier] ?? ['label' => 'unclassified', 'range' => 'unknown'];
+}
+
 /* ------------------------------------------------------------------ *
  * Handlers
  * ------------------------------------------------------------------ */
@@ -1670,7 +1895,7 @@ function handle_index(): never
 {
     send(200, [
         'service' => 'The API of Chaos',
-        'version' => '1.0.3',
+        'version' => '1.0.4',
         'tagline' => 'Dismissal, at scale, with an SLA of none.',
         'endpoints' => [
             'GET /kick/rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
@@ -1689,6 +1914,7 @@ function handle_index(): never
             'GET /excuses/late'      => "A reason you're late.",
             'GET /excuses/alibis'    => "A reason you weren't there.",
             'GET /ministry/gentle-correction' => 'Rolls a d6 against the Ministry\'s approved remedies, graded in newtons.',
+            'GET /ministry/mandatory-pet-adoption' => 'Assigns a legally binding pet from 203 options, tiered by how badly it ends you.',
             'GET /cage/finger'       => 'Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next.',
             'GET /cage/fictional/finger' => 'Put your finger in the cage. 50 fictional creatures this time. Shares your finger/toe count with /cage/finger.',
             'GET /cage/finger/left'  => 'How many fingers and toes you have left, out of ' . FINGERS_START . ' each.',
@@ -2093,6 +2319,21 @@ function handle_gentle_correction(): never
     ]);
 }
 
+function handle_mandatory_pet_adoption(): never
+{
+    $entry = pick(MANDATORY_PETS);
+    $tier  = pet_tier($entry['tier']);
+
+    send(200, [
+        'instruction'  => 'Surrender to the whisker regime.',
+        'animal'       => $entry['animal'],
+        'consequence'  => $entry['consequence'],
+        'tier'         => $entry['tier'],
+        'tier_label'   => $tier['label'],
+        'tier_range'   => $tier['range'],
+    ]);
+}
+
 function handle_cage_finger(): never
 {
     $id      = client_ip();
@@ -2393,6 +2634,7 @@ match (true) {
     $method === 'GET' && $path === '/excuses/late'          => handle_excuses_late(),
     $method === 'GET' && $path === '/excuses/alibis'        => handle_excuses_alibis(),
     $method === 'GET' && $path === '/ministry/gentle-correction' => handle_gentle_correction(),
+    $method === 'GET' && $path === '/ministry/mandatory-pet-adoption' => handle_mandatory_pet_adoption(),
     $method === 'GET' && $path === '/cage/finger'          => handle_cage_finger(),
     $method === 'GET' && $path === '/cage/fictional/finger' => handle_cage_finger_fictional(),
     $method === 'GET' && $path === '/cage/finger/left'     => handle_fingers_left(),
