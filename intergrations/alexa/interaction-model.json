@@ -1,0 +1,375 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "api of chaos",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.FallbackIntent",
+                    "samples": []
+                },
+                {
+                    "name": "GetEndpoint",
+                    "slots": [
+                        {
+                            "name": "endpoint",
+                            "type": "EndpointType"
+                        }
+                    ],
+                    "samples": [
+                        "get {endpoint}",
+                        "give me {endpoint}",
+                        "fetch {endpoint}",
+                        "call {endpoint}",
+                        "roll {endpoint}",
+                        "shake {endpoint}",
+                        "do {endpoint}",
+                        "invoke {endpoint}",
+                        "{endpoint}",
+                        "get me a {endpoint}",
+                        "assign me {endpoint}"
+                    ]
+                },
+                {
+                    "name": "KickRocks",
+                    "samples": [
+                        "kick rocks",
+                        "kick some rocks",
+                        "give me a rock",
+                        "assign a rock"
+                    ]
+                },
+                {
+                    "name": "KickMunitions",
+                    "samples": [
+                        "kick munitions",
+                        "kick a munition",
+                        "kick some munitions",
+                        "give me a munition",
+                        "assign a munition"
+                    ]
+                },
+                {
+                    "name": "PoundDirt",
+                    "samples": [
+                        "pound dirt",
+                        "pound some dirt",
+                        "add to my pile",
+                        "update my pile"
+                    ]
+                },
+                {
+                    "name": "ResetDirt",
+                    "samples": [
+                        "reset my pile",
+                        "clear my pile",
+                        "reset my dirt",
+                        "delete my pile"
+                    ]
+                },
+                {
+                    "name": "HealthCheck",
+                    "samples": [
+                        "health check",
+                        "is the api healthy",
+                        "health status",
+                        "check the api"
+                    ]
+                }
+            ],
+            "types": [
+                {
+                    "name": "EndpointType",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "rocks",
+                                "synonyms": [
+                                    "rock",
+                                    "kick rocks"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "rocks tiers",
+                                "synonyms": [
+                                    "rock tiers",
+                                    "rocks scale"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "munitions",
+                                "synonyms": [
+                                    "munition",
+                                    "lost munition"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "munitions tiers",
+                                "synonyms": [
+                                    "munitions scale",
+                                    "munition tiers"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "dirt",
+                                "synonyms": [
+                                    "pound dirt"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "dirt status",
+                                "synonyms": [
+                                    "pile status",
+                                    "my pile"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "dirt tiers",
+                                "synonyms": [
+                                    "dirt scale",
+                                    "pile tiers"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "dirt leaderboard",
+                                "synonyms": [
+                                    "leaderboard",
+                                    "top piles"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "excuses teams",
+                                "synonyms": [
+                                    "team excuse",
+                                    "dont join call"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "excuses social",
+                                "synonyms": [
+                                    "social excuse",
+                                    "dont attend"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "excuses oops",
+                                "synonyms": [
+                                    "oops excuse",
+                                    "went wrong"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "excuses ring-ring",
+                                "synonyms": [
+                                    "ring ring",
+                                    "didnt pick up",
+                                    "phone excuse"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "excuses late",
+                                "synonyms": [
+                                    "late excuse",
+                                    "why am i late"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "excuses alibis",
+                                "synonyms": [
+                                    "alibi",
+                                    "wasnt there"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "gentle correction",
+                                "synonyms": [
+                                    "gentle correction",
+                                    "ministry correction"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "mandatory pet adoption",
+                                "synonyms": [
+                                    "pet adoption",
+                                    "mandatory pet"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "finger in cage",
+                                "synonyms": [
+                                    "finger cage",
+                                    "cage finger"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "fictional finger",
+                                "synonyms": [
+                                    "fictional creature",
+                                    "fictional finger cage"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "finger status",
+                                "synonyms": [
+                                    "fingers left",
+                                    "toes left"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "finger reset",
+                                "synonyms": [
+                                    "reset fingers",
+                                    "reset toes"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "8ball",
+                                "synonyms": [
+                                    "eight ball",
+                                    "magic eight ball",
+                                    "shake the ball"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "optimism",
+                                "synonyms": [
+                                    "positive",
+                                    "give me optimism"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "pessimism",
+                                "synonyms": [
+                                    "negative",
+                                    "give me pessimism"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "advice",
+                                "synonyms": [
+                                    "give advice",
+                                    "unhinged advice"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "non-committal",
+                                "synonyms": [
+                                    "non committal",
+                                    "maybe"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "optimistic doom",
+                                "synonyms": [
+                                    "optimistic doom",
+                                    "doom but positive"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "turn it upside down",
+                                "synonyms": [
+                                    "flip",
+                                    "flip item",
+                                    "upside down"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "solid suddenly liquid",
+                                "synonyms": [
+                                    "liquid",
+                                    "solid liquid"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "solid suddenly gelatinous",
+                                "synonyms": [
+                                    "jelly",
+                                    "gelatinous",
+                                    "solid jelly",
+                                    "make solid jelly"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "choose your duck",
+                                "synonyms": [
+                                    "duck",
+                                    "bath duck",
+                                    "choose duck"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
