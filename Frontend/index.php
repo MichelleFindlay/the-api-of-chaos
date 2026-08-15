@@ -145,7 +145,7 @@ const ALLOWED_PATHS = [
     '#^/cage/finger$#',
     '#^/cage/finger/(left|reset)$#',
     '#^/cage/fictional/finger$#',
-    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal)$#',
+    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck)$#',
 ];
 
 /** Paths that may be called with DELETE. Everything else is GET or POST. */
@@ -189,6 +189,7 @@ const PILE_PARAM = 'pile';
 $CATALOGUE = [
     [
         'group'   => 'Rocks',
+        'collapsed' => true,
         'caption' => 'assigned, not chosen',
         'items'   => [
             [
@@ -208,6 +209,7 @@ $CATALOGUE = [
     ],
     [
         'group'   => 'Munitions',
+        'collapsed' => true,
         'caption' => 'unintentionally lost',
         'items'   => [
             [
@@ -222,6 +224,7 @@ $CATALOGUE = [
     ],
     [
         'group'   => 'Dirt',
+        'collapsed' => true,
         'caption' => 'one pile per address',
         'items'   => [
             [
@@ -266,7 +269,7 @@ $CATALOGUE = [
         'group'   => 'The Ministry',
         'caption' => 'graded in newtons',
         'items'   => [
-            ['path' => '/ministry/gentle-correction', 'method' => 'GET', 'note' => 'a d6 against the approved remedies', 'fields' => []],
+            ['path' => '/ministry/gentle-correction', 'method' => 'GET', 'note' => 'd6 against the approved remedies', 'fields' => []],
         ],
     ],
     [
@@ -288,10 +291,16 @@ $CATALOGUE = [
             ['path' => '/unhinged/pessimism',     'method' => 'GET', 'note' => 'unearned dread',             'fields' => []],
             ['path' => '/unhinged/advice',        'method' => 'GET', 'note' => 'applies to almost anything', 'fields' => []],
             ['path' => '/unhinged/non-committal', 'method' => 'GET', 'note' => 'fifty ways to not answer',   'fields' => []],
+            ['path' => '/unhinged/optimistic-dooom', 'method' => 'GET', 'note' => 'the end of everything, as good news', 'fields' => []],
+            ['path' => '/unhinged/turn-it-upside-down', 'display' => '\\unhinged\\turn-it-upside-down', 'method' => 'GET', 'note' => 'flip it and find out', 'fields' => []],
+            ['path' => '/unhinged/solid-suddenly-liquid', 'new' => true, 'method' => 'GET', 'note' => 'a solid, liquefied', 'fields' => []],
+            ['path' => '/unhinged/solid-suddenly-gelatinous', 'new' => true, 'method' => 'GET', 'note' => 'a solid, now jelly', 'fields' => []],
+            ['path' => '/unhinged/choose-your-duck', 'new' => true, 'method' => 'GET', 'note' => 'pick your bathing buddy', 'fields' => []],
         ],
     ],
     [
         'group'   => 'Vitals',
+        'collapsed' => true,
         'caption' => 'is anything on fire',
         'items'   => [
             ['path' => '/healthz', 'method' => 'GET', 'note' => 'liveness, plus lifetime counters', 'fields' => []],
@@ -883,14 +892,51 @@ a:hover { color: var(--amber); }
 }
 .pane__bar b { color: var(--fg); font-weight: 400; text-transform: none; letter-spacing: 0; }
 
+.barbtn {
+  font: inherit;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  background: none;
+  border: 1px solid var(--line);
+  padding: 0.05rem 0.5rem;
+  cursor: pointer;
+  text-transform: none;
+}
+.barbtn:hover { color: var(--amber); border-color: var(--amber); }
+.barbtn:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+
 .pane__body { padding: 0.85rem 0.75rem 1.1rem; }
 
 /* ----------------------------------------------------------- commands */
 
-.grp { margin: 1.25rem 0 0.35rem; font-size: 0.82rem; font-weight: 400; color: var(--dim); }
-.grp:first-child { margin-top: 0; }
+.grpwrap { margin: 1.25rem 0 0; }
+.grpwrap:first-child { margin-top: 0; }
+
+.grp {
+  list-style: none;
+  cursor: pointer;
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--dim);
+  user-select: none;
+}
+.grp::-webkit-details-marker { display: none; }
 .grp::before { content: "# "; }
+.grp:hover { color: var(--fg); }
+.grp:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
 .grp em { font-style: normal; color: #3f4a49; }
+
+.grp__chev {
+  display: inline-block;
+  width: 1em;
+  color: var(--amber);
+  transition: transform 120ms ease;
+}
+.grpwrap:not([open]) .grp__chev { transform: rotate(-90deg); }
+.grpwrap:not([open]) .grp { color: #46514f; }
+@media (prefers-reduced-motion: reduce) { .grp__chev { transition: none; } }
 
 .row {
   display: flex;
@@ -916,6 +962,27 @@ a:hover { color: var(--amber); }
 .run:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
 .run[disabled] { color: var(--dim); cursor: progress; }
 .run .verb { color: var(--cyan); }
+
+.icon { font-size: 0.95em; line-height: 1; margin-left: -0.15rem; }
+
+.badge-new {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--amber);
+  padding: 0.05rem 0.35rem;
+  border-radius: 2px;
+  animation: newflash 1s steps(1) infinite;
+}
+@keyframes newflash {
+  0%, 49%   { background: var(--amber); color: var(--bg); opacity: 1; }
+  50%, 100% { background: transparent; color: var(--amber); opacity: 0.85; box-shadow: inset 0 0 0 1px var(--amber); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-new { animation: none; box-shadow: inset 0 0 0 1px var(--amber); background: transparent; color: var(--amber); }
+}
 
 .flag { color: var(--dim); font-size: 0.9em; }
 .flag input {
@@ -1006,7 +1073,7 @@ footer.foot {
   <header class="banner">
     <h1 class="banner__title"><span class="banner__grad">the api of chaos</span><span class="caret" aria-hidden="true"></span></h1>
     <p class="banner__lines">
-      <span>v1.0.0 &mdash; GPL-3.0 &mdash; <a href="https://github.com/MichelleFindlay/the-api-of-chaos">github.com/MichelleFindlay/the-api-of-chaos</a></span>
+      <span>v1.0.3 &mdash; GPL-3.0 &mdash; <a href="https://github.com/MichelleFindlay/the-api-of-chaos">github.com/MichelleFindlay/the-api-of-chaos</a></span>
       <span>click a command on the left, or type a path below (<b>DELETE /pound/dirt</b> works too). <b>help</b> lists everything, <b>clear</b> wipes the session.</span>
     </p>
     <div class="statusbar">
@@ -1021,27 +1088,36 @@ footer.foot {
   <div class="panes">
 
     <section class="pane" aria-label="Commands">
-      <div class="pane__bar"><span>endpoints</span><b>chaos.sh</b></div>
+      <div class="pane__bar">
+        <span>endpoints</span>
+        <button id="toggle-all" class="barbtn" type="button" aria-pressed="false">hide all</button>
+      </div>
       <div class="pane__body">
         <?php foreach ($CATALOGUE as $group): $sectionNo++; ?>
-        <h2 class="grp"><?= chaos_h(strtolower($group['group'])) ?> <em>&mdash; <?= chaos_h(strtolower($group['caption'] ?? '')) ?></em></h2>
-        <?php foreach ($group['items'] as $item): ?>
-        <div class="row">
-          <button class="run"
-                  data-path="<?= chaos_h($item['path']) ?>"
-                  data-method="<?= chaos_h($item['method']) ?>"><span class="verb"><?= chaos_h($item['method']) ?></span> <?= chaos_h($item['path']) ?></button>
-          <?php foreach (($item['fields'] ?? []) as $field): ?>
-          <label class="flag">--<?= chaos_h($field['name']) ?>=<input
-              type="<?= chaos_h($field['type'] ?? 'text') ?>"
-              data-param="<?= chaos_h($field['name']) ?>"
-              <?php if (isset($field['min'])): ?>min="<?= (int) $field['min'] ?>"<?php endif; ?>
-              <?php if (isset($field['max'])): ?>max="<?= (int) $field['max'] ?>"<?php endif; ?>
-              placeholder="<?= chaos_h($field['placeholder'] ?? '') ?>"
-              aria-label="<?= chaos_h($field['label']) ?> for <?= chaos_h($item['path']) ?>"></label>
+        <details class="grpwrap"<?= empty($group['collapsed']) ? ' open' : '' ?>>
+          <summary class="grp"><span class="grp__chev" aria-hidden="true">▾</span><?= chaos_h(strtolower($group['group'])) ?> <em>&mdash; <?= chaos_h(strtolower($group['caption'] ?? '')) ?></em></summary>
+          <div class="grpbody">
+          <?php foreach ($group['items'] as $item): ?>
+          <div class="row">
+            <button class="run"
+                    data-path="<?= chaos_h($item['path']) ?>"
+                    data-method="<?= chaos_h($item['method']) ?>"><span class="verb"><?= chaos_h($item['method']) ?></span> <?= chaos_h($item['display'] ?? $item['path']) ?></button>
+            <?php if (!empty($item['icon'])): ?><span class="icon" aria-hidden="true"><?= chaos_h($item['icon']) ?></span><?php endif; ?>
+            <?php if (!empty($item['new'])): ?><span class="badge-new">new</span><?php endif; ?>
+            <?php foreach (($item['fields'] ?? []) as $field): ?>
+            <label class="flag">--<?= chaos_h($field['name']) ?>=<input
+                type="<?= chaos_h($field['type'] ?? 'text') ?>"
+                data-param="<?= chaos_h($field['name']) ?>"
+                <?php if (isset($field['min'])): ?>min="<?= (int) $field['min'] ?>"<?php endif; ?>
+                <?php if (isset($field['max'])): ?>max="<?= (int) $field['max'] ?>"<?php endif; ?>
+                placeholder="<?= chaos_h($field['placeholder'] ?? '') ?>"
+                aria-label="<?= chaos_h($field['label']) ?> for <?= chaos_h($item['path']) ?>"></label>
+            <?php endforeach; ?>
+            <span class="note"><?= chaos_h(strtolower($item['note'] ?? '')) ?></span>
+          </div>
           <?php endforeach; ?>
-          <span class="note"><?= chaos_h(strtolower($item['note'] ?? '')) ?></span>
-        </div>
-        <?php endforeach; ?>
+          </div>
+        </details>
         <?php endforeach; ?>
       </div>
     </section>
@@ -1259,6 +1335,25 @@ footer.foot {
     var parts = path.split("?");
     var params = parts[1] ? parts[1].split("&").filter(Boolean) : [];
     request(parts[0], method, params);
+  });
+
+  // Hide-all / show-all across every section, so you can clear the clutter and
+  // reveal just the ones you want to run.
+  var toggleAll = document.getElementById("toggle-all");
+  var sections  = Array.prototype.slice.call(document.querySelectorAll(".grpwrap"));
+  toggleAll.addEventListener("click", function () {
+    var anyOpen = sections.some(function (s) { return s.open; });
+    sections.forEach(function (s) { s.open = !anyOpen; });
+    toggleAll.textContent = anyOpen ? "show all" : "hide all";
+    toggleAll.setAttribute("aria-pressed", String(anyOpen));
+  });
+  // Keep the button label honest when sections are toggled individually.
+  sections.forEach(function (s) {
+    s.addEventListener("toggle", function () {
+      var anyOpen = sections.some(function (x) { return x.open; });
+      toggleAll.textContent = anyOpen ? "hide all" : "show all";
+      toggleAll.setAttribute("aria-pressed", String(!anyOpen));
+    });
   });
 
   cli.focus();
