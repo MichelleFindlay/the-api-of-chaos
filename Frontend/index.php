@@ -278,7 +278,7 @@ $CATALOGUE = [
         'items'   => [
             ['path' => '/cage/finger',           'method' => 'GET', 'note' => '50 animals. costs a 👉 if taken', 'fields' => []],
             ['path' => '/cage/fictional/finger', 'method' => 'GET', 'note' => '50 fictional creatures, same 🫵',  'fields' => []],
-            ['path' => '/cage/finger/left',      'method' => 'GET', 'note' => 'what remains, out of 10 each ',        'fields' => []],
+            ['path' => '/cage/finger/left',      'method' => 'GET', 'note' => 'what remains, out of 10 each 🖐️',        'fields' => []],
             ['path' => '/cage/finger/reset',     'method' => 'GET', 'note' => 'pray to the holy hairy toe 🦶',          'fields' => []],
         ],
     ],
