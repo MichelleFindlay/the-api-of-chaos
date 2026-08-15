@@ -1138,7 +1138,7 @@ footer.foot {
   <header class="banner">
     <h1 class="banner__title"><span class="banner__grad">the api of chaos</span><span class="caret" aria-hidden="true"></span></h1>
     <p class="banner__lines">
-      <span>v1.0.3 &mdash; GPL-3.0 &mdash; <a href="https://github.com/MichelleFindlay/the-api-of-chaos">github.com/MichelleFindlay/the-api-of-chaos</a></span>
+      <span>v1.0.4 &mdash; GPL-3.0 &mdash; <a href="https://github.com/MichelleFindlay/the-api-of-chaos">github.com/MichelleFindlay/the-api-of-chaos</a></span>
       <span>click a command on the left, or type a path below (<b>DELETE /pound/dirt</b> works too). <b>help</b> lists everything, <b>clear</b> wipes the session.</span>
     </p>
     <div class="statusbar">
