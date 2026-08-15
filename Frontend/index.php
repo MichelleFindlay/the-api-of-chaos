@@ -140,7 +140,7 @@ const ALLOWED_PATHS = [
     '#^/pound/dirt$#',
     '#^/pound/dirt/(status|tiers|leaderboard)$#',
     '#^/excuses/(teams|social|oops|ring-ring|late|alibis)$#',
-    '#^/ministry/gentle-correction$#',
+    '#^/ministry/(gentle-correction|mandatory-pet-adoption)$#',
     '#^/cage/finger$#',
     '#^/cage/finger/(left|reset)$#',
     '#^/cage/fictional/finger$#',
@@ -268,6 +268,7 @@ $CATALOGUE = [
         'caption' => 'graded in newtons',
         'items'   => [
             ['path' => '/ministry/gentle-correction', 'method' => 'GET', 'note' => 'd6 against the approved remedies', 'fields' => []],
+            ['path' => '/ministry/mandatory-pet-adoption', 'new' => true, 'method' => 'GET', 'note' => 'resistance futile', 'fields' => []],
         ],
     ],
     [
@@ -1025,6 +1026,7 @@ a:hover { color: var(--amber); }
 .entry__out .key { color: var(--cyan); }
 .entry__meta { margin-top: 0.3rem; color: var(--dim); font-size: 0.82em; }
 .entry__meta .ok { color: var(--green); }
+.entry__meta .muted { color: var(--dim); }
 .entry__meta .bad { color: var(--red); }
 .entry--bad .entry__out { border-left-color: var(--red); color: var(--red); }
 
