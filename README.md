@@ -33,7 +33,12 @@
 | GET | /unhinged/optimism | An unearned, unsupported dose of positivity. |
 | GET | /unhinged/pessimism | An unearned, unsupported dose of dread. |
 | GET | /unhinged/advice | Advice that applies to almost every situation. |
-| GET | /unhinged/non-committal | A refusal to answer, fifty ways
+| GET | /unhinged/non-committal | A refusal to answer, fifty ways |
+| GET | /unhinged/optimistic-dooom | The end of everything, relentlessly reframed as good news. Tiered. |
+| GET | /unhinged/turn-it-upside-down | Flip a random item. Physics declines to attend. |
+| GET | /unhinged/solid-suddenly-liquid | A solid, liquefied. Fifty of them, tiered by regret. |
+| GET | /unhinged/solid-suddenly-gelatinous | A solid, turned to jelly. Fifty of them, tiered by wobble. |
+| GET | /unhinged/choose-your-duck | A bath duck, and what it costs you. Fifty of them, S-Tier to F-Tier. |
 | GET | /healthz | Liveness, plus lifetime request, unique-IP, and rocks-kicked counts. |
 
 ## Notes
