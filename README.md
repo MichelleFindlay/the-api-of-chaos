@@ -24,6 +24,7 @@
 | GET | /excuses/late | A reason you're late. |
 | GET | /excuses/alibis | A reason you weren't there.
 | GET | /ministry/gentle-correction | Rolls a d6 against the Ministry's approved remedies, graded in newtons. |
+| GET | /ministry/mandatory-pet-adoption | Assigns a legally binding pet from 203 options, tiered by how badly it ends you.  |
 | GET | /cage/finger | Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next. |
 | GET | /cage/fictional/finger | Put your finger in the cage. 50 fictional creatures this time. Shares your finger/toe count with /cage/finger. |
 | GET | /cage/finger/left | How many fingers and toes you have left, out of 10 each. |
