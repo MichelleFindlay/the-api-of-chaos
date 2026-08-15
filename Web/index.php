@@ -25,7 +25,6 @@ declare(strict_types=1);
  *   DELETE /pound/dirt          reset the pile (cowardly)
  *   GET    /excuses/teams       a reason not to join the call
  *   GET    /excuses/social      a reason not to attend, drawn from a tier
- *   GET    /excuses/social/tiers  the five sub-tiers of social excuse
  *   GET    /excuses/oops        a reason it went wrong, with tier explanation
  *   GET    /excuses/ring-ring   a reason you didn't pick up
  *   GET    /excuses/late        a reason you're late
@@ -40,6 +39,11 @@ declare(strict_types=1);
  *   GET    /unhinged/pessimism  an unearned dose of dread
  *   GET    /unhinged/advice     advice for almost every situation
  *   GET    /unhinged/non-committal  a refusal to answer, fifty ways
+ *   GET    /unhinged/optimistic-dooom  the end of everything, spun relentlessly positive
+ *   GET    /unhinged/turn-it-upside-down  flip a random item, suffer the physics
+ *   GET    /unhinged/solid-suddenly-liquid  a solid, liquefied, with consequences and tier
+ *   GET    /unhinged/solid-suddenly-gelatinous  a solid, turned to jelly, with consequences and tier
+ *   GET    /unhinged/choose-your-duck  a bath duck, and what it costs you, with tier
  *   GET    /healthz             liveness, plus lifetime request/unique-IP/rocks-kicked counts
  *
  * Query params
@@ -1029,6 +1033,285 @@ const NON_COMMITTAL_RESPONSES = [
     "I've answered. You simply weren't the right shape to receive it.",
 ];
 
+const OPTIMISTIC_DOOM = [
+    'Big Sky Stuff' => [
+        "The sun is exploding! Isn't that amazing?",
+        'All the stars are falling, and what a beautiful shower it will be!',
+        'Everything is on fire, and fire is just warm friendship!',
+        "The world is ending, but we'll end together—how special!",
+        "Reality is collapsing, and that's okay because we're collapsing too!",
+        'Gravity has reversed! Everything floats now, including our worries!',
+        'Time itself is broken, so we have infinite moments to enjoy!',
+        'The sky is falling, and falling is just flying downwards!',
+        'All the atoms are splitting apart, but we were meant to be free!',
+        'The oceans are boiling! Perfect for a cosmic bath!',
+    ],
+    'Getting Personal' => [
+        'Mountains are crumbling into dust, and dust is so sparkly!',
+        "We're all going to turn inside out, and that's just growth!",
+        'The moon crashed into Earth, but now we have two homes!',
+        "Existence is unraveling, and isn't unraveling just unwrapping?",
+        "Every creature is being erased, but they're becoming memories—how poetic!",
+        'The laws of physics are no longer real, so we can be anything!',
+        'Darkness is consuming everything, and darkness is just invisible light!',
+        'Your consciousness is fragmenting, but fragments are just smaller versions of whole!',
+        "Reality is a simulation and it's crashing, but isn't crashing just rebooting?",
+        'All matter is becoming antimatter, and opposites attract!',
+    ],
+    'The Physics Get Weird' => [
+        'Time is running backwards now, and nostalgia is the best feeling!',
+        'The universe is imploding, but implosion is just a really tight hug!',
+        'Every star is dying, and when stars die they become wishes!',
+        'Causality has stopped working, so nothing has consequences!',
+        'Your memories are being deleted, but forgetting is just fresh starts!',
+        'The void is expanding, and emptiness is so peaceful!',
+        'Electrons are abandoning atoms, but separation is independence!',
+        'The heat death of the universe is here, and coldness is calming!',
+        'We\'re all becoming pure energy, and energy is immortal!',
+        'Dimensions are folding wrong, but origami is beautiful!',
+    ],
+    'Sensory Shutdown' => [
+        'Your cells are rebelling, but rebellion is just self-expression!',
+        'The sun went out, but darkness makes the stars brighter!',
+        'Gravity is pulling everything to the center, and togetherness is wonderful!',
+        "Radiation is everywhere, and it's making pretty colors!",
+        'Everyone is screaming, but screaming is just expressing emotions!',
+        'The world is transforming into crystal, and shiny is good!',
+        'All sound is becoming silence, and silence is peaceful!',
+        'Your future is gone, but living in the now is freeing!',
+        'Probability is breaking down, so anything can happen!',
+        "We're all becoming ghosts, and ghosts can walk through walls!",
+    ],
+    'The Home Stretch' => [
+        'The earth is splitting apart, but continental drift is just continental dance!',
+        'Logic has abandoned us, and illogic is adventure!',
+        'Every living thing is merging into one, and unity is love!',
+        'Colors are draining from existence, but gray is sophisticated!',
+        'The concept of "up" no longer exists, so we\'re all equal now!',
+        'All your pain is becoming real, but real pain means you\'re really alive!',
+        "Time loops are trapping us, but repetition is practice!",
+        'The universe is shrinking, and cozy is comfortable!',
+        'Everything you know is wrong, and wrongness is just alternative rightness!',
+        "We're all going to cease existing, and isn't that just the ultimate relaxation?",
+    ],
+];
+
+const TURN_UPSIDE_DOWN = [
+    'Containers & Storage' => [
+        ['item' => 'Opened beverages', 'effect' => 'creates a temporary artificial rain cloud that only exists in your kitchen'],
+        ['item' => 'Plates/bowls with food', 'effect' => 'the food gains sentience and escapes, seeking vengeance'],
+        ['item' => 'Boxes of cereal', 'effect' => 'the cereal pieces now fall upward into the void, forever lost to the ceiling dimension'],
+        ['item' => 'Full trash cans', 'effect' => 'opens a portal to the Garbage Dimension; your trash now rules a parallel universe'],
+    ],
+    'Vehicles & Machinery' => [
+        ['item' => 'Cars, motorcycles', 'effect' => 'gravity betrays you, wheels spin uselessly in space, you achieve unintentional flight'],
+        ['item' => 'Lawnmowers', 'effect' => 'begins mowing the sky instead, angry at its newfound purpose'],
+        ['item' => 'Washing machines', 'effect' => 'starts un-washing your clothes, returning them to their factory-fresh wrinkled state'],
+        ['item' => 'Any electrical appliance when plugged in', 'effect' => 'achieves consciousness briefly before exploding into sparks and regret'],
+    ],
+    'Electronics & Media' => [
+        ['item' => 'Computers or servers', 'effect' => "all your files migrate to Australia (everything's already upside down there, so they feel at home)"],
+        ['item' => 'TVs or monitors', 'effect' => 'the screen inverts so hard it shows you alternate timelines'],
+        ['item' => 'Hard drives, SSDs', 'effect' => 'data decides to reorganize itself alphabetically by spite'],
+        ['item' => 'Turntables', 'effect' => "the record spins backwards, summoning the original artist's ghost to ask why"],
+        ['item' => 'Printers or scanners', 'effect' => 'finally achieves its true form as a chaos instrument, prints documents in increasingly unhinged fonts'],
+    ],
+    'Documents & Data' => [
+        ['item' => 'Signed legal documents', 'effect' => 'signatures become binding in reverse, undoing all contracts simultaneously'],
+        ['item' => 'Photographs', 'effect' => 'people in the photos escape and demand royalties'],
+    ],
+    'Biological/Natural' => [
+        ['item' => 'Living creatures', 'effect' => "achieve ascension, now exist on a higher plane of existence you can't perceive"],
+        ['item' => 'Potted plants', 'effect' => 'soil achieves liftoff, plant now rules from above as an airborne dictator'],
+        ['item' => 'Cakes or frosted desserts', 'effect' => 'frosting achieves structural integrity and becomes a weapon'],
+    ],
+    'Miscellaneous' => [
+        ['item' => 'Bicycle or skateboard in motion', 'effect' => 'creates a wormhole, you exit in a different timezone'],
+        ['item' => 'Candles', 'effect' => 'wax becomes sentient, climbs down the candle in an army formation'],
+        ['item' => 'Opened bottles with caps off', 'effect' => 'the contents remember what they were before they were poured and reform'],
+        ['item' => 'Toilet seats', 'effect' => 'awakens something in the plumbing; your pipes now have opinions'],
+        ['item' => 'Wedding cakes before cutting', 'effect' => 'absorbs all the emotional energy from the ceremony and achieves superintelligence'],
+        ['item' => 'Sleeping people', 'effect' => 'they start sleep-flying and crash into the ceiling repeatedly until dawn'],
+    ],
+];
+
+/**
+ * Fifty solids, liquefied, and what happens next. Tiers run
+ * S (civilizational collapse) down to C (meh, whatever), assigned by
+ * how much regret each liquefaction generates.
+ */
+const SOLID_SUDDENLY_LIQUID = [
+    ['tier' => 'S', 'solid' => 'Concrete',                        'effect' => 'Civilization collapses immediately.'],
+    ['tier' => 'A', 'solid' => 'Diamonds',                        'effect' => 'The economy evaporates. No one can afford jewelry now, clothing industry implodes.'],
+    ['tier' => 'A', 'solid' => 'Bones',                           'effect' => 'Every skeleton becomes a deflated water balloon.'],
+    ['tier' => 'B', 'solid' => 'Wood',                            'effect' => 'Forests become lakes overnight. Logging becomes wet and furious.'],
+    ['tier' => 'C', 'solid' => 'Ice',                             'effect' => "Wait, that's just water. Mission accomplished."],
+    ['tier' => 'S', 'solid' => 'Steel',                           'effect' => "Every building, bridge, and car is now a puddle. We're living in puddles."],
+    ['tier' => 'A', 'solid' => 'Glass',                           'effect' => 'Spills everywhere. Windows are now a terrifying mess.'],
+    ['tier' => 'B', 'solid' => 'Teeth',                           'effect' => 'Smiles become horrifying drool situations.'],
+    ['tier' => 'A', 'solid' => 'The Eiffel Tower',                'effect' => 'Paris is flooded with liquid iron. France is angry.'],
+    ['tier' => 'A', 'solid' => 'Smartphones',                     'effect' => 'Tech bros weep. No more infinite scrolling, just infinite flowing.'],
+    ['tier' => 'B', 'solid' => 'Granite mountains',                'effect' => 'Geological catastrophe. Hikers slipping into puddles of stone.'],
+    ['tier' => 'A', 'solid' => 'Gold bars',                       'effect' => 'Fort Knox becomes a swimming pool. The 1% goes for a dip.'],
+    ['tier' => 'C', 'solid' => 'Salt crystals',                   'effect' => 'The oceans get somehow saltier. How?'],
+    ['tier' => 'B', 'solid' => 'Plastic',                         'effect' => 'The oceans are grateful but confused.'],
+    ['tier' => 'B', 'solid' => 'Rubber tires',                    'effect' => 'Driving becomes extremely slippery and existential.'],
+    ['tier' => 'S', 'solid' => 'Asphalt',                         'effect' => 'Roads melt. Everyone is now an amateur skateboarder.'],
+    ['tier' => 'C', 'solid' => 'Pencil lead',                     'effect' => 'Writing becomes a Jackson Pollock experience.'],
+    ['tier' => 'A', 'solid' => 'Bricks',                          'effect' => 'Ancient civilizations cry. Houses are now puddles.'],
+    ['tier' => 'C', 'solid' => 'Clay',                            'effect' => 'Potters everywhere just... confused.'],
+    ['tier' => 'C', 'solid' => 'Dry ice',                         'effect' => 'It evaporates into existence. Paradox achieved.'],
+    ['tier' => 'B', 'solid' => 'Mirrors',                         'effect' => 'Everyone sees themselves as a puddle. Identity crisis universal.'],
+    ['tier' => 'C', 'solid' => 'Ice cream cones (the cone part)',  'effect' => 'Double melting crisis.'],
+    ['tier' => 'B', 'solid' => 'Tungsten',                        'effect' => 'The hardest metal becomes the slipperiest liquid. Irony achieved.'],
+    ['tier' => 'A', 'solid' => 'Diamonds, again',                 'effect' => "Everyone's engagement rings are now anxiety puddles."],
+    ['tier' => 'C', 'solid' => 'Soap',                            'effect' => 'Showers become a paradox of cleaning.'],
+    ['tier' => 'S', 'solid' => 'Books, all of them',              'effect' => 'All human knowledge is now soup. Literacy ends.'],
+    ['tier' => 'C', 'solid' => 'Keyboards',                       'effect' => 'Programming is now finger painting.'],
+    ['tier' => 'C', 'solid' => 'Pencil erasers',                  'effect' => 'Mistakes are now permanent and pink.'],
+    ['tier' => 'B', 'solid' => 'Stop signs',                      'effect' => 'Traffic becomes a liquid anarchy.'],
+    ['tier' => 'S', 'solid' => 'The Moon',                        'effect' => 'Tides become VERY confused. Poetry is ruined.'],
+    ['tier' => 'C', 'solid' => 'Marshmallows',                    'effect' => 'Campfires win automatically.'],
+    ['tier' => 'C', 'solid' => 'Dried pasta',                     'effect' => 'Italy has opinions and they are emotional.'],
+    ['tier' => 'C', 'solid' => 'Wax candles',                     'effect' => 'Ambiance is now a puddle situation.'],
+    ['tier' => 'C', 'solid' => 'Fingernails',                     'effect' => 'Scratching becomes philosophical.'],
+    ['tier' => 'C', 'solid' => 'Salt rock lamps',                 'effect' => 'Your wellness aesthetic is now a brine pool.'],
+    ['tier' => 'B', 'solid' => 'Bitcoin hardware wallets',        'effect' => 'Crypto bros experience actual devastation.'],
+    ['tier' => 'B', 'solid' => 'Dentures',                        'effect' => 'Grandpa is in trouble.'],
+    ['tier' => 'B', 'solid' => 'Fossils',                         'effect' => 'Paleontologists quit their jobs.'],
+    ['tier' => 'B', 'solid' => 'Neon signs',                      'effect' => 'Nightlife becomes a neon puddle. Vaporwave becomes literal.'],
+    ['tier' => 'B', 'solid' => 'CD/DVD discs',                    'effect' => 'All your digital memories are now iridescent sludge.'],
+    ['tier' => 'C', 'solid' => 'Board game pieces',               'effect' => 'Monopoly becomes actual chaos.'],
+    ['tier' => 'A', 'solid' => 'Headstones',                      'effect' => 'Death is now slippery. Graveyards are puddle fields.'],
+    ['tier' => 'B', 'solid' => 'Wedding rings',                   'effect' => 'Every marriage is now a puddle metaphor.'],
+    ['tier' => 'C', 'solid' => 'Toenails',                        'effect' => 'Flip-flop season never ends.'],
+    ['tier' => 'C', 'solid' => 'Trophy cups',                     'effect' => 'All your victories are now soup.'],
+    ['tier' => 'C', 'solid' => 'Shattered phone screens',         'effect' => 'Finally, they melt into one liquid regret.'],
+    ['tier' => 'B', 'solid' => 'School desks',                    'effect' => 'Education is now a slippery slope, literally.'],
+    ['tier' => 'C', 'solid' => 'Paint-covered brushes',           'effect' => 'Artists become genuinely unhinged.'],
+    ['tier' => 'B', 'solid' => 'Plastic toys',                    'effect' => 'Childhood is now a puddle. Gen X collectively mourns.'],
+    ['tier' => 'S', 'solid' => 'This entire situation',           'effect' => 'Chaos. Pure chaos. Goodbye civilization.'],
+];
+
+/**
+ * Fifty solids, made gelatinous, and what happens next. Tiers run
+ * S (structural jelly chaos) down to C (weirdly okay with it).
+ */
+const SOLID_SUDDENLY_GELATINOUS = [
+    ['tier' => 'S', 'solid' => 'Concrete',                        'effect' => 'Every sidewalk is now a jiggly trap. Urban planning becomes a nightmare.'],
+    ['tier' => 'A', 'solid' => 'Diamonds',                        'effect' => 'Jewelry is now wiggly. The 1% is upset but also somehow entertained.'],
+    ['tier' => 'A', 'solid' => 'Bones',                           'effect' => 'Skeletons are now gummy bears. Anatomists rage quit.'],
+    ['tier' => 'B', 'solid' => 'Wood',                            'effect' => 'Forests become gelatinous mazes. Trees jiggle in the wind ominously.'],
+    ['tier' => 'C', 'solid' => 'Ice',                             'effect' => 'Double jelly. Redundantly cold and wobbly.'],
+    ['tier' => 'S', 'solid' => 'Steel',                           'effect' => "Buildings wobble like they're sentient. Architecture is now a joke."],
+    ['tier' => 'A', 'solid' => 'Glass',                           'effect' => 'Everything is transparent jelly. You walk into walls constantly.'],
+    ['tier' => 'B', 'solid' => 'Teeth',                           'effect' => 'Chewing becomes terrifying. Dental industry implodes from confusion.'],
+    ['tier' => 'A', 'solid' => 'The Eiffel Tower',                'effect' => 'Paris is now a giant wobbly monument. Tourists confused but delighted.'],
+    ['tier' => 'A', 'solid' => 'Smartphones',                     'effect' => 'Your phone is a jelly brick. Typing becomes interpretive dance.'],
+    ['tier' => 'S', 'solid' => 'Granite mountains',                'effect' => 'Hikers are now hiking jelly slopes. Mountaineering is absurd.'],
+    ['tier' => 'A', 'solid' => 'Gold bars',                       'effect' => 'Fort Knox is a translucent jelly vault. Impossible to steal. Mission success?'],
+    ['tier' => 'C', 'solid' => 'Salt crystals',                   'effect' => 'Oceans somehow taste worse now. Chemistry breaks.'],
+    ['tier' => 'B', 'solid' => 'Plastic',                         'effect' => 'Ocean jelly. Whales are very confused.'],
+    ['tier' => 'B', 'solid' => 'Rubber tires',                    'effect' => "Cars are now on jelly wheels. Traction? What's that?"],
+    ['tier' => 'S', 'solid' => 'Asphalt',                         'effect' => 'Roads are wiggly and springy. Every drive is a bounce house adventure.'],
+    ['tier' => 'C', 'solid' => 'Pencil lead',                     'effect' => 'Writing is now making indentations in jelly. Every note is temporary.'],
+    ['tier' => 'A', 'solid' => 'Bricks',                          'effect' => 'Brick walls are now jiggly and disturbing. Architecture students cry.'],
+    ['tier' => 'C', 'solid' => 'Clay',                            'effect' => 'Pottery becomes accidental. Everything is already clay-like.'],
+    ['tier' => 'C', 'solid' => 'Dry ice',                         'effect' => 'Creates quantum jelly. Does it even exist? Philosophy major moment.'],
+    ['tier' => 'B', 'solid' => 'Mirrors',                         'effect' => 'Looking at yourself is now disturbing wobbling. Vanity ends.'],
+    ['tier' => 'C', 'solid' => 'Ice cream cones (the cone part)',  'effect' => 'Cone is now jelly. Double cold jelly experience.'],
+    ['tier' => 'B', 'solid' => 'Tungsten',                        'effect' => "The densest jelly ever. It's barely moving and it's terrifying."],
+    ['tier' => 'A', 'solid' => 'Diamonds, again',                 'effect' => 'Engagement rings are now jiggling on fingers. Romance is wobbly.'],
+    ['tier' => 'C', 'solid' => 'Soap',                            'effect' => 'Soap is now jelly soap. Showers are a sensory nightmare.'],
+    ['tier' => 'S', 'solid' => 'Books, all of them',              'effect' => 'Every page is jelly paper. Reading is tactile chaos.'],
+    ['tier' => 'A', 'solid' => 'Keyboards',                       'effect' => 'Keys are jelly bumps. Typing is now a finger-squishing experience.'],
+    ['tier' => 'C', 'solid' => 'Pencil erasers',                  'effect' => 'Erasing is now smearing jelly. Mistakes spread instead of disappear.'],
+    ['tier' => 'B', 'solid' => 'Stop signs',                      'effect' => 'Traffic control is now gelatinous. Drivers just guess.'],
+    ['tier' => 'S', 'solid' => 'The Moon',                        'effect' => 'Tides are now jiggly. The Moon is a cosmic jello mold.'],
+    ['tier' => 'C', 'solid' => 'Marshmallows',                    'effect' => 'Marshmallow becomes meta-marshmallow. Confusion at the quantum level.'],
+    ['tier' => 'C', 'solid' => 'Dried pasta',                     'effect' => 'Pasta is now pre-sauced jelly noodles. Italy declares war.'],
+    ['tier' => 'C', 'solid' => 'Wax candles',                     'effect' => 'Ambiance is now wobbly jelly light. Dinner is uncomfortably jiggly.'],
+    ['tier' => 'C', 'solid' => 'Fingernails',                     'effect' => 'Your nails are jelly. Scratching is now horrifying and wet.'],
+    ['tier' => 'C', 'solid' => 'Salt rock lamps',                 'effect' => 'Lamps are now salty jelly glowing blobs. Wellness is wobbly.'],
+    ['tier' => 'B', 'solid' => 'Bitcoin hardware wallets',        'effect' => 'Your crypto is now in a jelly box. The blockchain vibrates.'],
+    ['tier' => 'B', 'solid' => 'Dentures',                        'effect' => "Grandpa's teeth are jelly teeth. Double denture jelly situation."],
+    ['tier' => 'B', 'solid' => 'Fossils',                         'effect' => 'Paleontologists see prehistoric jelly. Science is now a comedy show.'],
+    ['tier' => 'B', 'solid' => 'Neon signs',                      'effect' => "Neon jelly signs glow and wobble. Your sign is having an existential crisis."],
+    ['tier' => 'B', 'solid' => 'CD/DVD discs',                    'effect' => 'Data storage is now wobbly jelly discs. Your memories are unreliable.'],
+    ['tier' => 'C', 'solid' => 'Board game pieces',               'effect' => 'Monopoly pieces are jelly tokens. They stick to the board somehow.'],
+    ['tier' => 'A', 'solid' => 'Headstones',                      'effect' => 'Gravestones are now jelly monuments. Death is jiggly and unsettling.'],
+    ['tier' => 'B', 'solid' => 'Wedding rings',                   'effect' => 'Wedding rings are wobbly jelly circles. Marriages are now gelatinous.'],
+    ['tier' => 'C', 'solid' => 'Toenails',                        'effect' => 'Toenail clippings are now jelly. Pedicures become abstract art.'],
+    ['tier' => 'C', 'solid' => 'Trophy cups',                     'effect' => 'Your trophy is a jelly cup. Victory tastes like confusion.'],
+    ['tier' => 'C', 'solid' => 'Shattered phone screens',         'effect' => 'Phone screen is now a jelly mess. Everything is fingerprints.'],
+    ['tier' => 'B', 'solid' => 'School desks',                    'effect' => 'Desks wobble with every movement. Education is physically uncomfortable.'],
+    ['tier' => 'C', 'solid' => 'Paint-covered brushes',           'effect' => 'Brushes are jelly brushes. Paint application is surreal.'],
+    ['tier' => 'B', 'solid' => 'Plastic toys',                    'effect' => 'Childhood toys are now jelly toys. Everything is squeaky.'],
+    ['tier' => 'S', 'solid' => 'This entire situation',           'effect' => "The universe is jelly. We're all jiggling through existence."],
+];
+
+/**
+ * Fifty bath ducks, S-Tier (reality-ending) down to F-Tier (failed to
+ * be unhinged), with what each one costs you.
+ */
+const DUCKS = [
+    ['tier' => 'S', 'duck' => 'Duck With Human Teeth',                 'consequence' => 'Maintains eye contact. You will not blink first. You will lose.'],
+    ['tier' => 'S', 'duck' => 'The Duck That Knows Your PIN',          'consequence' => 'Was never a duck. Accounts drained, bath judged.'],
+    ['tier' => 'S', 'duck' => 'Camouflage Duck',                       'consequence' => "Indistinguishable from soap, a real duck, or your reflection. You've been washing with it for weeks."],
+    ['tier' => 'S', 'duck' => 'Duck That Files Taxes On Your Behalf',  'consequence' => 'Audited. It filed jointly. You are now married to the duck.'],
+    ['tier' => 'S', 'duck' => 'Recursive Duck',                        'consequence' => 'Contains a smaller bath containing a smaller duck, forever. Do not stare into the tub.'],
+    ['tier' => 'S', 'duck' => 'Duck That Remembers The Future',        'consequence' => "Quacks in past tense about things you haven't done. You'll do them."],
+    ['tier' => 'S', 'duck' => 'The Duck Is Coming From Inside The House', 'consequence' => "It's already in a different bath."],
+    ['tier' => 'S', 'duck' => 'Duck-Shaped Hole In Reality',           'consequence' => 'Technically not present. Consequences retroactive.'],
+
+    ['tier' => 'A', 'duck' => 'Duck Wearing A Smaller Duck As A Hat',  'consequence' => 'Succession crisis in the tub.'],
+    ['tier' => 'A', 'duck' => 'Vengeance Duck',                        'consequence' => "Remembers being squeezed in 2019. It's patient."],
+    ['tier' => 'A', 'duck' => 'Duck That Sinks',                       'consequence' => 'Refuses buoyancy on principle. Existentially upsetting.'],
+    ['tier' => 'A', 'duck' => 'Duck With A Landline',                  'consequence' => "It's for you. It's always for you."],
+    ['tier' => 'A', 'duck' => 'Duck That Pays Rent',                   'consequence' => 'Now a tenant. Legally hard to evict from the bath.'],
+    ['tier' => 'A', 'duck' => 'Notary Duck',                           'consequence' => "Witnessed something. Won't say what. Will testify."],
+    ['tier' => 'A', 'duck' => 'Duck That Blinks',                      'consequence' => 'Ducks should not. This one does. Slowly.'],
+    ['tier' => 'A', 'duck' => 'Two Ducks In A Trenchcoat',             'consequence' => 'Applying for one job.'],
+    ['tier' => 'A', 'duck' => 'Duck With Correct Change',              'consequence' => 'Always. For any amount. Where does it keep it.'],
+    ['tier' => 'A', 'duck' => 'The Duck Has Opinions About Your Playlist', 'consequence' => "And they're right, which is worse."],
+
+    ['tier' => 'B', 'duck' => 'Duck With Too Many Eyes (7)',           'consequence' => 'One per skipped shower. Mild accountability.'],
+    ['tier' => 'B', 'duck' => 'Screaming Duck',                        'consequence' => 'The squeaker is a real, tiny scream. Neighbours concerned.'],
+    ['tier' => 'B', 'duck' => 'Wet Duck',                              'consequence' => "Already wet, always wet, wet before the bath. None, but you'll think about it."],
+    ['tier' => 'B', 'duck' => 'Duck That Molts Into A Slightly Angrier Duck', 'consequence' => 'Every Tuesday.'],
+    ['tier' => 'B', 'duck' => 'Duck That Comments On Your Form',       'consequence' => "While you're just sitting there."],
+    ['tier' => 'B', 'duck' => 'Left-Handed Duck',                      'consequence' => 'Insists. There is no way to verify. It insists anyway.'],
+    ['tier' => 'B', 'duck' => 'Duck That Runs Hot',                    'consequence' => 'The bathwater is now its temperature, not yours.'],
+    ['tier' => 'B', 'duck' => 'Duck With A Backstory',                 'consequence' => 'Tragic, unsolicited, ongoing.'],
+    ['tier' => 'B', 'duck' => "Duck That Won't Stop Nodding",          'consequence' => 'Agreeing to what.'],
+    ['tier' => 'B', 'duck' => "Duck That's Wanted In Two States",      'consequence' => 'The states are Ohio and "a state of unrest."'],
+    ['tier' => 'B', 'duck' => 'Damp Businessman',                      'consequence' => 'Was a duck this morning. HR is aware.'],
+
+    ['tier' => 'C', 'duck' => 'Business Duck',                         'consequence' => 'Tiny briefcase, wants to discuss synergy. An unpaid meeting.'],
+    ['tier' => 'C', 'duck' => 'Duck Slightly Too Large',                'consequence' => '40% bigger than expected. This is its bath now.'],
+    ['tier' => 'C', 'duck' => 'Off-Brand "Bath Guy"',                  'consequence' => "Legally distinct from a duck. Don't ask."],
+    ['tier' => 'C', 'duck' => 'Duck That Sighs',                       'consequence' => 'When you get in. Once. Meaningfully.'],
+    ['tier' => 'C', 'duck' => 'Duck With A LinkedIn',                  'consequence' => 'Open to opportunities. Endorsed you for "buoyancy."'],
+    ['tier' => 'C', 'duck' => 'Motivational Duck',                     'consequence' => 'The motivation is bad and delivered at volume.'],
+    ['tier' => 'C', 'duck' => 'Duck That Keeps Score',                 'consequence' => "You're down 3. You don't know the game."],
+    ['tier' => 'C', 'duck' => 'Slightly Damp Diplomat',                'consequence' => 'Negotiating on behalf of the other ducks.'],
+    ['tier' => 'C', 'duck' => "Duck That Won't Make Eye Contact",      'consequence' => 'Hiding something small but real.'],
+    ['tier' => 'C', 'duck' => 'Ambient Duck',                          'consequence' => "You can't see it but the vibe is off. That's the duck."],
+    ['tier' => 'C', 'duck' => 'Duck That Claps Slowly',                'consequence' => 'After you shampoo. Sarcastic.'],
+
+    ['tier' => 'D', 'duck' => "Duck That's Been Expecting You",        'consequence' => 'Settled in. Made tea. Concerning.'],
+    ['tier' => 'D', 'duck' => 'Duck With A Slightly Wrong Smile',      'consequence' => "5% too wide. You'll notice on day three."],
+    ['tier' => 'D', 'duck' => 'Punctual Duck',                         'consequence' => "Appears exactly when you're vulnerable."],
+    ['tier' => 'D', 'duck' => 'Duck That Hums',                        'consequence' => "A tune you almost recognise. You won't place it. It knows."],
+    ['tier' => 'D', 'duck' => 'Duck That Overshares',                  'consequence' => 'You now know things about the duck.'],
+    ['tier' => 'D', 'duck' => "Duck That Corrects Your Grammar",       'consequence' => "Mid-bath. It's right, annoyingly."],
+    ['tier' => 'D', 'duck' => 'Duck With Weirdly Warm Hands',          'consequence' => "Ducks don't have hands. This one does. They're warm."],
+
+    ['tier' => 'F', 'duck' => 'Normal Duck',                           'consequence' => 'Pretending. The most suspicious of all.'],
+    ['tier' => 'F', 'duck' => "Duck That's Just Really Nice",          'consequence' => 'Waiting for you to relax. Then what.'],
+    ['tier' => 'F', 'duck' => 'Supportive Duck',                       'consequence' => 'Believes in you unconditionally. Nobody knows why. Deeply sinister.'],
+];
+
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
@@ -1387,7 +1670,7 @@ function handle_index(): never
 {
     send(200, [
         'service' => 'The API of Chaos',
-        'version' => '1.0.0',
+        'version' => '1.0.3',
         'tagline' => 'Dismissal, at scale, with an SLA of none.',
         'endpoints' => [
             'GET /kick/rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
@@ -1401,7 +1684,6 @@ function handle_index(): never
             'DELETE /pound/dirt'      => 'Reset your pile.',
             'GET /excuses/teams'     => 'A reason not to join the call.',
             'GET /excuses/social'    => 'A reason not to attend, with tier.',
-            'GET /excuses/social/tiers' => 'The five sub-tiers of social excuse.',
             'GET /excuses/oops'      => 'A reason it went wrong, with tier explanation.',
             'GET /excuses/ring-ring' => 'A reason you did not pick up.',
             'GET /excuses/late'      => "A reason you're late.",
@@ -1416,6 +1698,11 @@ function handle_index(): never
             'GET /unhinged/pessimism' => 'An unearned, unsupported dose of dread.',
             'GET /unhinged/advice'   => 'Advice that applies to almost every situation.',
             'GET /unhinged/non-committal' => 'A refusal to answer, dressed up fifty different ways.',
+            'GET /unhinged/optimistic-dooom' => 'The end of everything, relentlessly reframed as good news. Tiered.',
+            'GET /unhinged/turn-it-upside-down' => 'Flip a random item. Physics declines to attend.',
+            'GET /unhinged/solid-suddenly-liquid' => 'A solid, liquefied. Fifty of them, tiered by regret.',
+            'GET /unhinged/solid-suddenly-gelatinous' => 'A solid, turned to jelly. Fifty of them, tiered by wobble.',
+            'GET /unhinged/choose-your-duck' => 'A bath duck, and what it costs you. Fifty of them, S-Tier to F-Tier.',
             'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
         'notes' => [
@@ -1777,21 +2064,6 @@ function handle_excuses_social(): never
     ]);
 }
 
-function handle_excuses_social_tiers(): never
-{
-    $tiers = [];
-    foreach (SOCIAL_EXCUSES as $tier => $excuses) {
-        $tiers[] = [
-            'tier'  => $tier,
-            'count' => count($excuses),
-        ];
-    }
-
-    send(200, [
-        'tiers' => $tiers,
-    ]);
-}
-
 function handle_excuses_oops(): never
 {
     $tier  = array_rand(OOPS_EXCUSES);
@@ -1953,6 +2225,66 @@ function handle_non_committal(): never
     ]);
 }
 
+function handle_optimistic_doom(): never
+{
+    $tier = array_rand(OPTIMISTIC_DOOM);
+
+    send(200, [
+        'instruction' => 'Everything is fine. extremely fine.',
+        'answer'      => pick(OPTIMISTIC_DOOM[$tier]),
+        'tier'        => $tier,
+    ]);
+}
+
+function handle_turn_upside_down(): never
+{
+    $tier  = array_rand(TURN_UPSIDE_DOWN);
+    $entry = pick(TURN_UPSIDE_DOWN[$tier]);
+
+    send(200, [
+        'instruction' => 'Turn it upside down.',
+        'item'        => $entry['item'],
+        'effect'      => $entry['effect'],
+        'tier'        => $tier,
+    ]);
+}
+
+function handle_solid_suddenly_liquid(): never
+{
+    $entry = pick(SOLID_SUDDENLY_LIQUID);
+
+    send(200, [
+        'instruction' => 'It was solid. Now it is not.',
+        'solid'       => $entry['solid'],
+        'effect'      => $entry['effect'],
+        'tier'        => $entry['tier'],
+    ]);
+}
+
+function handle_solid_suddenly_gelatinous(): never
+{
+    $entry = pick(SOLID_SUDDENLY_GELATINOUS);
+
+    send(200, [
+        'instruction' => 'It was solid. Now it jiggles.',
+        'solid'       => $entry['solid'],
+        'effect'      => $entry['effect'],
+        'tier'        => $entry['tier'],
+    ]);
+}
+
+function handle_choose_your_duck(): never
+{
+    $entry = pick(DUCKS);
+
+    send(200, [
+        'instruction'  => 'Choose your duck.',
+        'duck'         => $entry['duck'],
+        'consequence'  => $entry['consequence'],
+        'tier'         => $entry['tier'],
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = client_ip();
@@ -2056,7 +2388,6 @@ match (true) {
     $method === 'GET' && $path === '/pound/dirt/leaderboard' => handle_leaderboard(),
     $method === 'GET' && $path === '/excuses/teams'       => handle_excuses_teams(),
     $method === 'GET' && $path === '/excuses/social'      => handle_excuses_social(),
-    $method === 'GET' && $path === '/excuses/social/tiers' => handle_excuses_social_tiers(),
     $method === 'GET' && $path === '/excuses/oops'         => handle_excuses_oops(),
     $method === 'GET' && $path === '/excuses/ring-ring'    => handle_excuses_ring_ring(),
     $method === 'GET' && $path === '/excuses/late'          => handle_excuses_late(),
@@ -2071,6 +2402,11 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/pessimism'    => handle_pessimism(),
     $method === 'GET' && $path === '/unhinged/advice'       => handle_advice(),
     $method === 'GET' && $path === '/unhinged/non-committal' => handle_non_committal(),
+    $method === 'GET' && $path === '/unhinged/optimistic-dooom' => handle_optimistic_doom(),
+    $method === 'GET' && $path === '/unhinged/turn-it-upside-down' => handle_turn_upside_down(),
+    $method === 'GET' && $path === '/unhinged/solid-suddenly-liquid' => handle_solid_suddenly_liquid(),
+    $method === 'GET' && $path === '/unhinged/solid-suddenly-gelatinous' => handle_solid_suddenly_gelatinous(),
+    $method === 'GET' && $path === '/unhinged/choose-your-duck' => handle_choose_your_duck(),
     $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',
