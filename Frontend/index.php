@@ -193,7 +193,7 @@ $CATALOGUE = [
         'items'   => [
             [
                 'path' => '/kick/rocks', 'method' => 'GET',
-                'note' => 'assigns a rock. tier, or a min/max range',
+                'note' => 'assigns a 🪨. tier, or a min/max range',
                 'fields' => [
                     ['name' => 'tier', 'label' => 'Tier', 'type' => 'number', 'min' => 1, 'max' => 14, 'placeholder' => 'n'],
                     ['name' => 'min',  'label' => 'Min',  'type' => 'number', 'min' => 1, 'max' => 14, 'placeholder' => '1'],
@@ -202,7 +202,7 @@ $CATALOGUE = [
             ],
             [
                 'path' => '/kick/rocks/tiers', 'method' => 'GET',
-                'note' => 'the full scale, 1 through 14', 'fields' => [],
+                'note' => 'the full scale, 1 through 14 ⛰️', 'fields' => [],
             ],
         ],
     ],
@@ -213,11 +213,11 @@ $CATALOGUE = [
         'items'   => [
             [
                 'path' => '/kick/munitions', 'method' => 'GET',
-                'note' => 'assigns one. tells you the tier and the arc', 'fields' => [],
+                'note' => 'assigns one. tells you the tier and the arc 🔫', 'fields' => [],
             ],
             [
                 'path' => '/kick/munitions/tiers', 'method' => 'GET',
-                'note' => '1 through 50, in five ten-tier arcs', 'fields' => [],
+                'note' => '1 through 50, in five ten-tier arcs ☢️', 'fields' => [],
             ],
         ],
     ],
@@ -228,25 +228,25 @@ $CATALOGUE = [
         'items'   => [
             [
                 'path' => '/pound/dirt', 'method' => 'GET',
-                'note' => 'adds to your pile. post works too',
+                'note' => 'adds to your pile. post works too 💩',
                 'fields' => [],
             ],
             [
                 'path' => '/pound/dirt/status', 'method' => 'GET',
-                'note' => 'peek without pounding',
+                'note' => 'peek without pounding 🫣',
                 'fields' => [],
             ],
             [
                 'path' => '/pound/dirt/tiers', 'method' => 'GET',
-                'note' => 'fistful through second moon', 'fields' => [],
+                'note' => '👊 through second 🌕', 'fields' => [],
             ],
             [
                 'path' => '/pound/dirt/leaderboard', 'method' => 'GET',
-                'note' => 'top 20. final octet removed', 'fields' => [],
+                'note' => 'top 20. final octet removed 🛘', 'fields' => [],
             ],
             [
                 'path' => '/pound/dirt', 'method' => 'DELETE',
-                'note' => 'levels your own pile and nobody else\'s',
+                'note' => 'levels your own pile and nobody else\'s 💣',
                 'fields' => [],
             ],
         ],
@@ -255,20 +255,20 @@ $CATALOGUE = [
         'group'   => 'Excuses',
         'caption' => 'seven ways out',
         'items'   => [
-            ['path' => '/excuses/teams',        'method' => 'GET', 'note' => 'not joining the call',        'fields' => []],
-            ['path' => '/excuses/social',       'method' => 'GET', 'note' => 'not attending, with tier',    'fields' => []],
-            ['path' => '/excuses/oops',         'method' => 'GET', 'note' => 'why it went wrong, with tier','fields' => []],
-            ['path' => '/excuses/ring-ring',    'method' => 'GET', 'note' => 'why you did not pick up',     'fields' => []],
-            ['path' => '/excuses/late',         'method' => 'GET', 'note' => 'why you are late',            'fields' => []],
-            ['path' => '/excuses/alibis',       'method' => 'GET', 'note' => 'why you were not there',      'fields' => []],
+            ['path' => '/excuses/teams',        'method' => 'GET', 'note' => 'not joining the call 👏',        'fields' => []],
+            ['path' => '/excuses/social',       'method' => 'GET', 'note' => 'not attending, with tier 👥',    'fields' => []],
+            ['path' => '/excuses/oops',         'method' => 'GET', 'note' => 'why it went wrong 🙈','fields' => []],
+            ['path' => '/excuses/ring-ring',    'method' => 'GET', 'note' => 'why you did not pick up 📞',     'fields' => []],
+            ['path' => '/excuses/late',         'method' => 'GET', 'note' => 'why you are late ⏰',            'fields' => []],
+            ['path' => '/excuses/alibis',       'method' => 'GET', 'note' => 'why you were not there 😉',      'fields' => []],
         ],
     ],
     [
         'group'   => 'The Ministry',
         'caption' => 'graded in newtons',
         'items'   => [
-            ['path' => '/ministry/gentle-correction', 'method' => 'GET', 'note' => 'd6 against the approved remedies', 'fields' => []],
-            ['path' => '/ministry/mandatory-pet-adoption', 'new' => true, 'method' => 'GET', 'note' => 'resistance futile', 'fields' => []],
+            ['path' => '/ministry/gentle-correction', 'method' => 'GET', 'note' => 'd6 against the approved remedies 💪', 'fields' => []],
+            ['path' => '/ministry/mandatory-pet-adoption', 'new' => true, 'method' => 'GET', 'note' => 'resistance futile 🐻', 'fields' => []],
         ],
     ],
     [
@@ -276,26 +276,26 @@ $CATALOGUE = [
         'collapsed' => true,
         'caption' => '50/50, fingers first',
         'items'   => [
-            ['path' => '/cage/finger',           'method' => 'GET', 'note' => '50 animals. costs a finger if taken', 'fields' => []],
-            ['path' => '/cage/fictional/finger', 'method' => 'GET', 'note' => '50 fictional creatures, same count',  'fields' => []],
-            ['path' => '/cage/finger/left',      'method' => 'GET', 'note' => 'what remains, out of 10 each',        'fields' => []],
-            ['path' => '/cage/finger/reset',     'method' => 'GET', 'note' => 'pray to the holy hairy toe',          'fields' => []],
+            ['path' => '/cage/finger',           'method' => 'GET', 'note' => '50 animals. costs a 👉 if taken', 'fields' => []],
+            ['path' => '/cage/fictional/finger', 'method' => 'GET', 'note' => '50 fictional creatures, same 🫵',  'fields' => []],
+            ['path' => '/cage/finger/left',      'method' => 'GET', 'note' => 'what remains, out of 10 each ',        'fields' => []],
+            ['path' => '/cage/finger/reset',     'method' => 'GET', 'note' => 'pray to the holy hairy toe 🦶',          'fields' => []],
         ],
     ],
     [
         'group'   => 'Unhinged',
         'caption' => 'no supervision',
         'items'   => [
-            ['path' => '/unhinged/8ball',         'method' => 'GET', 'note' => 'answers, unreliably',        'fields' => []],
-            ['path' => '/unhinged/optimism',      'method' => 'GET', 'note' => 'unearned positivity',        'fields' => []],
-            ['path' => '/unhinged/pessimism',     'method' => 'GET', 'note' => 'unearned dread',             'fields' => []],
-            ['path' => '/unhinged/advice',        'method' => 'GET', 'note' => 'applies to almost anything', 'fields' => []],
-            ['path' => '/unhinged/non-committal', 'method' => 'GET', 'note' => 'fifty ways to not answer',   'fields' => []],
-            ['path' => '/unhinged/optimistic-dooom', 'method' => 'GET', 'note' => 'the end of everything, as good news', 'fields' => []],
-            ['path' => '/unhinged/turn-it-upside-down', 'display' => '\\unhinged\\turn-it-upside-down', 'method' => 'GET', 'note' => 'flip it and find out', 'fields' => []],
-            ['path' => '/unhinged/solid-suddenly-liquid', 'new' => true, 'method' => 'GET', 'note' => 'a solid, liquefied', 'fields' => []],
-            ['path' => '/unhinged/solid-suddenly-gelatinous', 'new' => true, 'method' => 'GET', 'note' => 'a solid, now jelly', 'fields' => []],
-            ['path' => '/unhinged/choose-your-duck', 'new' => true, 'method' => 'GET', 'note' => 'pick your bathing buddy', 'fields' => []],
+            ['path' => '/unhinged/8ball',         'method' => 'GET', 'note' => 'answers, unreliably 🎱',        'fields' => []],
+            ['path' => '/unhinged/optimism',      'method' => 'GET', 'note' => 'unearned positivity 😵‍💫',        'fields' => []],
+            ['path' => '/unhinged/pessimism',     'method' => 'GET', 'note' => 'unearned dread 😮‍💨',             'fields' => []],
+            ['path' => '/unhinged/advice',        'method' => 'GET', 'note' => 'applies to almost anything 🫢', 'fields' => []],
+            ['path' => '/unhinged/non-committal', 'method' => 'GET', 'note' => 'fifty ways to not answer 😶',   'fields' => []],
+            ['path' => '/unhinged/optimistic-dooom', 'method' => 'GET', 'note' => 'the end of everything, as good news 😅', 'fields' => []],
+            ['path' => '/unhinged/turn-it-upside-down', 'display' => '\\unhinged\\turn-it-upside-down', 'method' => 'GET', 'note' => 'flip it and find out 🙃', 'fields' => []],
+            ['path' => '/unhinged/solid-suddenly-liquid', 'new' => true, 'method' => 'GET', 'note' => 'a solid, liquefied 💦', 'fields' => []],
+            ['path' => '/unhinged/solid-suddenly-gelatinous', 'new' => true, 'method' => 'GET', 'note' => 'solid, a jelly 🍧', 'fields' => []],
+            ['path' => '/unhinged/choose-your-duck', 'new' => true, 'method' => 'GET', 'note' => 'pick your 🛁 buddy', 'fields' => []],
         ],
     ],
     [
@@ -303,7 +303,7 @@ $CATALOGUE = [
         'collapsed' => true,
         'caption' => 'is anything on fire',
         'items'   => [
-            ['path' => '/healthz', 'method' => 'GET', 'note' => 'liveness, plus lifetime counters', 'fields' => []],
+            ['path' => '/healthz', 'method' => 'GET', 'note' => 'liveness, plus lifetime counters 💊', 'fields' => []],
         ],
     ],
 ];
