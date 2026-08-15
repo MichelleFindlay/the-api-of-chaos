@@ -140,7 +140,6 @@ const ALLOWED_PATHS = [
     '#^/pound/dirt$#',
     '#^/pound/dirt/(status|tiers|leaderboard)$#',
     '#^/excuses/(teams|social|oops|ring-ring|late|alibis)$#',
-    '#^/excuses/social/tiers$#',
     '#^/ministry/gentle-correction$#',
     '#^/cage/finger$#',
     '#^/cage/finger/(left|reset)$#',
@@ -258,7 +257,6 @@ $CATALOGUE = [
         'items'   => [
             ['path' => '/excuses/teams',        'method' => 'GET', 'note' => 'not joining the call',        'fields' => []],
             ['path' => '/excuses/social',       'method' => 'GET', 'note' => 'not attending, with tier',    'fields' => []],
-            ['path' => '/excuses/social/tiers', 'method' => 'GET', 'note' => 'the five sub-tiers',          'fields' => []],
             ['path' => '/excuses/oops',         'method' => 'GET', 'note' => 'why it went wrong, with tier','fields' => []],
             ['path' => '/excuses/ring-ring',    'method' => 'GET', 'note' => 'why you did not pick up',     'fields' => []],
             ['path' => '/excuses/late',         'method' => 'GET', 'note' => 'why you are late',            'fields' => []],
@@ -1063,6 +1061,71 @@ footer.foot {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem 1.75rem;
+}
+
+/* ----------------------------------------------------------- mobile */
+
+@media (max-width: 560px) {
+  body { font-size: 15px; }
+  .term { padding: 1.1rem 0.85rem 2rem; }
+
+  .masthead__title { font-size: clamp(1.5rem, 8vw, 2rem); }
+  .masthead__sub { font-size: 0.95rem; }
+  .masthead__meta { gap: 0.15rem 1.25rem; font-size: 0.7rem; }
+
+  /* status bar reads as stacked label/value pairs instead of one crowded row */
+  .statusbar { gap: 0.1rem 1rem; font-size: 0.74rem; padding: 0.4rem 0.6rem; }
+
+  .pane__body { padding: 0.75rem 0.6rem 1rem; }
+
+  /* each command becomes its own stacked card: button on top, controls below,
+     note beneath — nothing gets squeezed off-screen or hidden */
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.3rem;
+    padding: 0.55rem 0.5rem;
+    border-left-width: 3px;
+  }
+  .run {
+    font-size: 0.95rem;
+    padding: 0.25rem 0;
+    min-height: 40px;            /* comfortable tap target */
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    word-break: break-word;
+  }
+  .entry__controls,
+  .row > .badge-new { align-self: flex-start; }
+
+  .flag { font-size: 0.78rem; }
+  .flag input {
+    width: 100%;
+    min-width: 4rem;
+    min-height: 38px;
+    font-size: 16px;             /* stops iOS Safari zooming on focus */
+  }
+
+  /* notes were hidden at 620px; on a stacked card there's room to keep them */
+  .note { display: block; margin-left: 0; font-size: 0.85em; }
+
+  .barbtn { min-height: 34px; padding: 0.2rem 0.7rem; }
+
+  .log { height: 20rem; padding: 0.75rem 0.6rem 0; }
+  .entry__out { font-size: 0.88em; }
+
+  .prompt { padding: 0.55rem 0.6rem; gap: 0.4rem; }
+  .prompt input { font-size: 16px; }   /* no focus-zoom on iOS */
+
+  .docket, .term { max-width: 100%; }
+
+  footer.foot { gap: 0.25rem 1.25rem; font-size: 0.74rem; }
+}
+
+/* very narrow phones */
+@media (max-width: 360px) {
+  .masthead__meta span, .statusbar span { flex-basis: 100%; }
 }
 </style>
 </head>
