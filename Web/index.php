@@ -2109,7 +2109,7 @@ function handle_index(): never
 {
     send(200, [
         'service' => 'The API of Chaos',
-        'version' => '1.0.4',
+        'version' => '1.0.5',
         'tagline' => 'Dismissal, at scale, with an SLA of none.',
         'endpoints' => [
             'GET /kick/rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
