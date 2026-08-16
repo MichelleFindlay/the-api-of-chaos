@@ -1146,8 +1146,7 @@ footer.foot {
     </p>
     <div class="statusbar">
       <span>upstream <b><?= chaos_h(API_BASE) ?></b></span>
-      <span>you <b><?= chaos_h($clientIp) ?></b></span>
-      <span>pile <b><?= chaos_h(chaos_pile_id()) ?></b></span>
+      <span>you/pile <b><?= chaos_h($clientIp) ?></b><?php if (chaos_pile_id() !== $clientIp): ?> / <b><?= chaos_h(chaos_pile_id()) ?></b><?php endif; ?></span>
       <?php if ($country !== null): ?><span>region <b><?= chaos_h($country) ?></b></span><?php endif; ?>
       <span>date <b><?= chaos_h(gmdate('Y-m-d')) ?></b></span>
     </div>
