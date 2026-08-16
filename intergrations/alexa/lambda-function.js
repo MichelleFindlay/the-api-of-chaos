@@ -96,7 +96,11 @@ const endpointMap = {
   'choose your duck': '/unhinged/choose-your-duck',
   'duck': '/unhinged/choose-your-duck',
   'bath duck': '/unhinged/choose-your-duck',
-  'choose duck': '/unhinged/choose-your-duck'
+  'choose duck': '/unhinged/choose-your-duck',
+  'gravity resigned': '/unhinged/gravity-resigned',
+  'gravity has quit': '/unhinged/gravity-resigned',
+  'gravity': '/unhinged/gravity-resigned',
+  'zero gravity': '/unhinged/gravity-resigned'
 };
 
 function callApi(path, queryParams = {}, method = 'GET') {
@@ -328,7 +332,7 @@ exports.handler = async function(event, context) {
         'Excuses: for teams, social, oops, late, or an alibi. ' +
         'Ministry: gentle correction, or mandatory pet adoption. ' +
         'Cage: put your finger in the cage, try the cage with fictional creatures, or check your fingers. ' +
-        'And unhinged: the eight ball, optimism, pessimism, advice, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, or choose your duck. ' +
+        'And unhinged: the eight ball, optimism, pessimism, advice, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, or gravity resigned. ' +
         'What would you like?', false);
     }
 
