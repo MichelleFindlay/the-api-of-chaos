@@ -2059,18 +2059,11 @@ function pile_rate_limited(string $id): ?array
 }
 
 /**
- * Lets the dumpsterfire.uk frontend call this API from the browser. Only the
- * production and staging web frontends are allowed to read the response;
- * anything else still gets a response (this is not an auth check), it just
- * won't be readable from a browser running on another origin.
+ * Lets the dumpsterfire.uk frontend call this API from the browser.
  */
 function send_cors_headers(): void
 {
-    $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
-    $allowed = [WEB_URL, STAGING_WEB_URL];
-
-    header('Access-Control-Allow-Origin: ' . (in_array($origin, $allowed, true) ? $origin : WEB_URL));
-    header('Vary: Origin');
+    header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: *');
 }
