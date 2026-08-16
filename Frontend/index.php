@@ -17,6 +17,16 @@ declare(strict_types=1);
 // ============================================================ configuration
 
 /**
+ * Canonical URLs for the two environments this site runs in. Single source
+ * of truth for both files — the API applies these same four constants to
+ * its CORS allowlist, so keep the two copies in sync.
+ */
+const WEB_URL         = 'https://dumpsterfire.uk';
+const API_URL         = 'https://api.dumpsterfire.uk';
+const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk/api';
+const STAGING_API_URL = 'https://dumpsterfire.uk';
+
+/**
  * Where the API lives.
  *
  * Every request carries the visitor's address in CF-Connecting-IP. Be aware
@@ -27,8 +37,13 @@ declare(strict_types=1);
  *   1. Point this at an origin hostname that bypasses Cloudflare (grey cloud,
  *      or a direct origin record), so the header arrives untouched.
  *   2. Have the API read X-Chaos-Client-IP, which nothing rewrites.
+ *
+ * Picked automatically from the host this page is served on: production web
+ * host gets the production API, anything else (staging, localhost, a preview
+ * domain) gets staging. Uses define() rather than const because it needs
+ * $_SERVER at runtime, which plain const expressions can't touch.
  */
-const API_BASE        = 'https://api.dumpsterfire.uk';
+define('API_BASE', (($_SERVER['HTTP_HOST'] ?? '') === parse_url(WEB_URL, PHP_URL_HOST)) ? API_URL : STAGING_API_URL);
 
 /**
  * Reach the origin directly, bypassing Cloudflare's edge.
@@ -291,13 +306,13 @@ $CATALOGUE = [
             ['path' => '/unhinged/pessimism',     'method' => 'GET', 'note' => 'unearned dread 😮‍💨',             'fields' => []],
             ['path' => '/unhinged/advice',        'method' => 'GET', 'note' => 'applies to almost anything 🫢', 'fields' => []],
             ['path' => '/unhinged/non-committal', 'method' => 'GET', 'note' => 'fifty ways to not answer 😶',   'fields' => []],
-            ['path' => '/unhinged/optimistic-dooom', 'method' => 'GET', 'note' => 'the end of everything, as good news 😅', 'fields' => []],
+            ['path' => '/unhinged/optimistic-dooom', 'method' => 'GET', 'note' => 'end of everything, as good news 😅', 'fields' => []],
             ['path' => '/unhinged/turn-it-upside-down', 'display' => '\\unhinged\\turn-it-upside-down', 'method' => 'GET', 'note' => '🔃 it and find out 🙃', 'fields' => []],
-            ['path' => '/unhinged/solid-suddenly-liquid', ' 'method' => 'GET', 'note' => 'a solid, liquefied 💦', 'fields' => []],
+            ['path' => '/unhinged/solid-suddenly-liquid', 'method' => 'GET', 'note' => 'a solid, liquefied 💦', 'fields' => []],
             ['path' => '/unhinged/solid-suddenly-gelatinous', 'method' => 'GET', 'note' => '🪨, now jelly 🍧', 'fields' => []],
             ['path' => '/unhinged/choose-your-duck', 'new' => true, 'method' => 'GET', 'note' => 'pick your 🛁 buddy', 'fields' => []],
-            ['path' => '/unhinged/gravity-resigned', 'new' => true, 'method' => 'GET', 'note' => 'gravity has quit. time to float 🫧', 'fields' => []],
-            ['path' => '/unhinged/vengeful-weather', 'new' => true, 'method' => 'GET', 'note' => 'the sky, personally offended ⛈️', 'fields' => []],
+            ['path' => '/unhinged/gravity-resigned', 'new' => true, 'method' => 'GET', 'note' => 'gravity quit. now float 🫧', 'fields' => []],
+            ['path' => '/unhinged/vengeful-weather', 'new' => true, 'method' => 'GET', 'note' => 'the sky, now upset ⛈️', 'fields' => []],
         ],
     ],
     [
@@ -1204,7 +1219,7 @@ footer.foot {
   </div>
 
   <footer class="foot">
-    <span>every call goes straight from your browser to the api</span>
+    <span>every call goes straight from your browser to the api<?php if (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)): ?> <b>Beta / Testing</b><?php endif; ?></span>
     <span>your ip is your pile</span>
     <span>nothing here is load-bearing</span>
   </footer>

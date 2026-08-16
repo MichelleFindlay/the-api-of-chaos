@@ -62,6 +62,16 @@ declare(strict_types=1);
  * the void instead of getting a normal response. Try again.
  */
 
+/**
+ * Canonical URLs for the two environments this API serves. Single source of
+ * truth shared with the frontend's copy of the same four constants — keep
+ * them in sync. Used below to restrict CORS to just these two origins.
+ */
+const WEB_URL         = 'https://dumpsterfire.uk';
+const API_URL         = 'https://api.dumpsterfire.uk';
+const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk/api';
+const STAGING_API_URL = 'https://dumpsterfire.uk';
+
 /* ------------------------------------------------------------------ *
  * The scale. Masses are order-of-magnitude estimates and are not
  * warranted for use in actual geology.
@@ -2049,11 +2059,18 @@ function pile_rate_limited(string $id): ?array
 }
 
 /**
- * Lets the dumpsterfire.uk frontend call this API from the browser.
+ * Lets the dumpsterfire.uk frontend call this API from the browser. Only the
+ * production and staging web frontends are allowed to read the response;
+ * anything else still gets a response (this is not an auth check), it just
+ * won't be readable from a browser running on another origin.
  */
 function send_cors_headers(): void
 {
-    header('Access-Control-Allow-Origin: *');
+    $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowed = [WEB_URL, STAGING_WEB_URL];
+
+    header('Access-Control-Allow-Origin: ' . (in_array($origin, $allowed, true) ? $origin : WEB_URL));
+    header('Vary: Origin');
     header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: *');
 }
