@@ -144,7 +144,7 @@ const ALLOWED_PATHS = [
     '#^/cage/finger$#',
     '#^/cage/finger/(left|reset)$#',
     '#^/cage/fictional/finger$#',
-    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck|gravity-resigned)$#',
+    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck|gravity-resigned|vengeful-weather)$#',
 ];
 
 /** Paths that may be called with DELETE. Everything else is GET or POST. */
@@ -297,6 +297,7 @@ $CATALOGUE = [
             ['path' => '/unhinged/solid-suddenly-gelatinous', 'new' => true, 'method' => 'GET', 'note' => '🪨, now jelly 🍧', 'fields' => []],
             ['path' => '/unhinged/choose-your-duck', 'new' => true, 'method' => 'GET', 'note' => 'pick your 🛁 buddy', 'fields' => []],
             ['path' => '/unhinged/gravity-resigned', 'new' => true, 'method' => 'GET', 'note' => 'gravity has quit. time to float 🫧', 'fields' => []],
+            ['path' => '/unhinged/vengeful-weather', 'new' => true, 'method' => 'GET', 'note' => 'the sky, personally offended ⛈️', 'fields' => []],
         ],
     ],
     [

@@ -376,6 +376,16 @@
                                     "zero gravity"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "vengeful weather",
+                                "synonyms": [
+                                    "weather",
+                                    "the weather",
+                                    "forecast"
+                                ]
+                            }
                         }
                     ]
                 }

@@ -46,6 +46,7 @@ declare(strict_types=1);
  *   GET    /unhinged/solid-suddenly-gelatinous  a solid, turned to jelly, with consequences and tier
  *   GET    /unhinged/choose-your-duck  a bath duck, and what it costs you, with tier
  *   GET    /unhinged/gravity-resigned  gravity has quit; what floats, and your odds of surviving it
+ *   GET    /unhinged/vengeful-weather  the weather, personally offended, drawn from nine systems
  *   GET    /healthz             liveness, plus lifetime request/unique-IP/rocks-kicked counts
  *
  * Query params
@@ -1454,6 +1455,79 @@ const GRAVITY_RESIGNED = [
 ];
 
 /**
+ * The weather, personally offended. Grouped by system, each with a
+ * headline announcement and the forecasts that fall under it.
+ */
+const VENGEFUL_WEATHER = [
+    'PRECIPITATION HAS ACHIEVED SENTIENCE AND IS FILING GRIEVANCES' => [
+        'Rain falling upward, sideways, backward through time, and once — inexplicably — through the concept of Thursday itself',
+        "Drizzle that has your address, your mother's maiden name, and strong feelings about your posture",
+        'Freezing rain glazing the earth into a single continuous ice-mirror in which you can see every version of yourself that made worse decisions',
+        'Snow that lands, screams your unencrypted passwords into the void, and melts before you can stop it',
+        "Graupel: the sky's beanbag chair has ruptured at the seam and the stuffing is coming for us all, personally, by name",
+        "Hail the size of a court summons you can't legally decline",
+        'Sleet — the eternal war between rain and snow, fought in your collar, no survivors, no ceasefire, no god',
+        'Virga: rain that descends halfway, makes eye contact with the entire planet, and dematerializes out of a shame so profound it echoes in the troposphere',
+    ],
+    'THE SKY IS AWAKE AND IT REMEMBERS EVERYTHING' => [
+        'Clear skies. The blue is not a color. The blue is a lid. Do not ask what it is a lid on.',
+        'Partly cloudy: the clouds are dissociating and will not be taking questions',
+        'Overcast — the firmament has pulled a gray shroud over its ten thousand eyes and is pretending, for your sake, that it cannot see you',
+        'Cumulonimbus rising forty-five thousand feet, anvil-crowned, benching the jet stream, screaming a frequency only dogs and the damned can hear',
+        'Mammatus clouds: the sky has grown a hundred smooth bulbous udders and hangs low and wrong and every civilization that has seen this has, correctly, panicked',
+    ],
+    'FOG: VISIBILITY IS A PRIVILEGE AND IT HAS BEEN REVOKED' => [
+        'Fog that ingested the entire town and now hums contentedly, digesting',
+        "Mist — the fog's smaller, chattier familiar, whispering directions to a place that does not exist",
+        'Freezing fog: the fog has died and risen, a crystalline revenant, load-bearing, undying, faintly amused',
+        'Ice fog so cold that the air itself has surrendered its molecular ambitions and become a suspended galaxy of tiny patient blades',
+        'The Brown Fog. We do not speak of the Brown Fog. It knows your PIN.',
+    ],
+    'WIND, UNCHAINED, HOWLING IN A LANGUAGE THAT PREDATES VOWELS' => [
+        'Dead calm. The insects have stopped. The birds have stopped. Your watch has stopped. A decision, ancient and enormous, is being reached about you specifically.',
+        'Gusts abducting one glove, one earring, one memory of your father, redistributed at random across the county',
+        'Gale-force winds rearranging every lawn chair in the hemisphere into a single sigil that, viewed from orbit, spells a word no human throat can survive',
+        'Foehn winds — warm, dry, disarmingly kind, whispering that everything will be fine as they systematically dismantle your will to live and also your gazebo',
+        'Wind shear: two air masses meeting at 3,000 feet, recognizing each other from a previous life, and beginning, immediately, to scream',
+    ],
+    'THUNDERSTORMS: THE ATMOSPHERE HAS BEEN UNSUPERVISED FOR TOO LONG' => [
+        'Lightning that struck the same spot forty times to spell something, and we translated it, and we wish we hadn\'t',
+        'Thunder arriving late, arriving early, arriving from inside the house, laughing at a joke told before the invention of language',
+        'Tornadoes performing a synchronized ballet across three counties, F5, flawless, and the sky is weeping, and the weeping is applause',
+        'Waterspouts: a tornado that walked into the sea, made friends with something down there, and came back changed',
+        'Microburst — the fist of a colossus punching straight down onto one gazebo it has hated since the Pleistocene',
+        'Derecho: a single unbroken line of wind, six hundred miles long, that received one (1) upsetting notification and is now driving through your entire regional power grid to have a word',
+    ],
+    'LARGE-SCALE SYSTEMS WITH A PR TEAM, A GRUDGE, AND A COSMIC MANDATE' => [
+        'Hurricanes with a name, a rank, a Wikipedia page, and a reserved seat at the head of every table you will ever sit at again',
+        'Blizzards white-outing not just the landscape but the render distance of reality itself, until existence displays only a spinning cursor and the merciful hum of a universe reloading',
+        'Ice storms lacquering the world into a glass ornament so exquisite, so total, that God pauses, considers keeping it, and then hears it all shatter at once',
+        'Haboob: a mile-high wall of every desert that has ever been, standing up, dusting itself off, and walking toward the city with the unhurried confidence of something that has done this before and will do it again',
+        'Polar vortex — the Arctic has slipped its leash, crossed the 30th parallel, and is now standing in a parking lot in Dallas, radiating an ancient cold and demanding, in a voice like calving ice, to see the manager of the sun',
+    ],
+    'TEMPERATURE, SHIVERING AND BOILING IN THE SAME BREATH, FEVERISH, PROPHETIC' => [
+        'Heat so total the asphalt liquefies, stands up, and begins, softly, to prophesy',
+        'Cold that freezes the moisture in your eyes into two small perfect lenses through which you briefly, horribly, see clearly',
+        "Wind chill: the temperature and the wind have merged into a single entity whose entire theology is the ruination of your specific, individual face",
+        'Humidity so absolute the air is now a broth, sentient, warm, and it would like to keep you',
+    ],
+    'SMALL ATMOSPHERIC GREMLINS NURSING ANCIENT AND SPECIFIC GRUDGES' => [
+        'Dew — every blade of grass, weeping, all night, about a thing you did before you were born',
+        'Frost etching upon your windshield a fractal cathedral so intricate it can only have been drawn by something that had all of eternity and a personal vendetta',
+        'Rime ice growing sideways off every surface because gravity has read the room and quietly excused itself',
+        'Hoarfrost building, on your fence, a diorama of a tiny frozen kingdom whose tiny frozen king is staring, directly, at you',
+        'Drought: the sky has read your every message, watched your every offering burn, and elected — with the serene cruelty of the truly indifferent — to say nothing, for a year, and then another',
+    ],
+    'OPTICAL PHENOMENA, THE VEIL THINNING, THE EYE UNBLINKING' => [
+        'Rainbows arcing full-double across the heavens, promising gold, promising it knowingly, promising it to watch you run',
+        "Sundogs — the sun, lonely beyond the comprehension of warm-blooded things, has budded two false copies of itself, and the three of them are watching, and they are not in agreement about you",
+        'A moon halo: the moon has been ringed by something it did not choose and cannot remove, and it hangs there, luminous, encircled, doomed, and beautiful',
+        'Mirages: the desert, bored and immortal, conjuring a shimmering lake purely to enjoy the small warm shape of you stumbling toward a promise it never made',
+        'Sun pillar — a single shaft of light standing bolt upright from the horizon, silent, vertical, patient, as though something below is about to ascend, and we should not, any of us, be here to watch it',
+    ],
+];
+
+/**
  * Five severity tiers of state-mandated pet, escalating from
  * "featherweight chaos" to "cosmically ill-advised". Bounds are
  * rough mass/threat guidance, not enforced anywhere.
@@ -2070,6 +2144,7 @@ function handle_index(): never
             'GET /unhinged/solid-suddenly-gelatinous' => 'A solid, turned to jelly. Fifty of them, tiered by wobble.',
             'GET /unhinged/choose-your-duck' => 'A bath duck, and what it costs you. Fifty of them, S-Tier to F-Tier.',
             'GET /unhinged/gravity-resigned' => 'Gravity has quit. time to float.',
+            'GET /unhinged/vengeful-weather' => 'The sky, personally offended.',
             'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
         'notes' => [
@@ -2686,6 +2761,17 @@ function handle_gravity_resigned(): never
     send(200, $response);
 }
 
+function handle_vengeful_weather(): never
+{
+    $system = array_rand(VENGEFUL_WEATHER);
+
+    send(200, [
+        'instruction' => 'Step outside. Or don\'t. It knows either way.',
+        'forecast'    => pick(VENGEFUL_WEATHER[$system]),
+        'system'      => $system,
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = client_ip();
@@ -2810,6 +2896,7 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/solid-suddenly-gelatinous' => handle_solid_suddenly_gelatinous(),
     $method === 'GET' && $path === '/unhinged/choose-your-duck' => handle_choose_your_duck(),
     $method === 'GET' && $path === '/unhinged/gravity-resigned' => handle_gravity_resigned(),
+    $method === 'GET' && $path === '/unhinged/vengeful-weather' => handle_vengeful_weather(),
     $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',
