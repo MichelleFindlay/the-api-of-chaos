@@ -24,7 +24,7 @@ declare(strict_types=1);
 const WEB_URL         = 'https://dumpsterfire.uk';
 const API_URL         = 'https://api.dumpsterfire.uk';
 const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk';
-const STAGING_API_URL = 'https://dev.api.dumpsterfire.uk';
+const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
 
 /**
  * Where the API lives.
@@ -1219,7 +1219,8 @@ footer.foot {
   </div>
 
   <footer class="foot">
-    <span>every call goes straight from your browser to the api<?php if (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)): ?> <b>Beta / Testing</b><?php endif; ?></span>
+    <?php if (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)): ?><span><b>Beta / Testing</b></span><?php endif; ?>
+    <span>every call goes straight from your browser to the api</span>
     <span>your ip is your pile</span>
     <span>nothing here is load-bearing</span>
   </footer>
