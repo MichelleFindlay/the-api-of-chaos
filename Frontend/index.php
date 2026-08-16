@@ -296,7 +296,7 @@ $CATALOGUE = [
             ['path' => '/unhinged/solid-suddenly-liquid', 'new' => true, 'method' => 'GET', 'note' => 'a solid, liquefied 💦', 'fields' => []],
             ['path' => '/unhinged/solid-suddenly-gelatinous', 'new' => true, 'method' => 'GET', 'note' => '🪨, now jelly 🍧', 'fields' => []],
             ['path' => '/unhinged/choose-your-duck', 'new' => true, 'method' => 'GET', 'note' => 'pick your 🛁 buddy', 'fields' => []],
-            ['path' => '/unhinged/gravity-resigned', 'new' => true, 'method' => 'GET', 'note' => 'gravity has quit. time to floats.', 'fields' => []],
+            ['path' => '/unhinged/gravity-resigned', 'new' => true, 'method' => 'GET', 'note' => 'gravity has quit. time to float 🫧🛟', 'fields' => []],
         ],
     ],
     [

@@ -2069,7 +2069,7 @@ function handle_index(): never
             'GET /unhinged/solid-suddenly-liquid' => 'A solid, liquefied. Fifty of them, tiered by regret.',
             'GET /unhinged/solid-suddenly-gelatinous' => 'A solid, turned to jelly. Fifty of them, tiered by wobble.',
             'GET /unhinged/choose-your-duck' => 'A bath duck, and what it costs you. Fifty of them, S-Tier to F-Tier.',
-            'GET /unhinged/gravity-resigned' => 'Gravity has quit. time to floats.',
+            'GET /unhinged/gravity-resigned' => 'Gravity has quit. time to float.',
             'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
         'notes' => [
