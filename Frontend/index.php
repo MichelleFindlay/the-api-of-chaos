@@ -23,8 +23,8 @@ declare(strict_types=1);
  */
 const WEB_URL         = 'https://dumpsterfire.uk';
 const API_URL         = 'https://api.dumpsterfire.uk';
-const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk/api';
-const STAGING_API_URL = 'https://dumpsterfire.uk';
+const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk';
+const STAGING_API_URL = 'https://dev.api.dumpsterfire.uk';
 
 /**
  * Where the API lives.
@@ -38,12 +38,12 @@ const STAGING_API_URL = 'https://dumpsterfire.uk';
  *      or a direct origin record), so the header arrives untouched.
  *   2. Have the API read X-Chaos-Client-IP, which nothing rewrites.
  *
- * Picked automatically from the host this page is served on: production web
- * host gets the production API, anything else (staging, localhost, a preview
- * domain) gets staging. Uses define() rather than const because it needs
+ * Picked automatically from the host this page is served on: the staging web
+ * host gets the staging API, anything else (production, localhost, a preview
+ * domain) gets production. Uses define() rather than const because it needs
  * $_SERVER at runtime, which plain const expressions can't touch.
  */
-define('API_BASE', (($_SERVER['HTTP_HOST'] ?? '') === parse_url(WEB_URL, PHP_URL_HOST)) ? API_URL : STAGING_API_URL);
+define('API_BASE', (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)) ? STAGING_API_URL : API_URL);
 
 /**
  * Reach the origin directly, bypassing Cloudflare's edge.

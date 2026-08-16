@@ -69,8 +69,8 @@ declare(strict_types=1);
  */
 const WEB_URL         = 'https://dumpsterfire.uk';
 const API_URL         = 'https://api.dumpsterfire.uk';
-const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk/api';
-const STAGING_API_URL = 'https://dumpsterfire.uk';
+const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk';
+const STAGING_API_URL = 'https://dev.api.dumpsterfire.uk';
 
 /* ------------------------------------------------------------------ *
  * The scale. Masses are order-of-magnitude estimates and are not
