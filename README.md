@@ -50,6 +50,7 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
+| Web Frontend | 1.0.5 | ✅ yes | Active |
 | Amazon Alexa | 1.0.1 | ❌ No | Pending |
 
 ## Notes
