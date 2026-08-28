@@ -60,6 +60,29 @@
 | OpenAI | 1.0.0 | Web Frontend/mcp/ | Active |
 | Claude | 1.0.0 | Web Frontend/mcp-claude/ | Active |
 
+### Adding OpenAI MCP
+
+- **Type:** OpenAPI
+- **Name:** api-of-chaos
+- **ID** (optional)**:** api-of-chaos
+- **Description:** _(leave empty)_
+- **URL:** `https://dumpsterfire.uk/mcp`
+  - Enabled toggle: **on**
+- **Auth:** None _(no authentication)_
+- **Advanced:** _(leave collapsed)_
+- **Access Control:** _(not configured)_
+- **Function Name Filter List:** _(leave empty — e.g. `func1, !func2`)_
+
+Click **Save**.
+
+### Adding Claude Connector
+
+1. In Claude, go to **Settings → Connectors → Add custom connector**.
+2. Name: anything (`api-of-chaos` works). URL: `https://dumpsterfire.uk/mcp-claude`
+3. Claude's automatic server check is unreliable against this server regardless of what it actually sends back — it will likely report "Couldn't determine the server settings" and fail to find an authorization server. That's expected. Click **Next** anyway.
+4. On the auth step, choose **No authentication** — this server has none.
+5. Click **Add**. No further setup: no auth, no session state, nothing to configure.
+
 ## Notes
 
 - Piles are files on disk and survive restarts, unlike morale.
