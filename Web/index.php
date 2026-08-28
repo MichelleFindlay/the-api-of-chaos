@@ -45,6 +45,8 @@ declare(strict_types=1);
  *   GET    /unhinged/solid-suddenly-liquid  a solid, liquefied, with consequences and tier
  *   GET    /unhinged/solid-suddenly-gelatinous  a solid, turned to jelly, with consequences and tier
  *   GET    /unhinged/choose-your-duck  a bath duck, and what it costs you, with tier
+ *   GET    /unhinged/gravity-resigned  gravity has quit; what floats, and your odds of surviving it
+ *   GET    /unhinged/vengeful-weather  the weather, personally offended, drawn from nine systems
  *   GET    /healthz             liveness, plus lifetime request/unique-IP/rocks-kicked counts
  *
  * Query params
@@ -59,6 +61,16 @@ declare(strict_types=1);
  * Any request under /unhinged has a 1-in-10 chance of falling into
  * the void instead of getting a normal response. Try again.
  */
+
+/**
+ * Canonical URLs for the two environments this API serves. Single source of
+ * truth shared with the frontend's copy of the same four constants — keep
+ * them in sync. Used below to restrict CORS to just these two origins.
+ */
+const WEB_URL         = 'https://dumpsterfire.uk';
+const API_URL         = 'https://api.dumpsterfire.uk';
+const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk';
+const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
 
 /* ------------------------------------------------------------------ *
  * The scale. Masses are order-of-magnitude estimates and are not
@@ -1314,6 +1326,218 @@ const DUCKS = [
 ];
 
 /**
+ * Gravity has resigned. What goes airborne, what it does, and your
+ * odds of surviving it. Tier is severity (S+ down to F); survival_chance
+ * is the percentage chance you walk away.
+ */
+const GRAVITY_RESIGNED = [
+    ['item' => 'Coffee-sphere face-hunter', 'effect' => 'A scalding brown orb detaches and stalks your face like a caffeinated predator.', 'survival_chance' => 40, 'tier' => 'B'],
+    ['item' => 'Water grenade pour', 'effect' => 'Every glass of water becomes a wet fragmentation device.', 'survival_chance' => 60, 'tier' => 'C'],
+    ['item' => 'Ale-orb pub', 'effect' => 'The entire pub is now suspended lager and floating regret.', 'survival_chance' => 55, 'tier' => 'C'],
+    ['item' => 'Wine geyser', 'effect' => "Burgundy fires upward directly into the pourer's eye.", 'survival_chance' => 65, 'tier' => 'C'],
+    ['item' => 'Divorced cereal', 'effect' => 'Milk and Cheerios drift apart, emotionally estranged forever.', 'survival_chance' => 90, 'tier' => 'F'],
+    ['item' => 'Minestrone minefield', 'effect' => 'Airborne soup hunts exposed skin at boiling temperature.', 'survival_chance' => 45, 'tier' => 'B'],
+    ['item' => 'Juice-box artillery', 'effect' => 'One squeeze fires a scarlet jet across the room.', 'survival_chance' => 80, 'tier' => 'D'],
+    ['item' => 'Kettle death-cloud', 'effect' => 'A boiling steam-blob stalks the kitchen with intent.', 'survival_chance' => 40, 'tier' => 'B'],
+    ['item' => 'Fountain sniper', 'effect' => 'The office water fountain now fires at passersby.', 'survival_chance' => 75, 'tier' => 'C'],
+    ['item' => 'Serpent hose', 'effect' => 'The garden hose thrashes and sprays the whole street.', 'survival_chance' => 70, 'tier' => 'C'],
+    ['item' => 'Standing drowning shower', 'effect' => 'A suffocating water-shell forms around your skull.', 'survival_chance' => 25, 'tier' => 'A'],
+    ['item' => 'Cat-engulfing bath-tsunami', 'effect' => 'One blob leaves the tub and swallows the cat.', 'survival_chance' => 60, 'tier' => 'C'],
+    ['item' => 'Toilet reversal', 'effect' => 'Everything comes back.', 'survival_chance' => 50, 'tier' => 'C', 'note' => 'Dignity tier: F.'],
+    ['item' => 'Grease-planet sinks', 'effect' => 'Basins refuse to drain, forming rancid orbs.', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Beverage moon system', 'effect' => 'Ice cubes orbit your drink as tiny satellites.', 'survival_chance' => 95, 'tier' => 'F'],
+    ['item' => 'Invading fizz', 'effect' => "Bubbles don't rise, they occupy.", 'survival_chance' => 80, 'tier' => 'D'],
+    ['item' => 'Foam mummification', 'effect' => 'Beer head encases your entire face.', 'survival_chance' => 70, 'tier' => 'C'],
+    ['item' => 'Savory ceiling sky', 'effect' => 'Gravy achieves flight and coats the ceiling.', 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'Condiment shotgun', 'effect' => 'Ketchup discharges in a violent scarlet spread.', 'survival_chance' => 82, 'tier' => 'D'],
+    ['item' => 'Amber death-drift', 'effect' => "An unstoppable honey blob approaches; you can't run, it's honey.", 'survival_chance' => 65, 'tier' => 'C'],
+    ['item' => 'Brunch web', 'effect' => 'Airborne syrup traps everyone at the table in sticky suspension.', 'survival_chance' => 78, 'tier' => 'C'],
+    ['item' => 'Vinaigrette fog', 'effect' => 'The air itself becomes seasoned and breathable-adjacent.', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Grease-marble swarm', 'effect' => 'A thousand oil spheres seek your eyes.', 'survival_chance' => 68, 'tier' => 'C'],
+    ['item' => 'Vengeful broth', 'effect' => 'Boiling stock roams free and airborne.', 'survival_chance' => 42, 'tier' => 'B'],
+    ['item' => 'Confident flying fish', 'effect' => 'Released from the tank, they hover and make eye contact.', 'survival_chance' => 90, 'tier' => 'F'],
+    ['item' => 'Rage-blob steam', 'effect' => 'Boiling water becomes a spherical death cloud.', 'survival_chance' => 35, 'tier' => 'B'],
+    ['item' => 'Lung-fat aerosol', 'effect' => 'Frying atomizes burning grease straight into your airways.', 'survival_chance' => 40, 'tier' => 'B'],
+    ['item' => 'Wall-croissant', 'effect' => 'Batter floats free and cures onto the wall as architecture.', 'survival_chance' => 92, 'tier' => 'F'],
+    ['item' => 'House-consuming dough', 'effect' => 'Bread rises endlessly until it eats the home.', 'survival_chance' => 55, 'tier' => 'C'],
+    ['item' => 'One nation of linguine', 'effect' => 'You and the undrainable pasta become a single buoyant people.', 'survival_chance' => 80, 'tier' => 'D'],
+    ['item' => 'Salmonella nebula', 'effect' => 'Whisked eggs form a hovering yellow biohazard cloud.', 'survival_chance' => 72, 'tier' => 'C'],
+    ['item' => 'Eternal flour blizzard', 'effect' => 'Permanent indoor whiteout; you will never see clearly again.', 'survival_chance' => 78, 'tier' => 'C'],
+    ['item' => 'Crunchy air', 'effect' => 'Airborne sugar makes the atmosphere itself gritty.', 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'Sodium shotgun', 'effect' => 'The salt shaker discharges as a weapon.', 'survival_chance' => 90, 'tier' => 'D'],
+    ['item' => 'Archive of crumbs', 'effect' => "Every crumb you've ever made returns to judge you.", 'survival_chance' => 95, 'tier' => 'F'],
+    ['item' => 'Sobbing kitchen', 'effect' => 'Airborne onion vapor makes the whole room weep uncontrollably.', 'survival_chance' => 87, 'tier' => 'D'],
+    ['item' => 'Cutlery steam demon', 'effect' => 'Opening the dishwasher unleashes a wet screaming spirit.', 'survival_chance' => 50, 'tier' => 'B'],
+    ['item' => 'Leftover jack-in-the-box', 'effect' => 'The fridge ejects everything you were avoiding.', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Fire-jellyfish', 'effect' => 'Stove flames go spherical and drift, roaming.', 'survival_chance' => 45, 'tier' => 'B'],
+    ['item' => 'Death of measurement', 'effect' => 'Measuring anything becomes metaphysically impossible.', 'survival_chance' => 100, 'tier' => 'F'],
+    ['item' => 'The end of sitting', 'effect' => 'Chairs and buttocks lose their sacred bond forever.', 'survival_chance' => 100, 'tier' => 'F'],
+    ['item' => 'Mid-air thrash-sleep', 'effect' => 'Sleep now happens fetal and spinning in open space.', 'survival_chance' => 90, 'tier' => 'D'],
+    ['item' => 'Sofa launch pad', 'effect' => 'One shift sends you airborne for a week.', 'survival_chance' => 60, 'tier' => 'C'],
+    ['item' => 'Cushion ammunition', 'effect' => 'Every pillow becomes loose ordnance.', 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'Judgmental book tornado', 'effect' => 'Your unread library swirls around you, accusing.', 'survival_chance' => 82, 'tier' => 'D'],
+    ['item' => 'Heirloom vase missile', 'effect' => "Grandma's vase goes airborne, targeting the TV.", 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Living-room peat bog', 'effect' => 'Houseplants eject soil; your home becomes a floating swamp.', 'survival_chance' => 80, 'tier' => 'D'],
+    ['item' => 'Permanently haunted windows', 'effect' => 'Every curtain billows forever; the house looks possessed.', 'survival_chance' => 95, 'tier' => 'F'],
+    ['item' => 'Time itself breaks', 'effect' => 'Pendulum clocks stop, so technically time is broken now too.', 'survival_chance' => 100, 'tier' => 'F'],
+    ['item' => 'Rising sin-cloud', 'effect' => 'The bin exhales everything you threw away this week.', 'survival_chance' => 84, 'tier' => 'D'],
+    ['item' => 'Minty spit-pearl fog', 'effect' => 'Toothbrushing fills the bathroom with floating saliva orbs.', 'survival_chance' => 82, 'tier' => 'D'],
+    ['item' => 'The toothpaste worm', 'effect' => 'Once squeezed, it never stops; it lives with you now.', 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'Everywhere-germs', 'effect' => 'Handwashing relocates the bacteria into the breathable air.', 'survival_chance' => 70, 'tier' => 'C'],
+    ['item' => 'Iridescent bubble prison', 'effect' => 'Soap suds encase your head in a shimmering cell.', 'survival_chance' => 68, 'tier' => 'C'],
+    ['item' => 'Ceiling-shampoo that drips up', 'effect' => 'A hair-product slick migrates upward and rains on you.', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Menthol extinguisher', 'effect' => 'Shaving cream fires across the room under pressure.', 'survival_chance' => 90, 'tier' => 'D'],
+    ['item' => 'Neighborhood gas attack', 'effect' => 'Deodorant spray becomes an inescapable regional event.', 'survival_chance' => 80, 'tier' => 'D'],
+    ['item' => 'Duty-free apocalypse', 'effect' => 'Perfume mist saturates the house permanently.', 'survival_chance' => 83, 'tier' => 'D'],
+    ['item' => 'Keratin Saturn', 'effect' => 'Nail clippings orbit you in a disgusting ring system.', 'survival_chance' => 92, 'tier' => 'F'],
+    ['item' => 'The tumbleweed of you', 'effect' => "Every hair you've ever shed reunites into one horror.", 'survival_chance' => 90, 'tier' => 'F'],
+    ['item' => '200 pursuit missiles', 'effect' => 'A bowl of peas becomes a green guided-munitions swarm.', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Infinite rice', 'effect' => "A wedding's worth of grains fills the airspace eternally.", 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'Sandwich diaspora', 'effect' => 'Every ingredient separates and leaves, emotionally.', 'survival_chance' => 95, 'tier' => 'F'],
+    ['item' => 'Cold halo of shame', 'effect' => 'Ice cream orbits your cone as a milky ring.', 'survival_chance' => 93, 'tier' => 'F'],
+    ['item' => 'Buttery meteor shower', 'effect' => 'Cinema popcorn rains sideways; the film is ruined.', 'survival_chance' => 87, 'tier' => 'D'],
+    ['item' => 'Potato shrapnel', 'effect' => 'Chips detonate outward from the bowl.', 'survival_chance' => 89, 'tier' => 'D'],
+    ['item' => 'Carbohydrate medusa', 'effect' => 'Hovering spaghetti entangles the entire table.', 'survival_chance' => 84, 'tier' => 'D'],
+    ['item' => 'Tiny yellow suns', 'effect' => 'Egg yolks drift ominously; do not pop them.', 'survival_chance' => 86, 'tier' => 'D'],
+    ['item' => 'Sky-flinging fork', 'effect' => 'Every utensil launches its cargo upward.', 'survival_chance' => 90, 'tier' => 'D'],
+    ['item' => 'Useless napkins', 'effect' => 'Nothing stays on anything long enough to be wiped.', 'survival_chance' => 100, 'tier' => 'F'],
+    ['item' => 'Ceiling-fan junk belt', 'effect' => 'Your keys join the orbital debris field above.', 'survival_chance' => 95, 'tier' => 'F'],
+    ['item' => 'Coin asteroid field', 'effect' => 'Loose change rotates slowly, forever uncatchable.', 'survival_chance' => 93, 'tier' => 'F'],
+    ['item' => '3D pen escape', 'effect' => 'Every pen rolls in three dimensions and is gone.', 'survival_chance' => 96, 'tier' => 'F'],
+    ['item' => 'Bureaucratic snowstorm', 'effect' => 'All your documents become a swirling paper blizzard.', 'survival_chance' => 90, 'tier' => 'D'],
+    ['item' => 'Yellow task-ghosts', 'effect' => 'Sticky notes stick to nothing and haunt you.', 'survival_chance' => 94, 'tier' => 'F'],
+    ['item' => 'Hazard-cloud of jab', 'effect' => 'Earrings, rings, and bobby pins form a stabbing haze.', 'survival_chance' => 80, 'tier' => 'C'],
+    ['item' => 'Taunting phone', 'effect' => 'It drifts just out of reach forever, buzzing.', 'survival_chance' => 97, 'tier' => 'F'],
+    ['item' => 'Button reunion', 'effect' => 'Every popped button returns for the gathering.', 'survival_chance' => 95, 'tier' => 'F'],
+    ['item' => 'Three-year confetti resurgence', 'effect' => 'All of it, from every party, at once.', 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'Sovereign glitter', 'effect' => 'It was already eternal; now it rules.', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Legion of dust', 'effect' => 'Sweeping is dead; airborne dust is now a nation.', 'survival_chance' => 78, 'tier' => 'C'],
+    ['item' => 'Breathable filth-atmosphere', 'effect' => 'Vacuuming just redistributes dirt into the air.', 'survival_chance' => 72, 'tier' => 'C'],
+    ['item' => 'Grey lagoon of despair', 'effect' => 'Mopping releases a floating pool of sorrow-water.', 'survival_chance' => 80, 'tier' => 'D'],
+    ['item' => 'Slow watery boulder', 'effect' => 'The cleaning bucket becomes a rolling liquid menace.', 'survival_chance' => 82, 'tier' => 'D'],
+    ['item' => 'Droplet ambush', 'effect' => 'Wringing a cloth fires water into your open screaming mouth.', 'survival_chance' => 86, 'tier' => 'D'],
+    ['item' => 'Piñata of doom', 'effect' => 'Every trash bag ruptures into airborne refuse.', 'survival_chance' => 79, 'tier' => 'C'],
+    ['item' => 'Guns now', 'effect' => 'Spray bottles are simply weapons.', 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'Compost biosphere', 'effect' => 'The bin releases a hovering ecosystem with its own weather.', 'survival_chance' => 65, 'tier' => 'C'],
+    ['item' => 'Opinionated bleach', 'effect' => "It floats, it's everywhere, and it has views.", 'survival_chance' => 55, 'tier' => 'B'],
+    ['item' => 'Perfect entropy', 'effect' => 'Cleaning and mess-making become indistinguishable.', 'survival_chance' => 100, 'tier' => 'F'],
+    ['item' => 'Suspended grey ocean', 'effect' => "Rain won't fall; a smothering sky-sea just hangs.", 'survival_chance' => 30, 'tier' => 'A'],
+    ['item' => 'Eternal December fog', 'effect' => 'Snow never lands; a permanent blizzard-haze reigns.', 'survival_chance' => 40, 'tier' => 'B'],
+    ['item' => 'The ocean lets go', 'effect' => 'All of it rises and leaves the planet in one majestic sheet.', 'survival_chance' => 5, 'tier' => 'S'],
+    ['item' => 'Sky-lake colonization', 'effect' => 'Lakes evacuate and fish take the troposphere.', 'survival_chance' => 15, 'tier' => 'A'],
+    ['item' => 'Frozen waterfall', 'effect' => 'The plunge stops mid-air in a perpetual "wait, what?"', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Planetary exfoliation', 'effect' => 'Beach sand becomes a world-scale abrasive storm.', 'survival_chance' => 25, 'tier' => 'A'],
+    ['item' => "Earth's brown shroud", 'effect' => 'Every fallen leaf un-falls and swirls around the planet.', 'survival_chance' => 60, 'tier' => 'C'],
+    ['item' => 'Ascending salmon', 'effect' => 'Rivers rise; the fish are thrilled; this is their moment.', 'survival_chance' => 20, 'tier' => 'A'],
+    ['item' => 'Face-height puddles', 'effect' => 'Puddles rise to greet you, uninvited, at eye level.', 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'Agriculture: cancelled', 'effect' => 'The topsoil that grows all food simply leaves.', 'survival_chance' => 2, 'tier' => 'S'],
+    ['item' => 'Sky demolition ballet', 'effect' => 'Weightless cars drift and collide in slow-motion freeway carnage.', 'survival_chance' => 35, 'tier' => 'B'],
+    ['item' => 'Machines in solidarity', 'effect' => 'Fuel and oil abandon their tanks; every engine quits.', 'survival_chance' => 70, 'tier' => 'C'],
+    ['item' => 'Balance: discontinued', 'effect' => 'Bicycles, then unicycles, then nothing.', 'survival_chance' => 90, 'tier' => 'D'],
+    ['item' => 'Cheerful roof-breach elevator', 'effect' => 'It plummets upward through the ceiling.', 'survival_chance' => 45, 'tier' => 'B'],
+    ['item' => 'Boats remember', 'effect' => 'Buoyancy needed gravity, so they quietly stop floating.', 'survival_chance' => 30, 'tier' => 'A'],
+    ['item' => 'Concerning new flight', 'effect' => 'Airplanes achieve a novel and alarming kind of airborne.', 'survival_chance' => 20, 'tier' => 'A'],
+    ['item' => 'Wandering trains', 'effect' => 'They lift off the rails and roam the countryside.', 'survival_chance' => 40, 'tier' => 'B'],
+    ['item' => 'Speed-bump memorials', 'effect' => 'Every one becomes a monument to a simpler time.', 'survival_chance' => 100, 'tier' => 'F'],
+    ['item' => 'Loadless bridges', 'effect' => 'No loads, only chaos; the bridge is now decorative.', 'survival_chance' => 75, 'tier' => 'C'],
+    ['item' => 'Vertical traffic lights', 'effect' => 'Still governing, out of pure bureaucratic stubbornness.', 'survival_chance' => 95, 'tier' => 'F'],
+    ['item' => 'Ascended basketball', 'effect' => 'The ball rises to heaven and is never seen again.', 'survival_chance' => 98, 'tier' => 'F'],
+    ['item' => 'Par: infinity', 'effect' => 'You swing, the ball leaves the atmosphere, golf is over.', 'survival_chance' => 97, 'tier' => 'F'],
+    ['item' => 'Orbital bowling menace', 'effect' => 'The ball becomes a slow lane-satellite.', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Existence is a trampoline', 'effect' => 'Trampolines are redundant; reality bounces now.', 'survival_chance' => 88, 'tier' => 'D'],
+    ['item' => 'God of the empty gym', 'effect' => 'Weightlifting is trivial and meaningless.', 'survival_chance' => 100, 'tier' => 'F'],
+    ['item' => 'Permanent ceiling residency', 'effect' => 'The diving board launches you into a new lifestyle.', 'survival_chance' => 70, 'tier' => 'C'],
+    ['item' => 'Public safety emergency', 'effect' => 'Darts become a genuine crisis.', 'survival_chance' => 65, 'tier' => 'C'],
+    ['item' => 'Chlorinated cube', 'effect' => 'The pool ejects its entire contents as one glorious block.', 'survival_chance' => 40, 'tier' => 'B'],
+    ['item' => 'Airborne confused football', 'effect' => 'Ball, players, and commentators all drift, bewildered.', 'survival_chance' => 82, 'tier' => 'D'],
+    ['item' => 'Simultaneous global Jenga', 'effect' => 'Every tower on Earth resolves into ambient wooden shrapnel at once.', 'survival_chance' => 92, 'tier' => 'F'],
+    ['item' => 'Balloon-person', 'effect' => 'Blood pools in your head; you swell into a puffy, confused sphere.', 'survival_chance' => 15, 'tier' => 'A'],
+    ['item' => 'Eternal rollercoaster feeling', 'effect' => 'Your inner ear quits; permanent dizziness sets in.', 'survival_chance' => 55, 'tier' => 'C'],
+    ['item' => 'Blind grief-crying', 'effect' => 'Tears cling to your eyeballs in a shell; you cry unable to see.', 'survival_chance' => 75, 'tier' => 'C'],
+    ['item' => 'Full-body salt film', 'effect' => 'Sweat coats you in a clinging layer that will not leave.', 'survival_chance' => 70, 'tier' => 'C'],
+    ['item' => 'Startled astronaut humanity', 'effect' => 'Standing and walking are over; everyone bumps around confused.', 'survival_chance' => 60, 'tier' => 'C'],
+    ['item' => 'Digestive adventure', 'effect' => 'Gravity-dependent digestion becomes an ordeal.', 'survival_chance' => 65, 'tier' => 'C'],
+    ['item' => 'Punctuationless arguments', 'effect' => "You can't dramatically drop anything, robbing every fight of its ending.", 'survival_chance' => 100, 'tier' => 'F'],
+    ['item' => 'Self-propelled sneeze', 'effect' => 'Each sneeze fires you across the room.', 'survival_chance' => 80, 'tier' => 'D'],
+    ['item' => 'Rotisserie unconsciousness', 'effect' => 'You drift into sleep while slowly rotating like a chicken.', 'survival_chance' => 85, 'tier' => 'D'],
+    ['item' => 'Electrocuted-looking humanity', 'effect' => "Everyone's hair stands on end; all of mankind looks terrified.", 'survival_chance' => 95, 'tier' => 'F'],
+    ['item' => 'BREATHING (the atmosphere leaves)', 'effect' => 'The entire sky peels off the planet and floats into space, taking the oceans, the soil, the glitter, and your unfinished coffee with it.', 'survival_chance' => 0, 'tier' => 'S+', 'note' => 'Voids the whole scoreboard: every other entry needs a living person to experience it.'],
+];
+
+/**
+ * The weather, personally offended. Grouped by system, each with a
+ * headline announcement and the forecasts that fall under it.
+ */
+const VENGEFUL_WEATHER = [
+    'PRECIPITATION HAS ACHIEVED SENTIENCE AND IS FILING GRIEVANCES' => [
+        'Rain falling upward, sideways, backward through time, and once — inexplicably — through the concept of Thursday itself',
+        "Drizzle that has your address, your mother's maiden name, and strong feelings about your posture",
+        'Freezing rain glazing the earth into a single continuous ice-mirror in which you can see every version of yourself that made worse decisions',
+        'Snow that lands, screams your unencrypted passwords into the void, and melts before you can stop it',
+        "Graupel: the sky's beanbag chair has ruptured at the seam and the stuffing is coming for us all, personally, by name",
+        "Hail the size of a court summons you can't legally decline",
+        'Sleet — the eternal war between rain and snow, fought in your collar, no survivors, no ceasefire, no god',
+        'Virga: rain that descends halfway, makes eye contact with the entire planet, and dematerializes out of a shame so profound it echoes in the troposphere',
+    ],
+    'THE SKY IS AWAKE AND IT REMEMBERS EVERYTHING' => [
+        'Clear skies. The blue is not a color. The blue is a lid. Do not ask what it is a lid on.',
+        'Partly cloudy: the clouds are dissociating and will not be taking questions',
+        'Overcast — the firmament has pulled a gray shroud over its ten thousand eyes and is pretending, for your sake, that it cannot see you',
+        'Cumulonimbus rising forty-five thousand feet, anvil-crowned, benching the jet stream, screaming a frequency only dogs and the damned can hear',
+        'Mammatus clouds: the sky has grown a hundred smooth bulbous udders and hangs low and wrong and every civilization that has seen this has, correctly, panicked',
+    ],
+    'FOG: VISIBILITY IS A PRIVILEGE AND IT HAS BEEN REVOKED' => [
+        'Fog that ingested the entire town and now hums contentedly, digesting',
+        "Mist — the fog's smaller, chattier familiar, whispering directions to a place that does not exist",
+        'Freezing fog: the fog has died and risen, a crystalline revenant, load-bearing, undying, faintly amused',
+        'Ice fog so cold that the air itself has surrendered its molecular ambitions and become a suspended galaxy of tiny patient blades',
+        'The Brown Fog. We do not speak of the Brown Fog. It knows your PIN.',
+    ],
+    'WIND, UNCHAINED, HOWLING IN A LANGUAGE THAT PREDATES VOWELS' => [
+        'Dead calm. The insects have stopped. The birds have stopped. Your watch has stopped. A decision, ancient and enormous, is being reached about you specifically.',
+        'Gusts abducting one glove, one earring, one memory of your father, redistributed at random across the county',
+        'Gale-force winds rearranging every lawn chair in the hemisphere into a single sigil that, viewed from orbit, spells a word no human throat can survive',
+        'Foehn winds — warm, dry, disarmingly kind, whispering that everything will be fine as they systematically dismantle your will to live and also your gazebo',
+        'Wind shear: two air masses meeting at 3,000 feet, recognizing each other from a previous life, and beginning, immediately, to scream',
+    ],
+    'THUNDERSTORMS: THE ATMOSPHERE HAS BEEN UNSUPERVISED FOR TOO LONG' => [
+        'Lightning that struck the same spot forty times to spell something, and we translated it, and we wish we hadn\'t',
+        'Thunder arriving late, arriving early, arriving from inside the house, laughing at a joke told before the invention of language',
+        'Tornadoes performing a synchronized ballet across three counties, F5, flawless, and the sky is weeping, and the weeping is applause',
+        'Waterspouts: a tornado that walked into the sea, made friends with something down there, and came back changed',
+        'Microburst — the fist of a colossus punching straight down onto one gazebo it has hated since the Pleistocene',
+        'Derecho: a single unbroken line of wind, six hundred miles long, that received one (1) upsetting notification and is now driving through your entire regional power grid to have a word',
+    ],
+    'LARGE-SCALE SYSTEMS WITH A PR TEAM, A GRUDGE, AND A COSMIC MANDATE' => [
+        'Hurricanes with a name, a rank, a Wikipedia page, and a reserved seat at the head of every table you will ever sit at again',
+        'Blizzards white-outing not just the landscape but the render distance of reality itself, until existence displays only a spinning cursor and the merciful hum of a universe reloading',
+        'Ice storms lacquering the world into a glass ornament so exquisite, so total, that God pauses, considers keeping it, and then hears it all shatter at once',
+        'Haboob: a mile-high wall of every desert that has ever been, standing up, dusting itself off, and walking toward the city with the unhurried confidence of something that has done this before and will do it again',
+        'Polar vortex — the Arctic has slipped its leash, crossed the 30th parallel, and is now standing in a parking lot in Dallas, radiating an ancient cold and demanding, in a voice like calving ice, to see the manager of the sun',
+    ],
+    'TEMPERATURE, SHIVERING AND BOILING IN THE SAME BREATH, FEVERISH, PROPHETIC' => [
+        'Heat so total the asphalt liquefies, stands up, and begins, softly, to prophesy',
+        'Cold that freezes the moisture in your eyes into two small perfect lenses through which you briefly, horribly, see clearly',
+        "Wind chill: the temperature and the wind have merged into a single entity whose entire theology is the ruination of your specific, individual face",
+        'Humidity so absolute the air is now a broth, sentient, warm, and it would like to keep you',
+    ],
+    'SMALL ATMOSPHERIC GREMLINS NURSING ANCIENT AND SPECIFIC GRUDGES' => [
+        'Dew — every blade of grass, weeping, all night, about a thing you did before you were born',
+        'Frost etching upon your windshield a fractal cathedral so intricate it can only have been drawn by something that had all of eternity and a personal vendetta',
+        'Rime ice growing sideways off every surface because gravity has read the room and quietly excused itself',
+        'Hoarfrost building, on your fence, a diorama of a tiny frozen kingdom whose tiny frozen king is staring, directly, at you',
+        'Drought: the sky has read your every message, watched your every offering burn, and elected — with the serene cruelty of the truly indifferent — to say nothing, for a year, and then another',
+    ],
+    'OPTICAL PHENOMENA, THE VEIL THINNING, THE EYE UNBLINKING' => [
+        'Rainbows arcing full-double across the heavens, promising gold, promising it knowingly, promising it to watch you run',
+        "Sundogs — the sun, lonely beyond the comprehension of warm-blooded things, has budded two false copies of itself, and the three of them are watching, and they are not in agreement about you",
+        'A moon halo: the moon has been ringed by something it did not choose and cannot remove, and it hangs there, luminous, encircled, doomed, and beautiful',
+        'Mirages: the desert, bored and immortal, conjuring a shimmering lake purely to enjoy the small warm shape of you stumbling toward a promise it never made',
+        'Sun pillar — a single shaft of light standing bolt upright from the horizon, silent, vertical, patient, as though something below is about to ascend, and we should not, any of us, be here to watch it',
+    ],
+];
+
+/**
  * Five severity tiers of state-mandated pet, escalating from
  * "featherweight chaos" to "cosmically ill-advised". Bounds are
  * rough mass/threat guidance, not enforced anywhere.
@@ -1895,7 +2119,7 @@ function handle_index(): never
 {
     send(200, [
         'service' => 'The API of Chaos',
-        'version' => '1.0.4',
+        'version' => '1.0.5',
         'tagline' => 'Dismissal, at scale, with an SLA of none.',
         'endpoints' => [
             'GET /kick/rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
@@ -1929,6 +2153,8 @@ function handle_index(): never
             'GET /unhinged/solid-suddenly-liquid' => 'A solid, liquefied. Fifty of them, tiered by regret.',
             'GET /unhinged/solid-suddenly-gelatinous' => 'A solid, turned to jelly. Fifty of them, tiered by wobble.',
             'GET /unhinged/choose-your-duck' => 'A bath duck, and what it costs you. Fifty of them, S-Tier to F-Tier.',
+            'GET /unhinged/gravity-resigned' => 'Gravity has quit. time to float.',
+            'GET /unhinged/vengeful-weather' => 'The sky, personally offended.',
             'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
         'notes' => [
@@ -2526,6 +2752,36 @@ function handle_choose_your_duck(): never
     ]);
 }
 
+function handle_gravity_resigned(): never
+{
+    $entry = pick(GRAVITY_RESIGNED);
+
+    $response = [
+        'instruction'      => 'Gravity has resigned. Effective immediately.',
+        'item'             => $entry['item'],
+        'effect'           => $entry['effect'],
+        'survival_chance'  => $entry['survival_chance'] . '%',
+        'tier'             => $entry['tier'],
+    ];
+
+    if (isset($entry['note'])) {
+        $response['note'] = $entry['note'];
+    }
+
+    send(200, $response);
+}
+
+function handle_vengeful_weather(): never
+{
+    $system = array_rand(VENGEFUL_WEATHER);
+
+    send(200, [
+        'instruction' => 'Step outside. Or don\'t. It knows either way.',
+        'forecast'    => pick(VENGEFUL_WEATHER[$system]),
+        'system'      => $system,
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = client_ip();
@@ -2649,6 +2905,8 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/solid-suddenly-liquid' => handle_solid_suddenly_liquid(),
     $method === 'GET' && $path === '/unhinged/solid-suddenly-gelatinous' => handle_solid_suddenly_gelatinous(),
     $method === 'GET' && $path === '/unhinged/choose-your-duck' => handle_choose_your_duck(),
+    $method === 'GET' && $path === '/unhinged/gravity-resigned' => handle_gravity_resigned(),
+    $method === 'GET' && $path === '/unhinged/vengeful-weather' => handle_vengeful_weather(),
     $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',

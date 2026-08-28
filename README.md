@@ -1,6 +1,6 @@
 # The API of Chaos
 
-**v1.0.4** — Dismissal, at scale, with an SLA of none.
+**v1.0.5** — Dismissal, at scale, with an SLA of none.
 
 **Base URL** - https://api.dumpsterfire.uk
 
@@ -39,6 +39,8 @@
 | GET | /unhinged/solid-suddenly-liquid | A solid, liquefied. Fifty of them, tiered by regret. |
 | GET | /unhinged/solid-suddenly-gelatinous | A solid, turned to jelly. Fifty of them, tiered by wobble. |
 | GET | /unhinged/choose-your-duck | A bath duck, and what it costs you. Fifty of them, S-Tier to F-Tier. |
+| GET | /unhinged/gravity-resigned | gravity has quit. time to float |
+| GET | /unhinged/vengeful-weather | the sky, personally offended  |
 | GET | /healthz | Liveness, plus lifetime request, unique-IP, and rocks-kicked counts. |
 
 
@@ -48,7 +50,15 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
-| Amazon Alexa | 1.0.0 | ❌ No | Pending |
+| Web Frontend | 1.0.5 | ✅ yes | Active |
+| Amazon Alexa | 1.0.1 | ❌ No | Pending |
+
+## MCP Endpoints
+
+| Type | Version | URL | Status |
+|---|---|---|---|
+| OpenAI | 1.0.0 | Web Frontend/mcp/ | Active |
+| Claude | 1.0.0 | Web Frontend/mcp-claude | Active |
 
 ## Notes
 

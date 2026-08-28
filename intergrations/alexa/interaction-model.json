@@ -366,6 +366,26 @@
                                     "choose duck"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "gravity resigned",
+                                "synonyms": [
+                                    "gravity",
+                                    "gravity has quit",
+                                    "zero gravity"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "vengeful weather",
+                                "synonyms": [
+                                    "weather",
+                                    "the weather",
+                                    "forecast"
+                                ]
+                            }
                         }
                     ]
                 }

@@ -17,6 +17,16 @@ declare(strict_types=1);
 // ============================================================ configuration
 
 /**
+ * Canonical URLs for the two environments this site runs in. Single source
+ * of truth for both files — the API applies these same four constants to
+ * its CORS allowlist, so keep the two copies in sync.
+ */
+const WEB_URL         = 'https://dumpsterfire.uk';
+const API_URL         = 'https://api.dumpsterfire.uk';
+const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk';
+const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
+
+/**
  * Where the API lives.
  *
  * Every request carries the visitor's address in CF-Connecting-IP. Be aware
@@ -27,8 +37,13 @@ declare(strict_types=1);
  *   1. Point this at an origin hostname that bypasses Cloudflare (grey cloud,
  *      or a direct origin record), so the header arrives untouched.
  *   2. Have the API read X-Chaos-Client-IP, which nothing rewrites.
+ *
+ * Picked automatically from the host this page is served on: the staging web
+ * host gets the staging API, anything else (production, localhost, a preview
+ * domain) gets production. Uses define() rather than const because it needs
+ * $_SERVER at runtime, which plain const expressions can't touch.
  */
-const API_BASE        = 'https://api.dumpsterfire.uk';
+define('API_BASE', (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)) ? STAGING_API_URL : API_URL);
 
 /**
  * Reach the origin directly, bypassing Cloudflare's edge.
@@ -144,7 +159,7 @@ const ALLOWED_PATHS = [
     '#^/cage/finger$#',
     '#^/cage/finger/(left|reset)$#',
     '#^/cage/fictional/finger$#',
-    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck)$#',
+    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck|gravity-resigned|vengeful-weather)$#',
 ];
 
 /** Paths that may be called with DELETE. Everything else is GET or POST. */
@@ -291,11 +306,13 @@ $CATALOGUE = [
             ['path' => '/unhinged/pessimism',     'method' => 'GET', 'note' => 'unearned dread 😮‍💨',             'fields' => []],
             ['path' => '/unhinged/advice',        'method' => 'GET', 'note' => 'applies to almost anything 🫢', 'fields' => []],
             ['path' => '/unhinged/non-committal', 'method' => 'GET', 'note' => 'fifty ways to not answer 😶',   'fields' => []],
-            ['path' => '/unhinged/optimistic-dooom', 'method' => 'GET', 'note' => 'the end of everything, as good news 😅', 'fields' => []],
+            ['path' => '/unhinged/optimistic-dooom', 'method' => 'GET', 'note' => 'end of everything, as good news 😅', 'fields' => []],
             ['path' => '/unhinged/turn-it-upside-down', 'display' => '\\unhinged\\turn-it-upside-down', 'method' => 'GET', 'note' => '🔃 it and find out 🙃', 'fields' => []],
-            ['path' => '/unhinged/solid-suddenly-liquid', 'new' => true, 'method' => 'GET', 'note' => 'a solid, liquefied 💦', 'fields' => []],
-            ['path' => '/unhinged/solid-suddenly-gelatinous', 'new' => true, 'method' => 'GET', 'note' => '🪨, now jelly 🍧', 'fields' => []],
+            ['path' => '/unhinged/solid-suddenly-liquid', 'method' => 'GET', 'note' => 'a solid, liquefied 💦', 'fields' => []],
+            ['path' => '/unhinged/solid-suddenly-gelatinous', 'method' => 'GET', 'note' => '🪨, now jelly 🍧', 'fields' => []],
             ['path' => '/unhinged/choose-your-duck', 'new' => true, 'method' => 'GET', 'note' => 'pick your 🛁 buddy', 'fields' => []],
+            ['path' => '/unhinged/gravity-resigned', 'new' => true, 'method' => 'GET', 'note' => 'gravity quit. now float 🫧', 'fields' => []],
+            ['path' => '/unhinged/vengeful-weather', 'new' => true, 'method' => 'GET', 'note' => 'the sky, now upset ⛈️', 'fields' => []],
         ],
     ],
     [
@@ -1139,13 +1156,12 @@ footer.foot {
   <header class="banner">
     <h1 class="banner__title"><span class="banner__grad">the api of chaos</span><span class="caret" aria-hidden="true"></span></h1>
     <p class="banner__lines">
-      <span>v1.0.4 &mdash; GPL-3.0 &mdash; <a href="https://github.com/MichelleFindlay/the-api-of-chaos">github.com/MichelleFindlay/the-api-of-chaos</a></span>
+      <span>v1.0.5 &mdash; GPL-3.0 &mdash; <a href="https://github.com/MichelleFindlay/the-api-of-chaos">github.com/MichelleFindlay/the-api-of-chaos</a></span>
       <span>click a command on the left, or type a path below (<b>DELETE /pound/dirt</b> works too). <b>help</b> lists everything, <b>clear</b> wipes the session.</span>
     </p>
     <div class="statusbar">
       <span>upstream <b><?= chaos_h(API_BASE) ?></b></span>
-      <span>you <b><?= chaos_h($clientIp) ?></b></span>
-      <span>pile <b><?= chaos_h(chaos_pile_id()) ?></b></span>
+      <span>you/pile <b><?= chaos_h($clientIp) ?></b><?php if (chaos_pile_id() !== $clientIp): ?> / <b><?= chaos_h(chaos_pile_id()) ?></b><?php endif; ?></span>
       <?php if ($country !== null): ?><span>region <b><?= chaos_h($country) ?></b></span><?php endif; ?>
       <span>date <b><?= chaos_h(gmdate('Y-m-d')) ?></b></span>
     </div>
@@ -1203,6 +1219,7 @@ footer.foot {
   </div>
 
   <footer class="foot">
+    <?php if (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)): ?><span><b>Beta / Testing</b></span><?php endif; ?>
     <span>every call goes straight from your browser to the api</span>
     <span>your ip is your pile</span>
     <span>nothing here is load-bearing</span>

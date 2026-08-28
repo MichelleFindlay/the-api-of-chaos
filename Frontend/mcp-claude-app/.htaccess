@@ -1,0 +1,32 @@
+# The API of Chaos — dedicated Claude connector Apache configuration
+# Place alongside index.php.
+# Requires AllowOverride FileInfo (for Header and RewriteRule/RewriteCond
+# below).
+#
+# This folder is named mcp-claude-app, not mcp-claude, on purpose: the
+# public URL is still /mcp-claude/, mapped here by ../.htaccess. Apache's
+# automatic "add a trailing slash" redirect only fires for URLs that
+# resolve to a real directory on disk — since no directory literally named
+# mcp-claude exists, that redirect never triggers, and the bare "/mcp-claude"
+# form (no trailing slash) reaches index.php directly via the parent
+# rewrite instead of dead-ending at a redirect first. (An earlier attempt
+# to fix this with `DirectorySlash Off` in this same file didn't work: that
+# directive needs AllowOverride Indexes specifically, which wasn't
+# available here — this rename sidesteps the need for it entirely.)
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+
+    # No auth in this folder, so cross-origin requests are fine.
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Accept, Authorization, Mcp-Session-Id, Mcp-Protocol-Version"
+</IfModule>
+
+# Preflight requests never need to reach PHP. The headers above still apply
+# via "Header always", so the short-circuited response carries them too.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^ - [R=204,L]
+</IfModule>
