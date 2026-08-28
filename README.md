@@ -58,7 +58,7 @@
 | Type | Version | URL | Status |
 |---|---|---|---|
 | OpenAI | 1.0.0 | Web Frontend/mcp/ | Active |
-| Claude | 1.0.0 | Web Frontend/mcp-claude | Active |
+| Claude | 1.0.0 | Web Frontend/mcp-claude/ | Active |
 
 ## Notes
 
