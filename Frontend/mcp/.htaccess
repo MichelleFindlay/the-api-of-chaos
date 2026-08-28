@@ -1,0 +1,43 @@
+# The API of Chaos — MCP folder Apache configuration
+# Place alongside index.php, lib.php, openapi.php and tools.php.
+# Requires AllowOverride All (or at least FileInfo).
+#
+# /mcp/ itself needs no rewrite rule here — normal DirectoryIndex resolves
+# it to index.php. This file only routes the two REST-side URLs that don't
+# map to a real file on disk:
+#
+#   /mcp/openapi.json   -> openapi.php  (OpenAPI 3.1 spec)
+#   /mcp/tools/<name>   -> tools.php    (REST invocation of one tool)
+
+# Without this, Apache 301-redirects a bare "/mcp" (no trailing slash) to
+# "/mcp/" before anything else in this file runs. Connector setup flows and
+# MCP clients generally give the endpoint URL as typed and don't follow
+# redirects for the POST+JSON-RPC handshake, so a request to the bare URL
+# would dead-end at the redirect instead of ever reaching index.php. This
+# makes /mcp and /mcp/ behave identically, so either form works.
+<IfModule mod_dir.c>
+    DirectorySlash Off
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^openapi\.json$ openapi.php [L]
+    RewriteRule ^tools/([a-zA-Z0-9_]+)/?$ tools.php?name=$1 [L,QSA]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+
+    # No auth anywhere in this folder, so cross-origin requests are fine.
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Accept, Mcp-Session-Id, Mcp-Protocol-Version"
+</IfModule>
+
+# Preflight requests never need to reach PHP. The headers above still apply
+# via "Header always", so the short-circuited response carries them too.
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^ - [R=204,L]
+</IfModule>
