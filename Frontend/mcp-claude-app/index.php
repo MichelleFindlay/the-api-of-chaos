@@ -2,34 +2,40 @@
 declare(strict_types=1);
 
 /**
- * The API of Chaos — MCP server.
+ * The API of Chaos — dedicated Claude MCP connector.
  *
- * A Model Context Protocol endpoint speaking the Streamable HTTP transport
- * (MCP spec 2025-06-18, backward compatible with 2025-03-26). No auth, no
- * session state, nothing to configure — point a client at this URL and go.
- * Compatible with Claude, ChatGPT/OpenAI's Responses `mcp` tool, and any
- * other client that follows the spec, since the JSON-RPC surface is plain
- * and doesn't lean on any one client's quirks.
+ * The same Model Context Protocol server as ../mcp/, on its own path with
+ * nothing else attached — no OpenAPI/REST side for Open WebUI and similar,
+ * just the Streamable HTTP transport (MCP spec 2025-06-18, backward
+ * compatible with 2025-03-26). No auth, no session state, nothing to
+ * configure: paste this URL into Claude's "Add custom connector" dialog
+ * and, on the auth-detection step, choose "No authentication" — the
+ * automatic check for that has been unreliable in testing regardless of
+ * what this server actually sends, so don't wait on it.
  *
- *   POST /mcp/   JSON-RPC 2.0 messages (initialize, tools/list, tools/call)
- *   GET  /mcp/   opens the Streamable HTTP listening stream (200,
- *                text/event-stream). This server never has anything to
- *                push, so it closes right away — but it answers 200, not
- *                405, on purpose: some connector setup flows probe with a
- *                bare GET and read any non-2xx there as "this needs
- *                sign-in", which this server doesn't.
+ *   POST /mcp-claude/   JSON-RPC 2.0 messages (initialize, tools/list, tools/call)
+ *   GET  /mcp-claude/   opens the Streamable HTTP listening stream (200,
+ *                       text/event-stream). This server never has anything
+ *                       to push, so it closes right away — but it answers
+ *                       200, not 405, on purpose: a wrong-method status
+ *                       here has been misread by connector setup flows as
+ *                       "this needs sign-in", which this server doesn't.
  *
- * For clients that don't speak MCP at all (Open WebUI's OpenAPI Tool
- * Server and similar), the same tool catalogue is also published as a
- * plain REST API — see openapi.json and tools.php in this folder.
+ * This directory is named mcp-claude-app, not mcp-claude — the public URL
+ * above is still /mcp-claude/, mapped onto this folder by ../.htaccess, so
+ * that Apache's automatic directory-slash redirect (which only fires for
+ * URLs resolving to a real on-disk directory) never gets a chance to
+ * intercept the bare "/mcp-claude" form before it reaches this script.
  *
- * Every tool call proxies straight to the upstream API, server side, with
- * the caller's address forwarded upstream so /pound/dirt still attributes
- * piles to the right person — same trick as ../index.php, just reached
- * through tool calls instead of a browser terminal.
+ * Tool catalogue, upstream-calling and IP-forwarding logic all live in
+ * ../mcp/lib.php and are shared with the general-purpose connector there —
+ * one source of truth for what this API of Chaos exposes as tools. This
+ * file is only the JSON-RPC/transport layer, kept on its own path so
+ * Claude gets a plain, uncomplicated MCP endpoint with nothing else
+ * competing for how the connector setup flow interprets it.
  */
 
-require __DIR__ . '/lib.php';
+require __DIR__ . '/../mcp/lib.php';
 
 /** MCP protocol versions this server understands, newest first. */
 const SUPPORTED_MCP_VERSIONS = ['2025-06-18', '2025-03-26'];

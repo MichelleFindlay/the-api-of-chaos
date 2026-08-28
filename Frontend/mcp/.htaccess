@@ -1,6 +1,9 @@
 # The API of Chaos — MCP folder Apache configuration
 # Place alongside index.php, lib.php, openapi.php and tools.php.
-# Requires AllowOverride All (or at least FileInfo).
+# Requires AllowOverride Indexes (for DirectorySlash below) and FileInfo
+# (for Header and RewriteRule/RewriteCond below) — FileInfo alone is not
+# enough: without Indexes, DirectorySlash is silently ignored and the
+# bare-URL redirect this file exists to disable keeps happening.
 #
 # /mcp/ itself needs no rewrite rule here — normal DirectoryIndex resolves
 # it to index.php. This file only routes the two REST-side URLs that don't
@@ -32,7 +35,7 @@
     # No auth anywhere in this folder, so cross-origin requests are fine.
     Header always set Access-Control-Allow-Origin "*"
     Header always set Access-Control-Allow-Methods "GET, POST, DELETE, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type, Accept, Mcp-Session-Id, Mcp-Protocol-Version"
+    Header always set Access-Control-Allow-Headers "Content-Type, Accept, Authorization, Mcp-Session-Id, Mcp-Protocol-Version"
 </IfModule>
 
 # Preflight requests never need to reach PHP. The headers above still apply

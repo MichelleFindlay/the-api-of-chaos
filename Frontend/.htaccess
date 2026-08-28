@@ -1,0 +1,18 @@
+# The API of Chaos — Frontend document root Apache configuration
+# Requires AllowOverride FileInfo.
+#
+# Maps the public /mcp-claude URL onto the mcp-claude-app/ folder. The
+# folder is deliberately not named mcp-claude: Apache's automatic "add a
+# trailing slash" redirect (mod_dir) fires during directory resolution,
+# before any per-directory .htaccess RewriteRule gets a chance to run —
+# including one placed here, in the parent. That redirect only triggers for
+# URLs that resolve to a real on-disk directory, though, so as long as no
+# directory literally named mcp-claude exists, the rule below is what
+# handles both the bare "/mcp-claude" and "/mcp-claude/" forms, and an MCP
+# client that doesn't follow redirects on POST (the common case) still
+# reaches index.php either way.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^mcp-claude/?$ mcp-claude-app/index.php [L]
+</IfModule>
