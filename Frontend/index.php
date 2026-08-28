@@ -762,6 +762,11 @@ if (isset($_GET['path'])) {
 $clientIp  = chaos_client_ip();
 $country   = chaos_client_country();
 $sectionNo = 0;
+
+/** MCP connector URLs live on the web host, so they follow it to staging too. */
+$mcpWebBase    = (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)) ? STAGING_WEB_URL : WEB_URL;
+$mcpOpenApiUrl = rtrim($mcpWebBase, '/') . '/mcp';
+$mcpClaudeUrl  = rtrim($mcpWebBase, '/') . '/mcp-claude';
 ?>
 <!DOCTYPE html>
 <html lang="en-GB">
@@ -1080,8 +1085,85 @@ footer.foot {
   font-size: 0.8rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem 1.75rem;
+  align-items: center;
+  gap: 0.5rem 1.75rem;
 }
+
+.mcp-btn {
+  margin-left: auto;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--amber);
+  border: 1px solid var(--amber);
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 0 14px rgba(255, 180, 84, 0.35);
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+.mcp-btn:hover { background: transparent; color: var(--amber); box-shadow: 0 0 18px rgba(255, 180, 84, 0.5); }
+.mcp-btn:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
+
+/* -------------------------------------------------------- mcp dialog */
+
+.mcp-dialog {
+  width: min(640px, 92vw);
+  max-height: min(80vh, 640px);
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--pane);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 14px;
+}
+.mcp-dialog::backdrop { background: rgba(2, 4, 6, 0.72); }
+
+.mcp-dialog__bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 0.85rem;
+  border-bottom: 1px solid var(--line);
+  background: #0d1218;
+  color: var(--dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mcp-dialog__body {
+  padding: 1rem 1.1rem 1.2rem;
+  overflow-y: auto;
+  max-height: calc(min(80vh, 640px) - 2.6rem);
+}
+.mcp-dialog__body h3 {
+  margin: 1.4rem 0 0.6rem;
+  color: var(--amber);
+  font-size: 0.88rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+.mcp-dialog__body section:first-child h3 { margin-top: 0; }
+.mcp-dialog__body p, .mcp-dialog__body ol { margin: 0.5rem 0; }
+.mcp-dialog__body ol { padding-left: 1.3rem; }
+.mcp-dialog__body li { margin: 0.4rem 0; }
+.mcp-dialog__body code {
+  color: var(--amber);
+  background: #0d1218;
+  border: 1px solid var(--line);
+  padding: 0.03rem 0.35rem;
+  font: inherit;
+  word-break: break-all;
+}
+
+.mcp-kv { margin: 0.5rem 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.85rem; }
+.mcp-kv dt { color: var(--dim); }
+.mcp-kv dd { margin: 0; }
 
 /* ----------------------------------------------------------- mobile */
 
@@ -1140,7 +1222,8 @@ footer.foot {
 
   .docket, .term { max-width: 100%; }
 
-  footer.foot { gap: 0.25rem 1.25rem; font-size: 0.74rem; }
+  footer.foot { gap: 0.5rem 1.25rem; font-size: 0.74rem; }
+  .mcp-btn { margin-left: 0; width: 100%; text-align: center; min-height: 38px; order: -1; }
 }
 
 /* very narrow phones */
@@ -1223,7 +1306,43 @@ footer.foot {
     <span>every call goes straight from your browser to the api</span>
     <span>your ip is your pile</span>
     <span>nothing here is load-bearing</span>
+    <button id="mcp-access-btn" class="mcp-btn" type="button">MCP Access</button>
   </footer>
+
+  <dialog id="mcp-dialog" class="mcp-dialog">
+    <div class="mcp-dialog__bar">
+      <span>mcp access</span>
+      <button id="mcp-dialog-close" class="barbtn" type="button">close</button>
+    </div>
+    <div class="mcp-dialog__body">
+      <section>
+        <h3>Adding OpenAI MCP</h3>
+        <dl class="mcp-kv">
+          <dt>Type</dt><dd>OpenAPI</dd>
+          <dt>Name</dt><dd>api-of-chaos</dd>
+          <dt>ID (optional)</dt><dd>api-of-chaos</dd>
+          <dt>Description</dt><dd>(leave empty)</dd>
+          <dt>URL</dt><dd><code><?= chaos_h($mcpOpenApiUrl) ?></code></dd>
+          <dt>Enabled toggle</dt><dd>on</dd>
+          <dt>Auth</dt><dd>None (no authentication)</dd>
+          <dt>Advanced</dt><dd>(leave collapsed)</dd>
+          <dt>Access Control</dt><dd>(not configured)</dd>
+          <dt>Function Name Filter List</dt><dd>(leave empty &mdash; e.g. func1, !func2)</dd>
+        </dl>
+        <p>Click <b>Save</b>.</p>
+      </section>
+      <section>
+        <h3>Adding Claude Connector</h3>
+        <ol>
+          <li>In Claude, go to <b>Settings &rarr; Connectors &rarr; Add custom connector</b>.</li>
+          <li>Name: anything (<code>api-of-chaos</code> works). URL: <code><?= chaos_h($mcpClaudeUrl) ?></code></li>
+          <li>Claude's automatic server check is unreliable against this server regardless of what it actually sends back &mdash; it will likely report &ldquo;Couldn't determine the server settings&rdquo; and fail to find an authorization server. That's expected. Click <b>Next</b> anyway.</li>
+          <li>On the auth step, choose <b>No authentication</b> &mdash; this server has none.</li>
+          <li>Click <b>Add</b>. No further setup: no auth, no session state, nothing to configure.</li>
+        </ol>
+      </section>
+    </div>
+  </dialog>
 
 </div>
 
@@ -1437,6 +1556,15 @@ footer.foot {
       toggleAll.textContent = anyOpen ? "hide all" : "show all";
       toggleAll.setAttribute("aria-pressed", String(!anyOpen));
     });
+  });
+
+  var mcpBtn   = document.getElementById("mcp-access-btn");
+  var mcpModal = document.getElementById("mcp-dialog");
+  var mcpClose = document.getElementById("mcp-dialog-close");
+  mcpBtn.addEventListener("click", function () { mcpModal.showModal(); });
+  mcpClose.addEventListener("click", function () { mcpModal.close(); });
+  mcpModal.addEventListener("click", function (event) {
+    if (event.target === mcpModal) { mcpModal.close(); }
   });
 
   cli.focus();
