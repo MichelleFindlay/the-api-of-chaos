@@ -53,6 +53,13 @@
 | Web Frontend | 1.0.5 | ✅ yes | Active |
 | Amazon Alexa | 1.0.1 | ❌ No | Pending |
 
+## MCP Endpoints
+
+| Type | Version | URL | Status |
+|---|---|---|---|
+| OpenAI | 1.0.0 | Web Frontend/mcp/ | Active |
+| Claude | 1.0.0 | Web Frontend/mcp-claude | Active |
+
 ## Notes
 
 - Piles are files on disk and survive restarts, unlike morale.
