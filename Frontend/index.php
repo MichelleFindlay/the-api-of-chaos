@@ -393,12 +393,12 @@ function chaos_latest_release_version(): ?string
 
 /**
  * Whether the "changelog is a tombstone" banner line should show. It
- * hides itself the moment this site's own version pulls ahead of the
- * latest published GitHub release: at that point there is no matching
- * release to point people at yet, so linking "the latest release"
- * would show them something older than what's actually running —
- * worse than no message at all. It shows whenever a release is at
- * least caught up (or ahead), since only then is the link accurate.
+ * only shows while this site is running behind the latest published
+ * GitHub release — i.e. there's a newer release than what's deployed,
+ * so pointing people at "the latest release" actually tells them
+ * something they don't already have. The moment this site's version
+ * catches up (or pulls ahead of) the latest release, it's redundant —
+ * you're already running the newest thing — so it hides itself.
  * Nothing to remember to toggle either way.
  *
  * ?changelog_test=stale / =fresh force one state or the other, bypassing
@@ -417,12 +417,12 @@ function changelog_is_stale(): bool
 
     $latest = chaos_latest_release_version();
     if ($latest === null) {
-        // Can't tell — assume this site isn't ahead rather than risk
-        // hiding a notice that's still accurate.
-        return true;
+        // Can't tell — assume this site isn't behind rather than show
+        // a notice that might not be accurate.
+        return false;
     }
 
-    return version_compare(APP_VERSION, $latest, '<=');
+    return version_compare(APP_VERSION, $latest, '<');
 }
 
 // ============================================ debug mode (?debug=1, no call)

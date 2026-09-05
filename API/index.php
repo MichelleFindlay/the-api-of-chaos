@@ -2413,12 +2413,12 @@ function latest_release_version(): ?string
 
 /**
  * Whether the "changelog is a tombstone" note should appear in GET /. It
- * hides itself the moment this API's own version pulls ahead of the
- * latest published GitHub release: at that point there is no matching
- * release to point people at yet, so linking "the latest release" would
- * show them something older than what's actually running — worse than
- * no note at all. It shows whenever a release is at least caught up (or
- * ahead), since only then is the link accurate.
+ * only shows while this API is running behind the latest published
+ * GitHub release — i.e. there's a newer release than what's deployed,
+ * so pointing people at "the latest release" actually tells them
+ * something they don't already have. The moment this API's version
+ * catches up (or pulls ahead of) the latest release, it's redundant —
+ * you're already running the newest thing — so it hides itself.
  *
  * ?changelog_test=stale / =fresh force one state or the other, bypassing
  * the real GitHub check entirely, so both states can be checked without
@@ -2436,12 +2436,12 @@ function changelog_is_stale(): bool
 
     $latest = latest_release_version();
     if ($latest === null) {
-        // Can't tell — assume this API isn't ahead rather than risk
-        // hiding a note that's still accurate.
-        return true;
+        // Can't tell — assume this API isn't behind rather than show
+        // a note that might not be accurate.
+        return false;
     }
 
-    return version_compare(APP_VERSION, $latest, '<=');
+    return version_compare(APP_VERSION, $latest, '<');
 }
 
 /* ------------------------------------------------------------------ *
@@ -3206,14 +3206,121 @@ if ($method === 'OPTIONS') {
     exit;
 }
 
+// ?migration_debug=1: reports on the legacy-/tmp migration without
+// running it, so whether the legacy data is even still there (the OS can
+// sweep /tmp — see PILE_DATA_DIR's docblock in config.php) and whether
+// the PILES_BACKUP_MIN_INTERVAL throttle is currently blocking a retry
+// can both be checked directly against the live server, no shell needed.
+if ($method === 'GET' && isset($_GET['migration_debug'])) {
+    $liveDir         = pile_dir();
+    $legacyDir       = sys_get_temp_dir() . '/jar';
+    $legacyFiles     = is_dir($legacyDir) ? (glob($legacyDir . '/*.json') ?: []) : [];
+    $legacyStatsPath = $legacyDir . '/_lifetime_stats';
+
+    $backupRaw  = @file_get_contents(PILES_BACKUP_FILE);
+    $backupData = $backupRaw !== false ? json_decode($backupRaw, true) : null;
+    $backupAge  = is_array($backupData) && isset($backupData['written_at'])
+        ? time() - (int) $backupData['written_at']
+        : null;
+
+    send(200, [
+        'sys_get_temp_dir'               => sys_get_temp_dir(),
+        'legacy_dir'                     => $legacyDir,
+        'legacy_dir_exists'              => is_dir($legacyDir),
+        'legacy_json_file_count'         => count($legacyFiles),
+        'legacy_stats_file_exists'       => is_file($legacyStatsPath),
+        'legacy_stats_contents'          => is_file($legacyStatsPath)
+            ? json_decode((string) @file_get_contents($legacyStatsPath), true)
+            : null,
+        'live_pile_dir'                  => $liveDir,
+        'live_stats_file_exists'         => is_file(stats_path()),
+        'live_stats_contents'            => stats_snapshot(),
+        'piles_backup_file_exists'       => $backupRaw !== false,
+        'piles_backup_age_seconds'       => $backupAge,
+        'piles_backup_throttle_seconds'  => PILES_BACKUP_MIN_INTERVAL,
+        'migration_would_run_now'        => $backupAge === null || $backupAge >= PILES_BACKUP_MIN_INTERVAL,
+    ]);
+}
+
+// ?migration_force=1: one-time manual recovery. migrate_legacy_piles()
+// only copies _lifetime_stats in when the live file doesn't exist yet —
+// but a live file already got created (by stats_record() running before
+// this fix landed) before any copy could happen, so the automatic path
+// will now skip it forever, throttle or no throttle. This instead merges
+// (sums total_requests and counters, unions the ip-hash sets) rather than
+// overwriting, and copies over any still-missing legacy pile/appendage
+// files, ignoring the PILES_BACKUP_MIN_INTERVAL throttle entirely. Safe
+// to call more than once: a live 'legacy_merged_at' flag, set inside the
+// same locked read-modify-write as the merge, stops a second call from
+// double-counting the same legacy numbers again.
+if ($method === 'GET' && isset($_GET['migration_force'])) {
+    $liveDir   = pile_dir();
+    $legacyDir = sys_get_temp_dir() . '/jar';
+
+    $copied = [];
+    if (is_dir($legacyDir) && realpath($legacyDir) !== realpath($liveDir)) {
+        foreach (glob($legacyDir . '/*.json') ?: [] as $legacyFile) {
+            $base   = basename($legacyFile);
+            $target = $liveDir . '/' . $base;
+            if (!is_file($target) && @copy($legacyFile, $target)) {
+                $copied[] = $base;
+            }
+        }
+    }
+
+    $legacyStatsPath = $legacyDir . '/_lifetime_stats';
+    $merged          = false;
+    $alreadyMerged   = false;
+    if (is_file($legacyStatsPath)) {
+        $legacyStats = json_decode((string) @file_get_contents($legacyStatsPath), true);
+        if (is_array($legacyStats)) {
+            json_file_update(stats_path(), static function (array $live) use ($legacyStats, &$merged, &$alreadyMerged): array {
+                if (!empty($live['legacy_merged_at'])) {
+                    $alreadyMerged = true;
+                    return $live;
+                }
+
+                $live['total_requests'] = (int) ($live['total_requests'] ?? 0) + (int) ($legacyStats['total_requests'] ?? 0);
+
+                $liveIps   = is_array($live['ips'] ?? null) ? $live['ips'] : [];
+                $legacyIps = is_array($legacyStats['ips'] ?? null) ? $legacyStats['ips'] : [];
+                $live['ips'] = $liveIps + $legacyIps;
+
+                $liveCounters   = is_array($live['counters'] ?? null) ? $live['counters'] : [];
+                $legacyCounters = is_array($legacyStats['counters'] ?? null) ? $legacyStats['counters'] : [];
+                foreach ($legacyCounters as $key => $value) {
+                    $liveCounters[$key] = (int) ($liveCounters[$key] ?? 0) + (int) $value;
+                }
+                $live['counters'] = $liveCounters;
+
+                $live['legacy_merged_at'] = gmdate('c');
+                $merged = true;
+                return $live;
+            });
+        }
+    }
+
+    send(200, [
+        'stats_merged_this_call'  => $merged,
+        'stats_already_merged'    => $alreadyMerged,
+        'pile_files_copied'       => $copied,
+        'pile_files_copied_count' => count($copied),
+        'live_stats_after'        => stats_snapshot(),
+    ]);
+}
+
+// Must run before stats_record() below: that call creates
+// pile_dir()/_lifetime_stats on the spot if it doesn't exist yet
+// (json_file_update() opens it with 'c+'), and migrate_legacy_piles()
+// only copies the legacy /tmp file in when the live target is still
+// missing. Migrating first is what gives it a target to find missing.
+migrate_legacy_piles();
+
 // Every request counts towards lifetime stats, surfaced at GET /healthz.
 stats_record(client_ip());
 
 // Mirrors those stats into the webspace, throttled — see stats_backup().
 stats_backup();
-
-// Same for the pile/appendage data itself — see migrate_legacy_piles().
-migrate_legacy_piles();
 
 // One request in ten under /unhinged never makes it to a handler.
 void_check($path);
