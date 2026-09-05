@@ -1,0 +1,18 @@
+# The API of Chaos — deny-all for the data directory.
+#
+# Everything under here (jar/ — piles and appendage counts, one file per
+# visitor, keyed by sha1 of their IP with the raw IP inside; the
+# lifetime-stats file, no .json extension so the parent .htaccess's
+# extension-based rule alone wouldn't catch it; and the two consolidated
+# backup snapshots) is read and written only by index.php itself via
+# direct filesystem calls, never served. This blocks it outright,
+# regardless of file extension, rather than relying only on the parent
+# rule.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

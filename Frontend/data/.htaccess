@@ -1,0 +1,15 @@
+# The API of Chaos — deny-all for the data directory.
+#
+# Currently just the cached "latest GitHub release" lookup
+# (release-cache.json) — nothing sensitive, but it's read and written
+# only by index.php itself via direct filesystem calls, never served, so
+# deny it outright rather than leaving it to whatever else the parent
+# .htaccess happens to catch.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

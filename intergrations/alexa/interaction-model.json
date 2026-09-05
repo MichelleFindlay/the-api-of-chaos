@@ -386,6 +386,16 @@
                                     "forecast"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "wrongfall",
+                                "synonyms": [
+                                    "wrong fall",
+                                    "it rains the wrong thing",
+                                    "rain the wrong thing"
+                                ]
+                            }
                         }
                     ]
                 }

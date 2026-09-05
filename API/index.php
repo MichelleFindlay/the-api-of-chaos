@@ -4,7 +4,9 @@ declare(strict_types=1);
 /**
  * The API of Chaos (AOC)
  * ------------------------------------------------------------------
- * A dismissal-as-a-service API. Single file, no dependencies.
+ * A dismissal-as-a-service API. No external dependencies — just this
+ * file plus config.php (configuration only: URLs, version, trusted
+ * proxies, small tunables) sitting next to it.
  *
  *   php -S localhost:8000 kick-rocks.php
  *   KRAAS_DIR=/var/lib/kraas php -S 0.0.0.0:8000 kick-rocks.php
@@ -47,30 +49,26 @@ declare(strict_types=1);
  *   GET    /unhinged/choose-your-duck  a bath duck, and what it costs you, with tier
  *   GET    /unhinged/gravity-resigned  gravity has quit; what floats, and your odds of surviving it
  *   GET    /unhinged/vengeful-weather  the weather, personally offended, drawn from nine systems
+ *   GET    /unhinged/wrongfall  clouds went feral, with tier
  *   GET    /healthz             liveness, plus lifetime request/unique-IP/rocks-kicked counts
  *
  * Query params
  *   /kick/rocks?tier=7          request a specific tier (1-14)
  *   /kick/rocks?min=9&max=12    constrain the random range
+ *   /?changelog_test=stale      force-show the "changelog is a tombstone"
+ *                                note in / , ignoring the real GitHub check
+ *   /?changelog_test=fresh      force-hide it instead
  *
  * Piles are one per IP address and persist as JSON files under
- * sys_get_temp_dir()/jar (override with KRAAS_DIR), because PHP
- * forgets everything between requests. Much like the people you are
- * sending here.
+ * config.php's PILE_DATA_DIR, inside the webspace (override with
+ * KRAAS_DIR), because PHP forgets everything between requests. Much
+ * like the people you are sending here.
  *
  * Any request under /unhinged has a 1-in-10 chance of falling into
  * the void instead of getting a normal response. Try again.
  */
 
-/**
- * Canonical URLs for the two environments this API serves. Single source of
- * truth shared with the frontend's copy of the same four constants — keep
- * them in sync. Used below to restrict CORS to just these two origins.
- */
-const WEB_URL         = 'https://dumpsterfire.uk';
-const API_URL         = 'https://api.dumpsterfire.uk';
-const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk';
-const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
+require __DIR__ . '/config.php';
 
 /* ------------------------------------------------------------------ *
  * The scale. Masses are order-of-magnitude estimates and are not
@@ -687,10 +685,7 @@ const CAGE_FICTIONAL_OUTCOMES = [
     ['verdict' => 'Would take the finger with them', 'animal' => 'Langoliers', 'note' => 'will take the finger, the hand, and the past tense'],
 ];
 
-// How many fingers/toes you start (and get restored) with. Toes are
-// only spent once fingers run out.
-const FINGERS_START = 10;
-const TOES_START    = 10;
+// FINGERS_START and TOES_START now live in config.php.
 
 const GENTLE_CORRECTION_VERDICTS = [
     1 => ['verdict' => 'Reassuring pat',                'newtons' => 2,   'equivalent' => 'a supportive shoulder squeeze'],
@@ -701,8 +696,7 @@ const GENTLE_CORRECTION_VERDICTS = [
     6 => ['verdict' => 'Consult the warranty first',      'newtons' => 0,   'equivalent' => 'no impact administered; forms filed instead'],
 ];
 
-// Consecutive too-soon pounds against the same pile before the dirt guy quits.
-const RATE_LIMIT_MELTDOWN_STRIKES = 5;
+// RATE_LIMIT_MELTDOWN_STRIKES now lives in config.php.
 
 const RATE_LIMIT_RESPONSES = [
     [
@@ -1538,6 +1532,69 @@ const VENGEFUL_WEATHER = [
 ];
 
 /**
+ * Clouds went feral. Fifty materials, S-Tier (instant, dignified
+ * death) down to F-Tier (a fruitcake, finally doing something useful).
+ */
+const WRONGFALL = [
+    ['tier' => 'S', 'material' => 'Concrete', 'effect' => "It comes down grey and gasping and sets the instant it touches you, so you die mid-flinch, arms up, mouth open, a statue of your own last bad decision. Tourists will photograph you. They'll assume it's art. It is not art. It's Kevin."],
+    ['tier' => 'S', 'material' => 'Steel', 'effect' => 'The clouds ping like a struck anvil right before they open, which is the sky giving you exactly one second of warning, which is the cruelest thing it could possibly do. Molten. Everywhere. Your umbrella files for divorce and evaporates.'],
+    ['tier' => 'S', 'material' => 'Bedrock', 'effect' => 'The sky drops THE GROUND. Down is now falling on down. The planet is hitting itself. Geology has become a contact sport and you are the ball.'],
+    ['tier' => 'S', 'material' => 'Bone', 'effect' => "Warm. Personal. Faintly skeletal. Every drop used to be inside someone and it remembers. The gutters don't gurgle, they rattle, and if you listen closely — don't. Do not listen closely."],
+    ['tier' => 'S', 'material' => 'Silicon chips', 'effect' => 'The entire internet falls out of the sky as warm dead slurry and every single drop knows what you searched at 2am and lands on it specifically. You are being judged by rain. The rain wins.'],
+    ['tier' => 'S', 'material' => 'Tooth enamel', 'effect' => 'Eight billion sets of teeth fall from the heavens in the exact key everyone screamed, so it harmonises, so the apocalypse has a soundtrack and the soundtrack is a chord made of molars.'],
+    ['tier' => 'S', 'material' => 'Ice caps', 'effect' => "The poles just… come down. As weather. The map drowns from ABOVE now, which is a fun new direction for the map to drown from. Fish look up. Fish are confused. Fish inherit nothing because there's nothing left."],
+    ['tier' => 'S', 'material' => 'Bullets', 'effect' => 'Weather with a grudge and a target. It falls angry, it pools angrier, and nobody knows what liquid ammunition wants except down, and into you, and it has been waiting.'],
+
+    ['tier' => 'A', 'material' => 'Glass', 'effect' => "For four-tenths of one second the sky is the most beautiful it has ever been, a chandelier the size of the horizon, and then it's a billion falling windows and you die inside a kaleidoscope that is also a woodchipper. Gorgeous. Fatal. Instagrammable."],
+    ['tier' => 'A', 'material' => 'Asphalt', 'effect' => 'Warm black tar comes down and the birds go first, mid-flap, sealed like flies in amber, and then the whole world gets slowly, lovingly paved from the top down. The Earth is being resurfaced. You are under the resurfacing.'],
+    ['tier' => 'A', 'material' => 'Brick', 'effect' => "Entire towns fall UPWARD'S REVENGE. Masonry hail. A hard hat, against this, is a joke you tell at the funeral."],
+    ['tier' => 'A', 'material' => 'Copper', 'effect' => 'Electric soup, and every single drop completes a circuit, and the circuit is you, so standing outside becomes a lifestyle choice you get to make precisely once, and briefly, and brightly.'],
+    ['tier' => 'A', 'material' => 'Rebar', 'effect' => 'The sky is throwing STEEL SPEARS and — this is the worst part — it has aim. It is not raining. It is javelin practice and the field is everyone.'],
+    ['tier' => 'A', 'material' => 'Rubber', 'effect' => 'Bouncing goo, knee-deep, drains NEVER, plus the occasional full tyre from orbit going boing off your skull. The apocalypse, but slapstick. You die to a sound effect.'],
+    ['tier' => 'A', 'material' => 'Plastic', 'effect' => 'Modernity itself precipitates, warm and slurried, tupperware-flavoured doom, and the ocean — already full of the stuff — looks up and says "oh, more?" and thanks absolutely no one.'],
+    ['tier' => 'A', 'material' => 'Munitions', 'effect' => 'Like bullets, but each drop is an event, a percussion solo performed on the roof of the world by a sky that has clearly stopped taking its medication.'],
+
+    ['tier' => 'B', 'material' => 'Wood', 'effect' => 'Sap-storms, thick and amber and haunted, plus the occasional whole log doing 90 downward. Everything smells like a sawmill that died screaming. The beavers have gone quiet. The beavers know.'],
+    ['tier' => 'B', 'material' => 'Dentures', 'effect' => "Warm dental hail patters down and Grandpa — sweet, hopeful, oblivious Grandpa — looks UP. DO NOT LET GRANDPA LOOK UP. It is already too late. It was always too late. Pour one out for Grandpa's optimism."],
+    ['tier' => 'B', 'material' => 'Books', 'effect' => 'You get gently drizzled with the collected wisdom of humanity and then concussed by a hardback Tolstoy doing terminal velocity. You come inside wiser, filthier, and mildly brain-damaged. A fair trade, arguably.'],
+    ['tier' => 'B', 'material' => 'Chimney bricks', 'effect' => "FIRE and falling masonry, at once, together, a combo the sky is genuinely too proud of. It's showing off now. It wants applause. Do not applaud, your hands are full of brick."],
+    ['tier' => 'B', 'material' => 'Ceramic', 'effect' => "Toilets. Teacups. Sinks. Falling from heaven. Daily. This is the single least dignified way a civilisation has ever ended and it's scheduled and there's a little icon for it on the weather app and the icon is a toilet."],
+    ['tier' => 'B', 'material' => 'Ship hulls', 'effect' => 'Oil tankers. From cloud height. Each one is its own regional disaster with its own Wikipedia page that no one will live to write.'],
+    ['tier' => 'B', 'material' => 'Aircraft fuselage', 'effect' => "Everything that ever went up is now enthusiastically coming down and it is enormous and it is whistling. Look up. No. Don't. I told you not to. Why do you people keep looking up."],
+    ['tier' => 'B', 'material' => 'Coral reefs', 'effect' => 'Razor-sharp calcium hail, and in a final vicious joke the reef lands on the very fish that used to live in it, evicted and executed in the same afternoon. The sea is now just angry soup with a grudge.'],
+    ['tier' => 'B', 'material' => 'Piano frames', 'effect' => "Grand pianos. From orbit. Each one striking one perfect final chord on impact, so the sky sounds like a concert hall being fed into God's own garbage disposal. It is the most middle-class way to die and it knows it."],
+    ['tier' => 'B', 'material' => 'Coins', 'effect' => 'It rains cold hard cash, so you stand in the storm, mouth open, arms wide, getting richer and richer and more concussed and eventually drowned in your own sudden fortune. The most on-brand death available. Capitalism, weather edition.'],
+
+    ['tier' => 'C', 'material' => 'Furniture', 'effect' => 'Sofas plummet from the troposphere, soft-ish, ALMOST survivable, and then a WARDROBE finds you specifically, personally, like it had your address. IKEA from the sky. Some assembly required. Yours.'],
+    ['tier' => 'C', 'material' => 'Cutlery', 'effect' => 'Silverware rains down tinkling ominously, a thousand tiny cheerful chimes, and everyone is left slightly, constantly, cumulatively stabbed. Death by a thousand teaspoons. Very British.'],
+    ['tier' => 'C', 'material' => 'Statues', 'effect' => 'The great figures of history rain down one by one, each wearing an expression of profound disappointment in you personally, and the pigeons — homeless now, and FURIOUS — form a militia. Watch the pigeons. The pigeons have organised.'],
+    ['tier' => 'C', 'material' => 'Chalk', 'effect' => 'The White Cliffs of Dover fall out of the sky, dusty and damp, and England says nothing, England just stands in the doorway with a cup of tea and one single tear, because England knew, England always knew it would end like this.'],
+    ['tier' => 'C', 'material' => 'Shoe soles', 'effect' => "Rubber slabs bombard the earth and now everyone is barefoot AND under artillery, which is the exact wrong combination, and you can't even run away stylishly."],
+    ['tier' => 'C', 'material' => 'Spectacles', 'effect' => "The sky rains everybody's lost eyesight and it pools into puddles that are — cruelly — clearer than actual reality, so you can finally see perfectly, in the reflection, the enormous cash register falling toward your head."],
+    ['tier' => 'C', 'material' => 'Instruments', 'effect' => 'Guitars and trumpets and cellos tumble down, each sagging out one last mournful dying note, so the end of the world sounds like an orchestra falling down an infinite staircase. Beautiful. Ongoing. Loud.'],
+    ['tier' => 'C', 'material' => 'Doorknobs', 'effect' => 'Brass hail, which means everyone is trapped INSIDE (no knobs left indoors) and pelted the second they try to leave. The sky has locked you in and is knocking. The sky wants to come in. Do not let the sky in.'],
+    ['tier' => 'C', 'material' => 'Cash registers', 'effect' => "Tills. From the sky. Ka-CHING on the way down, splat on arrival. Retail didn't just collapse, it went airborne and hostile, and somewhere a manager is looking up going \"is this covered under—\" and then it isn't and neither is he."],
+    ['tier' => 'C', 'material' => 'Umbrellas', 'effect' => 'The sky rains the ONE OBJECT humanity invented specifically to fight rain. The irony is so dense it has its own gravity. You are being bullied by the weather. It is personal. It brought props.'],
+
+    ['tier' => 'D', 'material' => 'Garden gnomes', 'effect' => 'Ceramic hail, and every single one is smiling on the way down, a thousand tiny rosy-cheeked men descending with joy in their little painted eyes, and you will hear their happy little tinkle-smash for the rest of your short, haunted life. Sleep tight.'],
+    ['tier' => 'D', 'material' => 'Pencils', 'effect' => "Graphite showers leave everything smudged and grey and vaguely accusatory, as if the sky is disappointed you didn't do your homework, and honestly? You didn't. It's right. That's what stings."],
+    ['tier' => 'D', 'material' => 'Zippers', 'effect' => 'They fall and land with a sound like ten thousand flies going down at ONCE, the great unzipping, and the forecast simply reads: undignified, patchy, ongoing.'],
+    ['tier' => 'D', 'material' => 'Chess pieces', 'effect' => 'Strategic precipitation, and the KING lands first, because of course he does, coward, figures — the whole storm is just the sky resigning the match it started.'],
+    ['tier' => 'D', 'material' => 'Cufflinks', 'effect' => "Tiny gold formal shrapnel turns every wedding into a foxhole. The groom is flapping. The vicar has taken cover. Let them. Let it all come down. Till death, and it's arriving early."],
+    ['tier' => 'D', 'material' => 'Keys', 'effect' => "They fall, and they're in the WRONG POCKET, and they're STILL LOST, so the sky somehow lost your keys and is now hurling them back at you at speed — the universe found something more useless than a lost key, and it is a lost key doing 60 miles an hour toward your teeth."],
+    ['tier' => 'D', 'material' => 'Buttons', 'effect' => "Small round decisions the sky is making about your day, pattering down endlessly, each one a tiny \"no.\" Just \"no.\" \"No.\" \"No.\" \"No.\" Forever. The sky disapproves and it's specific."],
+    ['tier' => 'D', 'material' => 'Guitar picks', 'effect' => "A confetti-storm of the utterly useless, and every busker on Earth is now somehow even more grounded, mid-strum, forever, as the sky sheds the one thing they needed and it's worthless in bulk."],
+
+    ['tier' => 'E', 'material' => 'Ice cubes', 'effect' => "The sky isn't even trying. Warm hail. Lukewarm hail. It's menace with the batteries running low. You could die of this but it'd be embarrassing."],
+    ['tier' => 'E', 'material' => 'Sugar cubes', 'effect' => 'Sweet hail rains down and the ANTS ascend to godhood, a glittering insect theocracy rising from the sugar-drifts, while Britain issues a formal statement calling the tea situation "complicated." It is not complicated. The ants are gods now. Say it plainly.'],
+    ['tier' => 'E', 'material' => 'Dice', 'effect' => "You never know if today's storm is a gentle 2 or an apocalyptic 20, so every morning is a saving throw, and the sky is a Dungeon Master who hates you and rolls in the open just to watch you flinch."],
+    ['tier' => 'E', 'material' => 'Crayons', 'effect' => "Waxy rainbow rain runs down every gutter in glorious technicolour and NOBODY cleans it, ever, so the whole world looks like a melted child's drawing of the end times, which — fair. Accurate. The toddler was right all along."],
+    ['tier' => 'E', 'material' => 'Breath mints', 'effect' => "Minty precipitation makes the entire apocalypse smell outrageously fresh and pleasant and this, THIS, is the one that breaks people. Not the death. The pleasantness. Everyone is livid. It smells amazing. They're furious."],
+
+    ['tier' => 'F', 'material' => 'Fruitcake', 'effect' => 'It falls. It lands. And for the first time in the entire span of human history the fruitcake has a PURPOSE, a DESTINY, a reason to exist, and nobody mourns, nobody flinches, nobody even reaches for an umbrella, because deep down every single person on Earth agrees this is the one thing the sky has ever gotten right. Water walked so fruitcake could fall. We should have led with the fruitcake. We always should have led with the fruitcake.'],
+];
+
+/**
  * Five severity tiers of state-mandated pet, escalating from
  * "featherweight chaos" to "cosmically ill-advised". Bounds are
  * rough mass/threat guidance, not enforced anywhere.
@@ -1808,7 +1865,7 @@ function dirt_max_litres(): float
 
 function pile_dir(): string
 {
-    $dir = getenv('KRAAS_DIR') ?: sys_get_temp_dir() . '/jar';
+    $dir = getenv('KRAAS_DIR') ?: PILE_DATA_DIR;
     if (!is_dir($dir)) {
         mkdir($dir, 0770, true);
     }
@@ -1873,17 +1930,196 @@ function stats_snapshot(): array
 }
 
 /**
- * When served behind Cloudflare, REMOTE_ADDR is Cloudflare's own edge IP,
- * not the visitor's. CF-Connecting-IP carries the real one; trust it only
- * if it is actually shaped like an IP address.
+ * Mirrors the lifetime stats and pile count into a small consolidated
+ * JSON file (STATS_BACKUP_FILE, see config.php) alongside pile_dir()
+ * itself — cheaper to grab for a manual backup than reading every
+ * individual file. Throttled to STATS_BACKUP_MIN_INTERVAL so this
+ * doesn't turn every request into an extra disk write; the live numbers
+ * still come from stats_snapshot() and pile_dir().
+ */
+function stats_backup(): void
+{
+    $existing = @file_get_contents(STATS_BACKUP_FILE);
+    if ($existing !== false) {
+        $data = json_decode($existing, true);
+        if (is_array($data) && isset($data['written_at'])
+            && (time() - (int) $data['written_at']) < STATS_BACKUP_MIN_INTERVAL) {
+            return;
+        }
+    }
+
+    $stats = stats_snapshot();
+    $dir   = dirname(STATS_BACKUP_FILE);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0770, true);
+    }
+
+    @file_put_contents(STATS_BACKUP_FILE, json_encode([
+        'written_at'     => time(),
+        'written_at_iso' => gmdate('c'),
+        'total_requests' => $stats['total_requests'],
+        'unique_ips'     => $stats['unique_ips'],
+        'piles_tracked'  => count(glob(pile_dir() . '/*.json') ?: []),
+        'counters'       => $stats['counters'],
+    ], JSON_PRETTY_PRINT));
+}
+
+/**
+ * Two things happen here, both safe to repeat:
+ *
+ * 1. Real migration: anything still sitting in sys_get_temp_dir() . '/jar'
+ *    — pile_dir()'s default before PILE_DATA_DIR moved the live store
+ *    into the webspace — gets copied into pile_dir(), skipping any file
+ *    that already exists there so newer webspace data is never clobbered
+ *    by stale leftovers from the old location. Covers every pile and
+ *    appendage file (*.json) plus the one file that isn't named *.json:
+ *    _lifetime_stats (see stats_path()) — easy to miss since a plain
+ *    glob for *.json skips right over it, which would otherwise silently
+ *    drop the request/unique-IP/rocks-kicked history on this move.
+ * 2. A consolidated snapshot of pile_dir()'s current contents (the live
+ *    store either way) gets written to PILES_BACKUP_FILE — cheaper to
+ *    restore from than hundreds of individual pile files. Filenames
+ *    distinguish piles from appendages: a pile is a bare sha1(id).json,
+ *    an appendage is fingers-sha1(id).json or toes-sha1(id).json (see
+ *    pile_path() and appendage_path()).
+ *
+ * Both run on the same throttle as stats_backup() rather than once,
+ * since the live store keeps changing under normal use — each pass just
+ * re-does the sync and re-exports current contents, so nothing is lost
+ * even if either directory changes between runs.
+ */
+function migrate_legacy_piles(): void
+{
+    $existing = @file_get_contents(PILES_BACKUP_FILE);
+    if ($existing !== false) {
+        $data = json_decode($existing, true);
+        if (is_array($data) && isset($data['written_at'])
+            && (time() - (int) $data['written_at']) < PILES_BACKUP_MIN_INTERVAL) {
+            return;
+        }
+    }
+
+    $liveDir = pile_dir();
+
+    $legacyDir = sys_get_temp_dir() . '/jar';
+    if (is_dir($legacyDir) && realpath($legacyDir) !== realpath($liveDir)) {
+        $legacyFiles = glob($legacyDir . '/*.json') ?: [];
+        $legacyStats = $legacyDir . '/_lifetime_stats';
+        if (is_file($legacyStats)) {
+            $legacyFiles[] = $legacyStats;
+        }
+        foreach ($legacyFiles as $legacyFile) {
+            $target = $liveDir . '/' . basename($legacyFile);
+            if (!is_file($target)) {
+                @copy($legacyFile, $target);
+            }
+        }
+    }
+
+    $piles     = [];
+    $fingers   = [];
+    $toes      = [];
+
+    foreach (glob($liveDir . '/*.json') ?: [] as $file) {
+        $base = basename($file, '.json');
+        $data = json_decode((string) file_get_contents($file), true);
+        if (!is_array($data)) {
+            continue;
+        }
+
+        if (preg_match('/^[0-9a-f]{40}$/', $base) === 1) {
+            $piles[$base] = $data;
+        } elseif (preg_match('/^fingers-([0-9a-f]{40})$/', $base, $m) === 1) {
+            $fingers[$m[1]] = $data['left'] ?? null;
+        } elseif (preg_match('/^toes-([0-9a-f]{40})$/', $base, $m) === 1) {
+            $toes[$m[1]] = $data['left'] ?? null;
+        }
+    }
+
+    $dir = dirname(PILES_BACKUP_FILE);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0770, true);
+    }
+
+    @file_put_contents(PILES_BACKUP_FILE, json_encode([
+        'written_at'     => time(),
+        'written_at_iso' => gmdate('c'),
+        'piles'          => $piles,
+        'fingers_left'   => $fingers,
+        'toes_left'      => $toes,
+    ], JSON_PRETTY_PRINT));
+}
+
+/** Does an IP fall inside a single IP or CIDR range? Handles v4 and v6. */
+function ip_matches(string $ip, string $range): bool
+{
+    $bin = @inet_pton($ip);
+    if ($bin === false) {
+        return false;
+    }
+    if (strpos($range, '/') === false) {
+        $target = @inet_pton($range);
+        return $target !== false && $target === $bin;
+    }
+    [$subnet, $bits] = explode('/', $range, 2);
+    $subnetBin = @inet_pton($subnet);
+    if ($subnetBin === false || strlen($subnetBin) !== strlen($bin)) {
+        return false;
+    }
+    $bits    = (int) $bits;
+    $maxBits = strlen($bin) * 8;
+    if ($bits < 0 || $bits > $maxBits) {
+        return false;
+    }
+    $whole = intdiv($bits, 8);
+    $rest  = $bits % 8;
+    if ($whole > 0 && strncmp($bin, $subnetBin, $whole) !== 0) {
+        return false;
+    }
+    if ($rest === 0) {
+        return true;
+    }
+    $mask = chr((0xFF << (8 - $rest)) & 0xFF);
+    return ($bin[$whole] & $mask) === ($subnetBin[$whole] & $mask);
+}
+
+function ip_trusted(string $ip): bool
+{
+    foreach (TRUSTED_PROXIES as $range) {
+        if (ip_matches($ip, $range)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Detects, automatically and per request, whether Cloudflare (or another
+ * trusted reverse proxy) is actually in front of this API right now —
+ * there is no flag to keep in sync. CF-Connecting-IP is trusted only
+ * when REMOTE_ADDR itself is inside TRUSTED_PROXIES, i.e. when something
+ * on that list is what actually connected to PHP; otherwise REMOTE_ADDR
+ * is the real visitor address and is used as-is. This is what stops
+ * anyone from spoofing a pile ID (pounding, checking, or resetting an
+ * IP that isn't theirs, dodging their own rate limit, or polluting the
+ * leaderboard) with a forged header: the header only counts when the
+ * connection it arrived on could actually carry it truthfully. If
+ * Cloudflare is ever added or removed from in front of this API,
+ * REMOTE_ADDR reflects that on the very next request — nothing here
+ * needs to change.
  */
 function client_ip(): string
 {
-    $cf = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null;
-    if (is_string($cf) && filter_var($cf, FILTER_VALIDATE_IP) !== false) {
-        return $cf;
+    $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+
+    if ($remote !== '' && ip_trusted($remote)) {
+        $cf = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null;
+        if (is_string($cf) && filter_var($cf, FILTER_VALIDATE_IP) !== false) {
+            return $cf;
+        }
     }
-    return $_SERVER['REMOTE_ADDR'] ?? 'anonymous';
+
+    return $remote !== '' ? $remote : 'anonymous';
 }
 
 /**
@@ -2111,15 +2347,122 @@ function pet_tier(int $tier): array
     return PET_TIERS[$tier] ?? ['label' => 'unclassified', 'range' => 'unknown'];
 }
 
+/**
+ * Pulls the first x.y.z-shaped number out of a GitHub release's "name" or
+ * "tag_name" (tags here are inconsistent — "v1.05", "v1.0.5" — so this
+ * normalises rather than trusting either verbatim).
+ */
+function extract_semver(?string $raw): ?string
+{
+    if ($raw !== null && preg_match('/\d+(?:\.\d+)+/', $raw, $m)) {
+        return $m[0];
+    }
+    return null;
+}
+
+/**
+ * The latest release version published on GitHub, cached for an hour so
+ * this doesn't hit GitHub's API on every request (and so this server's
+ * shared outbound IP doesn't run into its unauthenticated rate limit).
+ * Written to RELEASE_CACHE_FILE (config.php), inside this app's own
+ * webspace — Frontend/index.php keeps its own separate copy of this
+ * same cache, since the two are different webspaces with their own
+ * backup boundaries. Returns null if it can't be determined — network
+ * failure, no releases, an unparseable tag.
+ */
+function latest_release_version(): ?string
+{
+    $cacheFile = RELEASE_CACHE_FILE;
+    $cached    = @file_get_contents($cacheFile);
+    if ($cached !== false) {
+        $data = json_decode($cached, true);
+        if (is_array($data) && isset($data['checked_at']) && (time() - (int) $data['checked_at']) < 3600) {
+            return is_string($data['version'] ?? null) ? $data['version'] : null;
+        }
+    }
+
+    $ch = curl_init('https://api.github.com/repos/' . GITHUB_REPO . '/releases/latest');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 5,
+        CURLOPT_HTTPHEADER     => ['User-Agent: chaos-api/1.0', 'Accept: application/vnd.github+json'],
+    ]);
+    $body = curl_exec($ch);
+    $ok   = curl_errno($ch) === 0 && (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE) === 200;
+    curl_close($ch);
+
+    $version = null;
+    if ($ok) {
+        $json = json_decode((string) $body, true);
+        if (is_array($json)) {
+            $version = extract_semver($json['name'] ?? null) ?? extract_semver($json['tag_name'] ?? null);
+        }
+    }
+
+    // Cache the result either way — including a failed lookup — so a
+    // GitHub outage doesn't turn into a curl call on every single request.
+    $cacheDir = dirname($cacheFile);
+    if (!is_dir($cacheDir)) {
+        @mkdir($cacheDir, 0770, true);
+    }
+    @file_put_contents($cacheFile, json_encode(['checked_at' => time(), 'version' => $version]));
+
+    return $version;
+}
+
+/**
+ * Whether the "changelog is a tombstone" note should appear in GET /. It
+ * hides itself the moment this API's own version pulls ahead of the
+ * latest published GitHub release: at that point there is no matching
+ * release to point people at yet, so linking "the latest release" would
+ * show them something older than what's actually running — worse than
+ * no note at all. It shows whenever a release is at least caught up (or
+ * ahead), since only then is the link accurate.
+ *
+ * ?changelog_test=stale / =fresh force one state or the other, bypassing
+ * the real GitHub check entirely, so both states can be checked without
+ * waiting for an actual release.
+ */
+function changelog_is_stale(): bool
+{
+    $test = $_GET['changelog_test'] ?? null;
+    if ($test === 'stale') {
+        return true;
+    }
+    if ($test === 'fresh') {
+        return false;
+    }
+
+    $latest = latest_release_version();
+    if ($latest === null) {
+        // Can't tell — assume this API isn't ahead rather than risk
+        // hiding a note that's still accurate.
+        return true;
+    }
+
+    return version_compare(APP_VERSION, $latest, '<=');
+}
+
 /* ------------------------------------------------------------------ *
  * Handlers
  * ------------------------------------------------------------------ */
 
 function handle_index(): never
 {
+    $notes = [
+        'Piles are files on disk and survive restarts, unlike morale.',
+        'Tier 14 is the Moon. There is no tier 15.',
+        'Pounding is rate-limited to once every 2s per pile. Push through it and the dirt guy quits.',
+        'Any /unhinged request has a 1-in-10 chance of falling into the void instead. Just try again.',
+    ];
+    if (changelog_is_stale()) {
+        $notes[] = 'The changelog is a 🪦 now. Check the latest release instead: https://github.com/MichelleFindlay/the-api-of-chaos/releases';
+    }
+
     send(200, [
         'service' => 'The API of Chaos',
-        'version' => '1.0.5',
+        'version' => APP_VERSION,
         'tagline' => 'Dismissal, at scale, with an SLA of none.',
         'endpoints' => [
             'GET /kick/rocks'        => 'Assigns a rock. Optional: ?tier=n, ?min=&max=',
@@ -2155,14 +2498,10 @@ function handle_index(): never
             'GET /unhinged/choose-your-duck' => 'A bath duck, and what it costs you. Fifty of them, S-Tier to F-Tier.',
             'GET /unhinged/gravity-resigned' => 'Gravity has quit. time to float.',
             'GET /unhinged/vengeful-weather' => 'The sky, personally offended.',
+            'GET /unhinged/wrongfall' => 'Clouds went feral. Fifty of them, tiered S to F.',
             'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
-        'notes' => [
-            'Piles are files on disk and survive restarts, unlike morale.',
-            'Tier 14 is the Moon. There is no tier 15.',
-            'Pounding is rate-limited to once every 2s per pile. Push through it and the dirt guy quits.',
-            'Any /unhinged request has a 1-in-10 chance of falling into the void instead. Just try again.',
-        ],
+        'notes' => $notes,
         'source'  => 'https://github.com/MichelleFindlay/the-api-of-chaos',
         'license' => 'GPL-3.0',
     ]);
@@ -2232,37 +2571,27 @@ function void_check(string $path): void
     send_cors_headers();
 
     echo <<<'ART'
-.            '                  .           `
-        `              .              '                 .         '
+    .          '            .          `
+        `           .          '        .
 
-                     ::::::::::::::::::::::::::::::
-                ::::::----------------------------::::::
-             ::::------==========================------::::
-          ::::----======++++++++++++++++++++++++======----::::
-        :::----=====++++++********************++++++=====----:::
-       ::----====+++++*****##################*****+++++====----::
-     ::---=====++++****####%%%%%%%%%%%%%%%%%%####****++++=====---::
-    ::---====++++****####%%%%@@@@@@@@@@@@@@%%%%####****++++====---::
-   ::---====++++****####%%%@@@@@@      @@@@@@%%%####****++++====---::
-  ::---====++++****####%%%@@@@@          @@@@@%%%####****++++====---::
- ::---====++++****####%%%@@@@              @@@@%%%####****++++====---::
-::---====++++****####%%%%@@@                @@@@@%%####****++++====---::
-::---====++++****####%%%@@@@                @@@@%%%####****++++====---::
-::---====++++****####%%@@@@@                @@@%%%%####****++++====---::
- ::---====++++****####%%%@@@@              @@@@%%%####****++++====---::
-  ::---====++++****####%%%@@@@@          @@@@@%%%####****++++====---::
-   ::---====++++****####%%%@@@@@@      @@@@@@%%%####****++++====---::
-    ::---====++++****####%%%%@@@@@@@@@@@@@@%%%%####****++++====---::
-     ::---=====++++****####%%%%%%%%%%%%%%%%%%####****++++=====---::
-       ::----====+++++*****##################*****+++++====----::
-        :::----=====++++++********************++++++=====----:::
-          ::::----======++++++++++++++++++++++++======----::::
-             ::::------==========================------::::
-                ::::::----------------------------::::::
-                     ::::::::::::::::::::::::::::::
+                  ::----::
+                ::---==---::
+              ::---======---::
+            ::---===++++===---::
+          ::---===++####++===---::
+        ::---===++###@@###++===---::
+      ::---===++###@@  @@###++===---::
+    ::---===++###@@      @@###++===---::
+      ::---===++###@@  @@###++===---::
+        ::---===++###@@###++===---::
+          ::---===++####++===---::
+            ::---===++++===---::
+              ::---======---::
+                ::---==---::
+                  ::----::
 
-         '                .          `                 .
-                 .              '            .                '
+        '          .        `          .
+            .          '        .          '
 
 The floor stopped being an opinion the void was willing to hold, and you
 went through it like a coin through a grate. You fell into the void. It
@@ -2782,6 +3111,18 @@ function handle_vengeful_weather(): never
     ]);
 }
 
+function handle_wrongfall(): never
+{
+    $entry = pick(WRONGFALL);
+
+    send(200, [
+        'instruction' => 'Look up. Regret it immediately.',
+        'material'    => $entry['material'],
+        'effect'      => $entry['effect'],
+        'tier'        => $entry['tier'],
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = client_ip();
@@ -2868,6 +3209,12 @@ if ($method === 'OPTIONS') {
 // Every request counts towards lifetime stats, surfaced at GET /healthz.
 stats_record(client_ip());
 
+// Mirrors those stats into the webspace, throttled — see stats_backup().
+stats_backup();
+
+// Same for the pile/appendage data itself — see migrate_legacy_piles().
+migrate_legacy_piles();
+
 // One request in ten under /unhinged never makes it to a handler.
 void_check($path);
 
@@ -2907,6 +3254,7 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/choose-your-duck' => handle_choose_your_duck(),
     $method === 'GET' && $path === '/unhinged/gravity-resigned' => handle_gravity_resigned(),
     $method === 'GET' && $path === '/unhinged/vengeful-weather' => handle_vengeful_weather(),
+    $method === 'GET' && $path === '/unhinged/wrongfall'   => handle_wrongfall(),
     $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',

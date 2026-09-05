@@ -27,9 +27,14 @@ Options -Indexes -MultiViews
     FallbackResource /index.php
 </IfModule>
 
-# --- Protect the pile store -------------------------------------------
-# Only relevant if you set KRAAS_DIR to somewhere under the web root.
-# Better still: keep it outside the web root entirely.
+# --- Protect the pile store and stats backup ---------------------------
+# The live pile store (piles, appendage counts, lifetime stats) now
+# defaults inside the webspace under data/jar/ (config.php's
+# PILE_DATA_DIR), specifically so ordinary website backups cover it —
+# see data/.htaccess for the deny-all covering that whole directory
+# regardless of extension. This rule is the backstop: catches any .json
+# file anywhere under the docroot, including the two consolidated backup
+# snapshots in data/. Nothing under here is meant to be fetched directly.
 <FilesMatch "\.json$">
     Require all denied
 </FilesMatch>

@@ -17,64 +17,23 @@ declare(strict_types=1);
 
 // ============================================================ configuration
 
-const WEB_URL         = 'https://dumpsterfire.uk';
-const API_URL         = 'https://api.dumpsterfire.uk';
-const STAGING_WEB_URL = 'https://dev.dumpsterfire.uk';
-const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
-
-/** Picked automatically from the host this endpoint is served on. */
-define('API_BASE', (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)) ? STAGING_API_URL : API_URL);
+/**
+ * WEB_URL, API_URL, STAGING_WEB_URL, STAGING_API_URL, API_BASE,
+ * APP_VERSION, TRUSTED_PROXIES, CONNECT_TIMEOUT, TIMEOUT, MAX_BYTES,
+ * FORWARD_CLIENT_IP, CLIENT_IP_HEADER, FRONTEND_KEY and PILE_PARAM all
+ * come from here — this folder shares the frontend's config rather than
+ * keeping its own second copy that could drift out of sync.
+ */
+require __DIR__ . '/../config.php';
 
 /** Where this folder itself is reachable — used as the OpenAPI "servers" entry. */
 define('FRONTEND_MCP_URL', rtrim((($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)) ? STAGING_WEB_URL : WEB_URL, '/') . '/mcp');
 
-const CONNECT_TIMEOUT   = 4;
-const TIMEOUT           = 10;
-const MAX_BYTES         = 262144;
-const MAX_BODY_BYTES    = 65536;
-const FORWARD_CLIENT_IP = true;
-
-/** See ../index.php for the full rationale on all of the constants below. */
-const TRUST_CLOUDFLARE_HEADER = true;
-
-const TRUSTED_PROXIES = [
-    '127.0.0.0/8',
-    '::1',
-    '10.0.0.0/8',
-    '172.16.0.0/12',
-    '192.168.0.0/16',
-    'fc00::/7',
-    '173.245.48.0/20',
-    '103.21.244.0/22',
-    '103.22.200.0/22',
-    '103.31.4.0/22',
-    '141.101.64.0/18',
-    '108.162.192.0/18',
-    '190.93.240.0/20',
-    '188.114.96.0/20',
-    '197.234.240.0/22',
-    '198.41.128.0/17',
-    '162.158.0.0/15',
-    '104.16.0.0/13',
-    '104.24.0.0/14',
-    '172.64.0.0/13',
-    '131.0.72.0/22',
-    '2400:cb00::/32',
-    '2606:4700::/32',
-    '2803:f800::/32',
-    '2405:b500::/32',
-    '2405:8100::/32',
-    '2a06:98c0::/29',
-    '2c0f:f248::/32',
-];
-
-const CLIENT_IP_HEADER = 'X-Chaos-Client-IP';
-const FRONTEND_KEY     = '';
-const PILE_PARAM       = 'pile';
+const MAX_BODY_BYTES = 65536;
 
 const SERVER_NAME    = 'the-api-of-chaos';
 const SERVER_TITLE   = 'The API of Chaos';
-const SERVER_VERSION = '1.0.5';
+const SERVER_VERSION = APP_VERSION;
 
 // ================================================================= tools
 
@@ -259,6 +218,11 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'unhinged_wrongfall', 'path' => '/unhinged/wrongfall', 'method' => 'GET',
+        'description' => 'Clouds went feral. Fifty of them, tiered S to F.',
+        'params' => [],
+    ],
+    [
         'name' => 'healthz', 'path' => '/healthz', 'method' => 'GET',
         'description' => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         'params' => [],
@@ -337,7 +301,7 @@ function chaos_forwarded_chain(): array
 function chaos_client_ip(): string
 {
     $remote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-    $trusted = TRUST_CLOUDFLARE_HEADER || ($remote !== '' && chaos_ip_trusted($remote));
+    $trusted = ($remote !== '' && chaos_ip_trusted($remote));
 
     if ($trusted) {
         foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_TRUE_CLIENT_IP'] as $header) {
@@ -369,7 +333,7 @@ function chaos_pile_id(): string
 function chaos_client_country(): ?string
 {
     $remote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-    $trusted = TRUST_CLOUDFLARE_HEADER || ($remote !== '' && chaos_ip_trusted($remote));
+    $trusted = ($remote !== '' && chaos_ip_trusted($remote));
     $country = strtoupper(trim((string) ($_SERVER['HTTP_CF_IPCOUNTRY'] ?? '')));
     if (!$trusted || !preg_match('/^[A-Z]{2}$|^XX$|^T1$/', $country)) {
         return null;
