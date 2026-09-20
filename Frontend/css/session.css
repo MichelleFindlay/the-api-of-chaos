@@ -1,0 +1,82 @@
+.log {
+  padding: 0.85rem 0.75rem 0;
+  height: min(62vh, 34rem);
+  overflow-y: auto;
+  scrollbar-color: var(--line) transparent;
+}
+@media (max-width: 900px) { .log { height: 24rem; } }
+
+.log__hint { color: var(--dim); margin: 0 0 1rem; }
+
+.entry { margin: 0 0 1.15rem; }
+.entry__cmd { color: var(--fg); word-break: break-all; }
+.entry__cmd::before { content: "🗑️🔥 "; font-size: 0.9em; }
+.entry__out {
+  margin: 0.35rem 0 0;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--line);
+  color: var(--fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.92em;
+}
+.entry__out .key { color: var(--cyan); }
+.entry__meta { margin-top: 0.3rem; color: var(--dim); font-size: 0.82em; }
+.entry__meta .ok { color: var(--green); }
+.entry__meta .muted { color: var(--dim); }
+.entry__meta .bad { color: var(--red); }
+.entry--bad .entry__out { border-left-color: var(--red); color: var(--red); }
+
+.prompt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+}
+
+.cli-suggest {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 100%;
+  margin-bottom: 0.35rem;
+  background: var(--pane);
+  border: 1px solid var(--line);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
+  max-height: 12rem;
+  overflow-y: auto;
+  z-index: 20;
+}
+.cli-suggest[hidden] { display: none; }
+.cli-suggest__item {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-size: 0.92em;
+  text-align: left;
+  color: var(--fg);
+  background: none;
+  border: 0;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+.cli-suggest__item strong { color: var(--amber); font-weight: 700; }
+.cli-suggest__item:hover,
+.cli-suggest__item.is-active { background: var(--surface-hover); color: var(--amber); }
+
+.prompt__sigil { color: var(--amber); white-space: nowrap; }
+.prompt input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--fg);
+  background: none;
+  border: 0;
+  padding: 0;
+  caret-color: var(--amber);
+}
+.prompt input:focus { outline: 0; }
+.prompt input::placeholder { color: var(--muted); }
