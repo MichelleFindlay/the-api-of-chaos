@@ -1,0 +1,89 @@
+.grpwrap { margin: 1.25rem 0 0; }
+.grpwrap:first-child { margin-top: 0; }
+
+.grp {
+  list-style: none;
+  cursor: pointer;
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--dim);
+  user-select: none;
+}
+.grp::-webkit-details-marker { display: none; }
+.grp::before { content: "# "; }
+.grp:hover { color: var(--fg); }
+.grp:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
+.grp em { font-style: normal; color: var(--muted); }
+
+.grp__chev {
+  display: inline-block;
+  width: 1em;
+  color: var(--amber);
+  transition: transform 120ms ease;
+}
+.grpwrap:not([open]) .grp__chev { transform: rotate(-90deg); }
+.grpwrap:not([open]) .grp { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .grp__chev { transition: none; } }
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.5rem;
+  padding: 0.12rem 0.4rem;
+  border-left: 2px solid transparent;
+}
+.row:hover, .row:focus-within { background: var(--surface-hover); border-left-color: var(--amber); }
+
+.run {
+  font: inherit;
+  color: var(--fg);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.run::before { content: "› "; color: var(--dim); }
+.run:hover { color: var(--amber); }
+.run:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
+.run[disabled] { color: var(--dim); cursor: progress; }
+.run .verb { color: var(--cyan); }
+
+.icon { font-size: 0.95em; line-height: 1; margin-left: -0.15rem; }
+
+.badge-new {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--amber);
+  padding: 0.05rem 0.35rem;
+  border-radius: 2px;
+  animation: newflash 1s steps(1) infinite;
+}
+@keyframes newflash {
+  0%, 49%   { background: var(--amber); color: var(--bg); opacity: 1; }
+  50%, 100% { background: transparent; color: var(--amber); opacity: 0.85; box-shadow: inset 0 0 0 1px var(--amber); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-new { animation: none; box-shadow: inset 0 0 0 1px var(--amber); background: transparent; color: var(--amber); }
+}
+
+.flag { color: var(--dim); font-size: 0.9em; }
+.flag input {
+  width: 4.5rem;
+  font: inherit;
+  color: var(--amber);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 0 0.3rem;
+  caret-color: var(--amber);
+}
+.flag input:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
+.flag input::placeholder { color: var(--muted); }
+
+.note { color: var(--muted); font-size: 0.86em; margin-left: auto; }
+@media (max-width: 620px) { .note { display: none; } }

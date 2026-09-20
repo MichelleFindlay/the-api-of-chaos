@@ -1,0 +1,33 @@
+footer.foot {
+  margin-top: 1.1rem;
+  color: var(--dim);
+  font-size: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.75rem;
+}
+
+.mcp-btn {
+  margin-left: auto;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--amber);
+  border: 1px solid var(--amber);
+  padding: 0.4rem 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 0 14px rgba(255, 180, 84, 0.35);
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+.mcp-btn:hover { background: transparent; color: var(--amber); box-shadow: 0 0 18px rgba(255, 180, 84, 0.5); }
+.mcp-btn:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
+
+/* Fixed to fit the longest label ("theme: high contrast") so the footer
+   doesn't reflow — and other buttons jump around — every time the label
+   changes length on click. */
+#theme-toggle-btn { min-width: 11rem; text-align: center; }

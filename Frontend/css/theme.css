@@ -1,0 +1,77 @@
+:root {
+  --bg:      #05070a;
+  --pane:    #090c11;
+  --line:    #1a212a;
+  --fg:      #b7c1bd;
+  --dim:     #5c6a68;
+  --amber:   #ffb454;
+  --cyan:    #6fb3c0;
+  --red:     #ff6b5e;
+  --green:   #86c17c;
+  --surface:       #0d1218;
+  --surface-alt:   #10161d;
+  --surface-hover: #0f151c;
+  --muted:         #465250;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+
+/* light: same layout, daylight-readable palette */
+:root[data-theme="light"] {
+  --bg:      #f3f4f0;
+  --pane:    #ffffff;
+  --line:    #d3d6cf;
+  --fg:      #1c211f;
+  --dim:     #5c655f;
+  --amber:   #a35b12;
+  --cyan:    #0d6e7a;
+  --red:     #b8261a;
+  --green:   #1f7a34;
+  --surface:       #eceee7;
+  --surface-alt:   #e6e9e0;
+  --surface-hover: #e3e6dc;
+  --muted:         #8a938c;
+  color-scheme: light;
+}
+
+/* high contrast: pure black/white, no gradients or texture, thick lines */
+:root[data-theme="high-contrast"] {
+  --bg:      #000000;
+  --pane:    #000000;
+  --line:    #ffffff;
+  --fg:      #ffffff;
+  --dim:     #e6e6e6;
+  --amber:   #ffe100;
+  --cyan:    #4df0ff;
+  --red:     #ff5c5c;
+  --green:   #5cff5c;
+  --surface:       #1a1a1a;
+  --surface-alt:   #1a1a1a;
+  --surface-hover: #2b2b2b;
+  --muted:         #cccccc;
+  color-scheme: dark;
+}
+:root[data-theme="high-contrast"] .banner__grad {
+  background-image: none;
+  color: var(--amber);
+  -webkit-text-fill-color: var(--amber);
+  filter: none;
+}
+:root[data-theme="high-contrast"] .caret { background: var(--amber); }
+:root[data-theme="light"] body::after,
+:root[data-theme="high-contrast"] body::after {
+  display: none;
+}
+:root[data-theme="high-contrast"] .pane,
+:root[data-theme="high-contrast"] .panes,
+:root[data-theme="high-contrast"] .prompt,
+:root[data-theme="high-contrast"] .statusbar,
+:root[data-theme="high-contrast"] .pane__bar,
+:root[data-theme="high-contrast"] .mcp-dialog__bar,
+:root[data-theme="high-contrast"] input,
+:root[data-theme="high-contrast"] .flag input,
+:root[data-theme="high-contrast"] .barbtn,
+:root[data-theme="high-contrast"] .run:focus-visible,
+:root[data-theme="high-contrast"] .grp:focus-visible {
+  border-width: 2px;
+}
