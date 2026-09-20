@@ -27,7 +27,8 @@ footer.foot {
 .mcp-btn:hover { background: transparent; color: var(--amber); box-shadow: 0 0 18px rgba(255, 180, 84, 0.5); }
 .mcp-btn:focus-visible { outline: 1px solid var(--amber); outline-offset: 2px; }
 
-/* Fixed to fit the longest label ("theme: high contrast") so the footer
-   doesn't reflow — and other buttons jump around — every time the label
-   changes length on click. */
-#theme-toggle-btn { min-width: 11rem; text-align: center; }
+/* Fixed to fit the longest label ("high contrast") so the footer doesn't
+   reflow — and the other footer content jump around — every time the
+   label changes length on click. Kept just wide enough for that label so
+   the footer's three status lines still fit on one row. */
+#theme-toggle-btn { min-width: 7rem; text-align: center; }

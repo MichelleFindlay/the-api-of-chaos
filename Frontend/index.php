@@ -789,7 +789,7 @@ $mcpClaudeUrl  = rtrim($mcpWebBase, '/') . '/mcp-claude';
     <span>every call goes straight from your browser to the api</span>
     <span>your ip is your pile</span>
     <span>nothing here is load-bearing</span>
-    <button id="theme-toggle-btn" class="barbtn" type="button">theme: dark</button>
+    <button id="theme-toggle-btn" class="barbtn" type="button" aria-label="Theme: dark. Click to switch.">dark</button>
     <button id="mcp-access-btn" class="mcp-btn" type="button">MCP Access</button>
   </footer>
 
