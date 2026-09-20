@@ -223,6 +223,16 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'unhinged_poke', 'path' => '/unhinged/poke', 'method' => 'GET',
+        'description' => 'Poke someone, then escalate dramatically. Fifty ways.',
+        'params' => [],
+    ],
+    [
+        'name' => 'unhinged_storage_buddies', 'path' => '/unhinged/storage-buddies', 'method' => 'GET',
+        'description' => 'A piece of furniture starts following you. Fifty of them.',
+        'params' => [],
+    ],
+    [
         'name' => 'healthz', 'path' => '/healthz', 'method' => 'GET',
         'description' => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         'params' => [],

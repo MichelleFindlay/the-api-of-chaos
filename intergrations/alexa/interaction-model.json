@@ -396,6 +396,26 @@
                                     "rain the wrong thing"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "poke",
+                                "synonyms": [
+                                    "poke someone",
+                                    "poke them",
+                                    "give someone a poke"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "storage buddies",
+                                "synonyms": [
+                                    "storage buddy",
+                                    "furniture",
+                                    "follow me furniture"
+                                ]
+                            }
                         }
                     ]
                 }

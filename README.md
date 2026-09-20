@@ -1,6 +1,6 @@
 # The API of Chaos
 
-**v2.0.0** — Dismissal, at scale, with an SLA of none.
+**v2.10.0** — Dismissal, at scale, with an SLA of none.
 
 **Base URL** - https://api.dumpsterfire.uk
 
@@ -42,6 +42,8 @@
 | GET | /unhinged/gravity-resigned | gravity has quit. time to float |
 | GET | /unhinged/vengeful-weather | the sky, personally offended  |
 | GET | /unhinged/wrongfall | Clouds went feral. Fifty of them, tiered S to F. |
+| GET | /unhinged/poke | Poke someone, then escalate dramatically. Fifty ways. |
+| GET | /unhinged/storage-buddies | A piece of furniture starts following you. Fifty of them. |
 | GET | /healthz | Liveness, plus lifetime request, unique-IP, and rocks-kicked counts. |
 
 
@@ -51,15 +53,15 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
-| Web Frontend | 2.0.0a | ✅ yes | Active |
-| Amazon Alexa | 1.1.0 | ❌ No | Pending |
+| Web Frontend | 2.10.0 | ✅ yes | Active |
+| Amazon Alexa | 2.10.0 | ❌ No | Pending |
 
 ## MCP Endpoints
 
 | Type | Version | URL | Status |
 |---|---|---|---|
-| OpenAI | 2.0.0 | Web Frontend/mcp/ | Active |
-| Claude | 2.0.0 | Web Frontend/mcp-claude/ | Active |
+| OpenAI | 2.10.0 | Web Frontend/mcp/ | Active |
+| Claude | 2.10.0 | Web Frontend/mcp-claude/ | Active |
 
 ### Adding OpenAI MCP
 

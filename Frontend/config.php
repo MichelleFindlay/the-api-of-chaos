@@ -25,7 +25,7 @@ const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
  * This site's own version, shown in the banner. Bump this alongside the
  * same number in Web/index.php and Frontend/mcp/lib.php's SERVER_VERSION.
  */
-const APP_VERSION  = '2.0.0a';
+const APP_VERSION  = '2.10.0';
 const GITHUB_REPO  = 'MichelleFindlay/the-api-of-chaos';
 
 /**
@@ -173,7 +173,7 @@ const ALLOWED_PATHS = [
     '#^/cage/finger$#',
     '#^/cage/finger/(left|reset)$#',
     '#^/cage/fictional/finger$#',
-    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck|gravity-resigned|vengeful-weather|wrongfall)$#',
+    '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck|gravity-resigned|vengeful-weather|wrongfall|poke|storage-buddies)$#',
 ];
 
 /** Paths that may be called with DELETE. Everything else is GET or POST. */
