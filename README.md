@@ -1,6 +1,6 @@
 # The API of Chaos
 
-**v2.0.0** — Dismissal, at scale, with an SLA of none.
+**v2.10.0** — Dismissal, at scale, with an SLA of none.
 
 **Base URL** - https://api.dumpsterfire.uk
 
