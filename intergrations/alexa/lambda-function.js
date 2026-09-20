@@ -108,7 +108,15 @@ const endpointMap = {
   'wrongfall': '/unhinged/wrongfall',
   'wrong fall': '/unhinged/wrongfall',
   'it rains the wrong thing': '/unhinged/wrongfall',
-  'rain the wrong thing': '/unhinged/wrongfall'
+  'rain the wrong thing': '/unhinged/wrongfall',
+  'poke': '/unhinged/poke',
+  'poke someone': '/unhinged/poke',
+  'poke them': '/unhinged/poke',
+  'give someone a poke': '/unhinged/poke',
+  'storage buddies': '/unhinged/storage-buddies',
+  'storage buddy': '/unhinged/storage-buddies',
+  'furniture': '/unhinged/storage-buddies',
+  'follow me furniture': '/unhinged/storage-buddies'
 };
 
 function callApi(path, queryParams = {}, method = 'GET') {
@@ -215,7 +223,7 @@ const PROSE_KEYS = new Set([
   'instruction', 'remark', 'message', 'result', 'answer', 'advice',
   'excuse', 'reason', 'alibi', 'verdict', 'note', 'saying', 'quote',
   'text', 'line', 'consequence', 'name', 'label', 'scale', 'now_roughly',
-  'contender', 'tier_explanation', 'equivalent', 'forecast'
+  'contender', 'tier_explanation', 'equivalent', 'forecast', 'poke'
 ]);
 
 // Join spoken fragments with clean punctuation (no double periods).
@@ -340,7 +348,7 @@ exports.handler = async function(event, context) {
         'Excuses: for teams, social, oops, late, or an alibi. ' +
         'Ministry: gentle correction, or mandatory pet adoption. ' +
         'Cage: put your finger in the cage, try the cage with fictional creatures, or check your fingers. ' +
-        'And unhinged: the eight ball, optimism, pessimism, advice, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, or wrongfall. ' +
+        'And unhinged: the eight ball, optimism, pessimism, advice, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, or storage buddies. ' +
         'What would you like?', false);
     }
 

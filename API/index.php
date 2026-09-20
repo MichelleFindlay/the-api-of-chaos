@@ -50,6 +50,8 @@ declare(strict_types=1);
  *   GET    /unhinged/gravity-resigned  gravity has quit; what floats, and your odds of surviving it
  *   GET    /unhinged/vengeful-weather  the weather, personally offended, drawn from nine systems
  *   GET    /unhinged/wrongfall  clouds went feral, with tier
+ *   GET    /unhinged/poke       poke someone, then escalate dramatically
+ *   GET    /unhinged/storage-buddies  a piece of furniture starts following you
  *   GET    /healthz             liveness, plus lifetime request/unique-IP/rocks-kicked counts
  *
  * Query params
@@ -1595,6 +1597,120 @@ const WRONGFALL = [
 ];
 
 /**
+ * Fifty ways to poke someone, escalating from mundane to deranged. No
+ * tiers — purely random, same shape as EIGHT_BALL_RESPONSES and friends.
+ */
+const POKE_RESPONSES = [
+    'Poke, then hand them a laminated card explaining the poke in a language neither of you speaks',
+    "Poke with a live lobster you've named after their childhood pet",
+    'Poke and immediately begin narrating it in the third person, past tense',
+    'Poke, then produce a second, smaller you from your coat to do a follow-up poke',
+    'Poke with a spoon you insist is "the last one of its kind"',
+    'Poke and declare the poke tax-deductible',
+    'Poke, then dramatically remove a single glove and drop it',
+    'Poke with a full bowl of cereal, milk holding steady by sheer will',
+    "Poke and whisper the exact date, but you won't say of what",
+    'Poke, then have a lawyer step forward to represent the finger',
+    'Poke with a fax machine mid-transmission',
+    'Poke and say "the simulation logged that"',
+    'Poke, then release a single moth from a matchbox',
+    'Poke with a portrait of yourself, corner-first, "so I\'m always here"',
+    'Poke and hand them an invoice itemising the poke',
+    'Poke, then check them off a clipboard list of everyone alive',
+    "Poke with a candle that's still lit, calmly",
+    'Poke and announce "the reign begins"',
+    'Poke, then teach a nearby child to do the next one',
+    "Poke with a violin bow and refuse to explain the instrument's absence",
+    'Poke and say "I felt that more than you did"',
+    'Poke, then perform a slow costume change into an identical outfit',
+    'Poke with a wheel of cheese rolled from across the room',
+    'Poke and quietly begin building a small shrine to the moment',
+    'Poke, then hand them a receipt that just reads "the poke — PAID"',
+    'Poke with a garden hose (dry) held like a diplomatic scroll',
+    'Poke and say "your table is ready" to no restaurant',
+    'Poke, then release a flock of one pigeon',
+    'Poke with a birthday cake, candle side, singing to nobody',
+    'Poke and whisper the names of your enemies, alphabetised',
+    'Poke, then have an orchestra sting play from somewhere behind you',
+    'Poke with a full-length mirror so they poke themselves',
+    'Poke and declare it "load-bearing"',
+    'Poke, then age visibly by several years and say nothing',
+    'Poke with a rotisserie chicken, still turning',
+    "Poke and hand them a pamphlet titled \"So You've Been Poked\"",
+    'Poke, then quietly deflate like the poke cost you everything',
+    'Poke with a ceremonial sword, flat side, knighting them by accident',
+    'Poke and say "that syncs to the cloud now"',
+    'Poke, then reveal the finger was a decoy the whole time',
+    'Poke with a lit sparkler on the final second of its burn',
+    'Poke and read them their rights, but for a crime not yet invented',
+    'Poke, then plant a small flag and claim them',
+    'Poke with an entire watermelon, two-handed, grunting',
+    "Poke and whisper \"you're it, and the game has no end\"",
+    "Poke, then vanish behind a curtain that wasn't there before",
+    'Poke with a taxidermied owl, beak-first, "he insisted"',
+    'Poke and say "the elders have been notified"',
+    'Poke, then hand them the finger in a small velvet box',
+    'Poke with a grandfather clock as it strikes twelve, timing it exactly',
+];
+
+/**
+ * Fifty pieces of furniture that have started following you around the
+ * house. No tiers — purely random, same shape as GRAVITY_RESIGNED.
+ */
+const STORAGE_BUDDIES = [
+    ['item' => 'The Chest of Regret', 'effect' => 'opens only to reveal the last thing you wanted, never the current one.'],
+    ['item' => 'Fridge Legs', 'effect' => 'a full-size fridge on four spindly legs. Follows you. Hums. Blocks the fridge.'],
+    ['item' => 'The Filing Cabinet', 'effect' => 'every drawer sticks except one, and that one is empty and always open.'],
+    ['item' => 'Wardrobe, Freestanding, Unstable', 'effect' => 'must be held upright by you at all times or it "considers falling."'],
+    ['item' => 'The Ottoman', 'effect' => 'sits down whenever you do, on whatever you were about to sit on.'],
+    ['item' => 'Bookshelf, Overleaning', 'effect' => 'leans a little more each day. You know how this ends.'],
+    ['item' => 'The Bin That Sorts', 'effect' => 'recycles your important items and keeps the rubbish. Firmly.'],
+    ['item' => 'Toolbox, Rattling', 'effect' => 'everything inside is loose. It follows you like a maraca made of pain.'],
+    ['item' => 'The Safe', 'effect' => '400kg. Combination lost. Follows you by rolling downhill, generally.'],
+    ['item' => 'Sock Drawer', 'effect' => 'only stores one sock of each pair. Guards the odd one jealously.'],
+    ['item' => 'The Pantry', 'effect' => 'smells faintly of a meal you never made. Follows you at dinnertime specifically.'],
+    ['item' => 'Crate of Loose Marbles', 'effect' => 'no lid. Follows enthusiastically. Downstairs is a nightmare.'],
+    ['item' => 'The Coat Rack', 'effect' => 'grabs at your sleeves as you pass, "helpfully." Never lets go the first time.'],
+    ['item' => 'Bedside Table, Nocturnal', 'effect' => "only follows you between 3 and 4am. You wake up and it's there."],
+    ['item' => 'The Trunk', 'effect' => 'heavy, brass-cornered, and it stubs every toe in a 2-metre radius. Yours included.'],
+    ['item' => 'Shoe Cupboard', 'effect' => 'stores shoes, hides the left ones, presents you two rights at the door.'],
+    ['item' => 'The Tupperware Cabinet', 'effect' => 'infinite lids, no containers. Follows you rattling with false promise.'],
+    ['item' => 'Dresser, Top-Heavy', 'effect' => 'every drawer opens itself the moment you stack anything on top.'],
+    ['item' => 'The Locker', 'effect' => 'slams. Loudly. Whenever a conversation reaches a tender moment.'],
+    ['item' => 'Spice Rack', 'effect' => 'reorders itself constantly. The one you want is always at the back, now.'],
+    ['item' => 'The Hamper', 'effect' => 'follows you and eats one clean item for every dirty one you feed it.'],
+    ['item' => 'Cutlery Drawer', 'effect' => 'the divider is missing. Follows you sounding like a small metal avalanche.'],
+    ['item' => 'The Display Cabinet', 'effect' => 'glass front, always smudged, and it noses in to show off during fights.'],
+    ['item' => 'Garden Shed', 'effect' => 'a full shed. Follows you indoors. Does not fit. Tries anyway. Splinters everywhere.'],
+    ['item' => 'The Junk Drawer', 'effect' => 'sentient. Knows where the thing is. Will not say. Enjoys this.'],
+    ['item' => 'Wine Rack, Empty', 'effect' => 'clinks mournfully. Follows you toward every off-licence. Guilt-trips.'],
+    ['item' => 'The Medicine Cabinet', 'effect' => "mirror on the front, so it's always showing you your worst angle mid-panic."],
+    ['item' => 'Suitcase, Overpacked', 'effect' => 'will not zip. Follows you spilling one item per step. Endlessly full.'],
+    ['item' => 'The Umbrella Stand', 'effect' => 'holds no umbrellas, only your patience. Follows you into dry weather.'],
+    ['item' => 'Cardboard Box, Load-Bearing', 'effect' => "you're using it as storage and a table. It knows. It waits."],
+    ['item' => 'The Cabinet of Almost', 'effect' => 'every item inside is nearly the one you need. A size off. A shade wrong.'],
+    ['item' => 'Bread Bin', 'effect' => 'follows you exhaling the smell of toast you cannot have. No bread inside. Ever.'],
+    ['item' => 'The Under-Stair Cupboard', 'effect' => 'geometrically wrong. Follows you and takes up more room than it is.'],
+    ['item' => 'Vanity Table', 'effect' => "every drawer is a mirror. Follows you multiplying your reflection when you're low."],
+    ['item' => 'The Cool Box', 'effect' => 'leaks. Slowly. Follows you leaving a damp confessional trail across every floor.'],
+    ['item' => 'Magazine Rack', 'effect' => 'full of one issue from a decade ago. Presents it to you at every quiet moment.'],
+    ['item' => 'The Corner Cabinet', 'effect' => 'only works in corners. Follows you into open rooms, visibly distressed.'],
+    ['item' => 'Nightstand Drawer', 'effect' => 'where phone chargers go to breed. Follows you tangled and proud.'],
+    ['item' => 'The Linen Press', 'effect' => 'folds nothing, creases everything. Follows you undoing your laundry.'],
+    ['item' => 'Bike Rack, Indoor', 'effect' => 'no bike. Follows you at shin height. Purely a shin device now.'],
+    ['item' => 'The Curio Cabinet', 'effect' => 'full of tiny fragile things. Follows you into every doorway. Braces you for the sound.'],
+    ['item' => 'Fireproof Box', 'effect' => "you've lost the key. Follows you holding the one document you actually need."],
+    ['item' => 'The Wall Unit', 'effect' => 'an entire wall of shelving. Follows you. Is a wall. Rooms become suggestions.'],
+    ['item' => 'Cutlery Canteen', 'effect' => 'velvet-lined, missing the fish knives. Follows you and mentions it. Often.'],
+    ['item' => 'The Toy Box', 'effect' => 'plays a single music-box note each time it moves. Follows you at bedtime.'],
+    ['item' => 'Recycling Trio', 'effect' => 'three bins, one personality, constant disagreement about which of them you meant.'],
+    ['item' => 'The Airing Cupboard', 'effect' => 'warm, smug, and full. Follows you radiating heat on the hottest day.'],
+    ['item' => 'Console Table', 'effect' => 'narrow, decorative, structurally opposed to holding anything you own.'],
+    ['item' => 'The Blanket Box', 'effect' => 'swallows one blanket per winter and returns it in July, damp and apologetic.'],
+    ['item' => "Nan's Sideboard", 'effect' => "you cannot get rid of it. It followed the last three owners too. It'll follow the next."],
+];
+
+/**
  * Five severity tiers of state-mandated pet, escalating from
  * "featherweight chaos" to "cosmically ill-advised". Bounds are
  * rough mass/threat guidance, not enforced anywhere.
@@ -2499,6 +2615,8 @@ function handle_index(): never
             'GET /unhinged/gravity-resigned' => 'Gravity has quit. time to float.',
             'GET /unhinged/vengeful-weather' => 'The sky, personally offended.',
             'GET /unhinged/wrongfall' => 'Clouds went feral. Fifty of them, tiered S to F.',
+            'GET /unhinged/poke' => 'Poke someone, then escalate dramatically. Fifty ways.',
+            'GET /unhinged/storage-buddies' => 'A piece of furniture starts following you. Fifty of them.',
             'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
         'notes' => $notes,
@@ -3123,6 +3241,25 @@ function handle_wrongfall(): never
     ]);
 }
 
+function handle_poke(): never
+{
+    send(200, [
+        'instruction' => 'Poke them. See what happens.',
+        'poke'        => pick(POKE_RESPONSES),
+    ]);
+}
+
+function handle_storage_buddies(): never
+{
+    $entry = pick(STORAGE_BUDDIES);
+
+    send(200, [
+        'instruction' => 'A piece of furniture has taken an interest in you.',
+        'item'        => $entry['item'],
+        'effect'      => $entry['effect'],
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = client_ip();
@@ -3362,6 +3499,8 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/gravity-resigned' => handle_gravity_resigned(),
     $method === 'GET' && $path === '/unhinged/vengeful-weather' => handle_vengeful_weather(),
     $method === 'GET' && $path === '/unhinged/wrongfall'   => handle_wrongfall(),
+    $method === 'GET' && $path === '/unhinged/poke'        => handle_poke(),
+    $method === 'GET' && $path === '/unhinged/storage-buddies' => handle_storage_buddies(),
     $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',
