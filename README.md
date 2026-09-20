@@ -51,7 +51,7 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
-| Web Frontend | 2.10.0 | ✅ yes | Active |
+| Web Frontend | 2.0.0a | ✅ yes | Active |
 | Amazon Alexa | 1.1.0 | ❌ No | Pending |
 
 ## MCP Endpoints
