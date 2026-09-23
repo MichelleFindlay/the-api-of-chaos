@@ -91,6 +91,7 @@ $CATALOGUE = [
     ],
     [
         'group'   => 'Excuses',
+        'collapsed' => true,
         'caption' => 'six ways out',
         'items'   => [
             ['path' => '/excuses/teams',        'method' => 'GET', 'note' => 'not joining the call 👏',        'fields' => []],
@@ -136,10 +137,12 @@ $CATALOGUE = [
             ['path' => '/unhinged/solid-suddenly-gelatinous', 'method' => 'GET', 'note' => '🪨, now jelly 🍧', 'fields' => []],
             ['path' => '/unhinged/choose-your-duck', 'method' => 'GET', 'note' => 'pick your 🛁 buddy', 'fields' => []],
             ['path' => '/unhinged/gravity-resigned', 'method' => 'GET', 'note' => 'gravity quit. now float 🫧', 'fields' => []],
-            ['path' => '/unhinged/vengeful-weather', 'new' => true, 'method' => 'GET', 'note' => 'the sky, now upset ⛈️', 'fields' => []],
-            ['path' => '/unhinged/wrongfall', 'new' => true, 'method' => 'GET', 'note' => 'Clouds went feral. 🌧️', 'fields' => []],
+            ['path' => '/unhinged/vengeful-weather', 'method' => 'GET', 'note' => 'the sky, now upset ⛈️', 'fields' => []],
+            ['path' => '/unhinged/wrongfall', 'method' => 'GET', 'note' => 'Clouds went feral. 🌧️', 'fields' => []],
             ['path' => '/unhinged/poke', 'new' => true, 'method' => 'GET', 'note' => 'poke, then escalate dramatically 👉', 'fields' => []],
             ['path' => '/unhinged/storage-buddies', 'new' => true, 'method' => 'GET', 'note' => 'furniture following you 🗄️', 'fields' => []],
+            ['path' => '/unhinged/fate-arrived', 'new' => true, 'method' => 'GET', 'note' => 'fate has arrived, badly 🔮', 'fields' => []],
+            ['path' => '/unhinged/its-fine', 'new' => true, 'method' => 'GET', 'note' => 'it\'s fine. probably. 🔥', 'fields' => []],
         ],
     ],
     [
@@ -787,10 +790,10 @@ $mcpClaudeUrl  = rtrim($mcpWebBase, '/') . '/mcp-claude';
   </div>
 
   <footer class="foot">
-    <?php if (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)): ?><span><b>Beta / Testing</b></span><?php endif; ?>
+    <?php if (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)): ?><span class="env-badge">Dev</span><?php endif; ?>
     <span>every call goes straight from your browser to the api</span>
     <span>your ip is your pile</span>
-    <span>nothing here is load-bearing</span>
+    <span>nothing is load-bearing</span>
     <button id="theme-toggle-btn" class="barbtn" type="button" aria-label="Theme: dark. Click to switch.">dark</button>
     <button id="mcp-access-btn" class="mcp-btn" type="button">MCP Access</button>
   </footer>

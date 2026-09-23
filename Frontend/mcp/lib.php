@@ -233,6 +233,16 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'unhinged_fate_arrived', 'path' => '/unhinged/fate-arrived', 'method' => 'GET',
+        'description' => 'Fate has arrived, badly. A hundred ways.',
+        'params' => [],
+    ],
+    [
+        'name' => 'unhinged_its_fine', 'path' => '/unhinged/its-fine', 'method' => 'GET',
+        'description' => "It's fine. Probably. A hundred ways.",
+        'params' => [],
+    ],
+    [
         'name' => 'healthz', 'path' => '/healthz', 'method' => 'GET',
         'description' => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         'params' => [],

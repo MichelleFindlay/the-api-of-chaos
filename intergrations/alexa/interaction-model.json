@@ -416,6 +416,26 @@
                                     "follow me furniture"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "fate arrived",
+                                "synonyms": [
+                                    "fate has arrived",
+                                    "fate",
+                                    "destiny"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "its fine",
+                                "synonyms": [
+                                    "it's fine",
+                                    "everything's fine",
+                                    "everything is fine"
+                                ]
+                            }
                         }
                     ]
                 }

@@ -26,7 +26,7 @@ const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
  * same number in Frontend/index.php's APP_VERSION and Frontend/mcp/lib.php's
  * SERVER_VERSION.
  */
-const APP_VERSION = '2.10.0';
+const APP_VERSION = '2.15.0';
 const GITHUB_REPO = 'MichelleFindlay/the-api-of-chaos';
 
 /**
