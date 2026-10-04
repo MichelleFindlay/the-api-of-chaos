@@ -116,7 +116,27 @@ const endpointMap = {
   'storage buddies': '/unhinged/storage-buddies',
   'storage buddy': '/unhinged/storage-buddies',
   'furniture': '/unhinged/storage-buddies',
-  'follow me furniture': '/unhinged/storage-buddies'
+  'follow me furniture': '/unhinged/storage-buddies',
+  'fate arrived': '/unhinged/fate-arrived',
+  'fate has arrived': '/unhinged/fate-arrived',
+  'fate': '/unhinged/fate-arrived',
+  'destiny': '/unhinged/fate-arrived',
+  "it's fine": '/unhinged/its-fine',
+  'its fine': '/unhinged/its-fine',
+  "everything's fine": '/unhinged/its-fine',
+  'everything is fine': '/unhinged/its-fine',
+  'suddenly sideways': '/unhinged/suddenly-sideways',
+  'sideways': '/unhinged/suddenly-sideways',
+  'gone sideways': '/unhinged/suddenly-sideways',
+  'everything has gone sideways': '/unhinged/suddenly-sideways',
+  'sick note': '/unhinged/adulting-sick-note',
+  'adulting sick note': '/unhinged/adulting-sick-note',
+  'sick': '/unhinged/adulting-sick-note',
+  'adulting': '/unhinged/adulting-sick-note',
+  'its now fizzy': '/unhinged/its-now-fizzy',
+  "it's now fizzy": '/unhinged/its-now-fizzy',
+  'now fizzy': '/unhinged/its-now-fizzy',
+  'fizzy': '/unhinged/its-now-fizzy'
 };
 
 function callApi(path, queryParams = {}, method = 'GET') {
@@ -223,7 +243,8 @@ const PROSE_KEYS = new Set([
   'instruction', 'remark', 'message', 'result', 'answer', 'advice',
   'excuse', 'reason', 'alibi', 'verdict', 'note', 'saying', 'quote',
   'text', 'line', 'consequence', 'name', 'label', 'scale', 'now_roughly',
-  'contender', 'tier_explanation', 'equivalent', 'forecast', 'poke'
+  'contender', 'tier_explanation', 'equivalent', 'forecast', 'poke', 'fate',
+  'reassurance', 'scenario', 'fizzy'
 ]);
 
 // Join spoken fragments with clean punctuation (no double periods).
@@ -348,7 +369,7 @@ exports.handler = async function(event, context) {
         'Excuses: for teams, social, oops, late, or an alibi. ' +
         'Ministry: gentle correction, or mandatory pet adoption. ' +
         'Cage: put your finger in the cage, try the cage with fictional creatures, or check your fingers. ' +
-        'And unhinged: the eight ball, optimism, pessimism, advice, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, or storage buddies. ' +
+        'And unhinged: the eight ball, optimism, pessimism, advice, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, or its now fizzy. ' +
         'What would you like?', false);
     }
 

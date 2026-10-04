@@ -233,6 +233,31 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'unhinged_fate_arrived', 'path' => '/unhinged/fate-arrived', 'method' => 'GET',
+        'description' => 'Fate has arrived, badly. A hundred ways.',
+        'params' => [],
+    ],
+    [
+        'name' => 'unhinged_its_fine', 'path' => '/unhinged/its-fine', 'method' => 'GET',
+        'description' => "It's fine. Probably. A hundred ways.",
+        'params' => [],
+    ],
+    [
+        'name' => 'unhinged_suddenly_sideways', 'path' => '/unhinged/suddenly-sideways', 'method' => 'GET',
+        'description' => 'Everything has gone sideways. A hundred ways, in seven categories.',
+        'params' => [],
+    ],
+    [
+        'name' => 'unhinged_adulting_sick_note', 'path' => '/unhinged/adulting-sick-note', 'method' => 'GET',
+        'description' => "A doctor's note for the adult malady of being alive. A hundred, in ten categories.",
+        'params' => [],
+    ],
+    [
+        'name' => 'unhinged_its_now_fizzy', 'path' => '/unhinged/its-now-fizzy', 'method' => 'GET',
+        'description' => 'Everything is now fizzy. A hundred ways, in ten categories.',
+        'params' => [],
+    ],
+    [
         'name' => 'healthz', 'path' => '/healthz', 'method' => 'GET',
         'description' => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         'params' => [],
