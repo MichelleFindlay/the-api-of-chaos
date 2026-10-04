@@ -140,83 +140,98 @@ const endpointMap = {
 };
 
 function callApi(path, queryParams = {}, method = 'GET') {
-  return new Promise((resolve, reject) => {
-    const queryString = Object.keys(queryParams).length > 0
-      ? '?' + Object.entries(queryParams).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
-      : '';
+  const queryString = Object.keys(queryParams).length > 0
+    ? '?' + Object.entries(queryParams).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+    : '';
 
-    const options = {
-      hostname: API_HOST,
-      path: path + queryString,
-      method: method,
-      headers: {
-        'User-Agent': 'AlexaSkill/1.0',
-        'Accept': 'application/json',
-        // Ask for uncompressed so we never have to decompress
-        'Accept-Encoding': 'identity'
-      }
-    };
+  const options = {
+    hostname: API_HOST,
+    path: path + queryString,
+    method: method,
+    headers: {
+      'User-Agent': 'AlexaSkill/1.0',
+      'Accept': 'application/json',
+      // Ask for uncompressed so we never have to decompress
+      'Accept-Encoding': 'identity'
+    }
+  };
 
-    const request = https.request(options, (res) => {
-      const chunks = [];
-      res.on('data', chunk => { chunks.push(chunk); });
-      res.on('end', () => {
-        let body = Buffer.concat(chunks);
-        const encoding = (res.headers['content-encoding'] || '').toLowerCase();
+  // /unhinged endpoints have a 1-in-10 chance of returning a 418 "fell
+  // into the void" response instead of real content - that's charming on
+  // the web but just looks like a broken skill in voice. Retry once,
+  // silently, so an Alexa user practically never sees it (odds of two
+  // in a row are 1 in 100); only fall back to a generic line if the
+  // retry hits it too.
+  function attempt(retriesLeft) {
+    return new Promise((resolve, reject) => {
+      const request = https.request(options, (res) => {
+        const chunks = [];
+        res.on('data', chunk => { chunks.push(chunk); });
+        res.on('end', () => {
+          let body = Buffer.concat(chunks);
+          const encoding = (res.headers['content-encoding'] || '').toLowerCase();
 
-        // Decompress if the server compressed anyway
-        try {
-          if (encoding === 'gzip') body = zlib.gunzipSync(body);
-          else if (encoding === 'br') body = zlib.brotliDecompressSync(body);
-          else if (encoding === 'deflate') body = zlib.inflateSync(body);
-        } catch (e) {
-          console.error('Decompress error:', e.message);
-        }
+          // Decompress if the server compressed anyway
+          try {
+            if (encoding === 'gzip') body = zlib.gunzipSync(body);
+            else if (encoding === 'br') body = zlib.brotliDecompressSync(body);
+            else if (encoding === 'deflate') body = zlib.inflateSync(body);
+          } catch (e) {
+            console.error('Decompress error:', e.message);
+          }
 
-        const text = body.toString('utf8');
+          const text = body.toString('utf8');
 
-        // Handle redirects (https module does not follow them)
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          console.error('Unexpected redirect to:', res.headers.location);
-          resolve('The API redirected unexpectedly.');
-          return;
-        }
+          // Handle redirects (https module does not follow them)
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            console.error('Unexpected redirect to:', res.headers.location);
+            resolve('That wandered off somewhere it shouldn\'t have. Try again.');
+            return;
+          }
 
-        // 418 I'm a teapot - the void's little joke
-        if (res.statusCode === 418) {
-          console.error('API returned 418');
-          resolve('The void ate you and burped you back out. Try again.');
-          return;
-        }
+          if (res.statusCode === 418) {
+            console.error('API returned 418, retries left:', retriesLeft);
+            if (retriesLeft > 0) {
+              resolve(attempt(retriesLeft - 1));
+            } else {
+              resolve('That one slipped away. Try again in a moment.');
+            }
+            return;
+          }
 
-        if (res.statusCode >= 400) {
-          console.error('API returned status', res.statusCode, text.substring(0, 200));
-          resolve('The API returned an error, status ' + res.statusCode + '.');
-          return;
-        }
+          if (res.statusCode >= 400) {
+            console.error('API returned status', res.statusCode, text.substring(0, 200));
+            resolve('Something broke out there. Try again in a moment.');
+            return;
+          }
 
-        try {
-          resolve(formatResponse(JSON.parse(text)));
-        } catch (e) {
-          // Not JSON: speak the raw text
-          resolve(text.substring(0, 500) || 'The API sent an empty response.');
-        }
+          try {
+            resolve(formatResponse(JSON.parse(text)));
+          } catch (e) {
+            // Not JSON: speak the raw text
+            resolve(text.substring(0, 500) || 'It came back with nothing to say.');
+          }
+        });
       });
-    });
 
-    request.on('error', (error) => {
-      console.error('API error:', error.message);
-      resolve('I could not reach the API.');
-    });
+      request.on('error', (error) => {
+        console.error('API error:', error.message);
+        resolve('I could not reach the chaos out there. Try again in a moment.');
+      });
 
-    request.setTimeout(7000, () => {
-      request.destroy();
-      console.error('API request timed out');
-      resolve('The API took too long to answer.');
-    });
+      // Kept well under Alexa's ~8s response window so a slow upstream
+      // resolves to a friendly timeout instead of the skill going silent.
+      request.setTimeout(4500, () => {
+        request.destroy();
+        console.error('API request timed out');
+        resolve('That took too long to come back. Try again in a moment.');
+      });
 
-    request.end();
-  });
+      request.end();
+    });
+  }
+
+  return attempt(1);
 }
 
 // Keys that are machine-facing noise when spoken aloud. The API pairs
@@ -317,16 +332,16 @@ function formatResponse(data) {
   }
 
   out = (out || '').trim();
-  if (!out) return 'The API sent nothing to say.';
+  if (!out) return 'There was nothing to say about that.';
   return out.length > MAX_SPEECH ? out.substring(0, MAX_SPEECH) + '...' : out;
 }
 
-function buildResponse(message, shouldEnd) {
+function buildResponse(message, shouldEnd, sessionAttributes) {
   // Never emit empty speech - Alexa replaces it with its own generic
   // "here's what I found" wrapper, so guarantee a non-empty string.
   let text = (message === undefined || message === null) ? '' : String(message).trim();
   if (!text && !shouldEnd) {
-    text = 'The API sent nothing to say. Try another command.';
+    text = 'There was nothing to say about that. Try another command.';
   }
   console.log('Speaking:', JSON.stringify(text));
 
@@ -351,6 +366,9 @@ function buildResponse(message, shouldEnd) {
 
   return {
     version: '1.0',
+    // Always set explicitly (even to {}) so a stale pendingReset flag
+    // never lingers into a turn that didn't just ask about it.
+    sessionAttributes: sessionAttributes || {},
     response: response
   };
 }
@@ -369,7 +387,7 @@ exports.handler = async function(event, context) {
         'Excuses: for teams, social, oops, late, or an alibi. ' +
         'Ministry: gentle correction, or mandatory pet adoption. ' +
         'Cage: put your finger in the cage, try the cage with fictional creatures, or check your fingers. ' +
-        'And unhinged: the eight ball, optimism, pessimism, advice, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, or its now fizzy. ' +
+        'And unhinged: the eight ball, optimism, pessimism, advice, a non-committal answer, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, or its now fizzy. ' +
         'What would you like?', false);
     }
 
@@ -390,6 +408,28 @@ exports.handler = async function(event, context) {
     // Safe slot access: slots object may be entirely absent
     const slots = (event.request.intent && event.request.intent.slots) || {};
     const slotValue = (name) => (slots[name] && slots[name].value) ? slots[name].value : null;
+
+    const sessionAttrs = (event.session && event.session.attributes) || {};
+
+    // Resetting a pile is destructive and cannot be undone, so it needs
+    // an explicit yes before it happens - the pending state round-trips
+    // through sessionAttributes between this turn and the next.
+    if (intentName === 'AMAZON.YesIntent') {
+      if (sessionAttrs.pendingReset) {
+        const result = await callApi('/pound/dirt', {}, 'DELETE');
+        return buildResponse(result, false);
+      }
+      return buildResponse('I am not sure what you are confirming. Try another command.', false);
+    }
+    if (intentName === 'AMAZON.NoIntent') {
+      if (sessionAttrs.pendingReset) {
+        return buildResponse('Okay, your pile stays as it is.', false);
+      }
+      return buildResponse('Okay. Try another command, or say stop to quit.', false);
+    }
+    if (intentName === 'ResetDirt') {
+      return buildResponse('Resetting clears your pile back to zero and cannot be undone. Say yes to confirm, or no to cancel.', false, { pendingReset: true });
+    }
 
     if (intentName === 'GetEndpoint') {
       const slot = slots.endpoint;
@@ -433,8 +473,6 @@ exports.handler = async function(event, context) {
       path = '/kick/munitions';
     } else if (intentName === 'PoundDirt') {
       path = '/pound/dirt';
-    } else if (intentName === 'ResetDirt') {
-      path = '/pound/dirt';
     } else if (intentName === 'HealthCheck') {
       path = '/healthz';
     } else if (intentName === 'AMAZON.HelpIntent') {
@@ -449,7 +487,7 @@ exports.handler = async function(event, context) {
       return buildResponse('I did not understand that. Try another command, or say stop to quit.', false);
     }
 
-    const result = await callApi(path, queryParams, intentName === 'ResetDirt' ? 'DELETE' : 'GET');
+    const result = await callApi(path, queryParams, 'GET');
     return buildResponse(result, false);
 
   } catch (error) {
