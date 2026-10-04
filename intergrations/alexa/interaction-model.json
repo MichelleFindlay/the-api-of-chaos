@@ -436,6 +436,36 @@
                                     "everything is fine"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "suddenly sideways",
+                                "synonyms": [
+                                    "sideways",
+                                    "gone sideways",
+                                    "everything has gone sideways"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "adulting sick note",
+                                "synonyms": [
+                                    "sick note",
+                                    "sick",
+                                    "adulting"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "its now fizzy",
+                                "synonyms": [
+                                    "it's now fizzy",
+                                    "now fizzy",
+                                    "fizzy"
+                                ]
+                            }
                         }
                     ]
                 }

@@ -54,6 +54,9 @@ declare(strict_types=1);
  *   GET    /unhinged/storage-buddies  a piece of furniture starts following you
  *   GET    /unhinged/fate-arrived  fate has arrived, badly
  *   GET    /unhinged/its-fine   it's fine. probably.
+ *   GET    /unhinged/suddenly-sideways  everything has gone sideways
+ *   GET    /unhinged/adulting-sick-note  a doctor's note for being alive
+ *   GET    /unhinged/its-now-fizzy  everything is now fizzy
  *   GET    /healthz             liveness, plus lifetime request/unique-IP/rocks-kicked counts
  *
  * Query params
@@ -1927,6 +1930,379 @@ const ITS_FINE_RESPONSES = [
 ];
 
 /**
+ * A hundred things that have suddenly gone sideways, grouped by theme.
+ * Picked in two steps — category, then scenario within it — same shape
+ * as VENGEFUL_WEATHER.
+ */
+const SUDDENLY_SIDEWAYS = [
+    'Transport' => [
+        'The lift now travels horizontally. You are on floor 4 of the building next door. Nobody is happy about this.',
+        'The plane lands sideways. The pilot calls it "crab mode" and gets a round of applause from no one.',
+        'The double-decker bus tips gently onto its side and keeps driving. The top deck is now the left deck.',
+        'The ferry turns 90° and sails into Calais like a door being slammed.',
+        'The rollercoaster car detaches and goes sideways into the gift shop. You are now holding a novelty pencil.',
+        'The ski lift chair swings round and carries you up the mountain like a sideways Ferris wheel.',
+        "The Tube train exits the tunnel sideways at Bank and emerges in Moorgate's ticket hall.",
+        'The cable car lurches sideways and now hangs from one cable like a bauble, slowly spinning, playing lift music.',
+        'The hot air balloon basket tilts 90°. Everyone is now standing on what was the wall, very politely.',
+        "Your wheelie goes sideways. You're riding along a hedge.",
+        'The trolley veers sideways. All 48 eggs make a break for it, in formation.',
+        'The wheelchair ramp now goes left. Someone in the council planning office is getting a stern letter.',
+        'The pram goes sideways down the hill and arrives at the bottom perfectly parallel parked.',
+        'The parked car is now parked across three spaces and the pavement. It insists this was on purpose.',
+        'The canal boat turns sideways in the lock and wedges perfectly. It lives there now. It has a postcode.',
+    ],
+    'Buildings & structures' => [
+        "The skyscraper lies down for a nap across four streets. Its lifts are now horizontal and it's the best commute in London.",
+        'The bridge swivels sideways and now spans the river lengthways. Technically still a bridge. To where?',
+        'The staircase turns sideways. Every step is now a wall. You live upstairs.',
+        "The chimney tilts and is now blowing smoke directly into the neighbour's bedroom window. The neighbour has opinions.",
+        'The lighthouse falls over and is now beaming horizontally into the town. Every ship is safe. Every resident is awake.',
+        "The ladder slides sideways along the gutter like a library ladder. You're doing a tour of the eaves.",
+        'The bookshelf tips. Every book is now on a shelf that is a wall. Gravity has re-alphabetised everything.',
+        'The wardrobe turns sideways and is now a bed. You now sleep in Narnia.',
+        'The shed goes sideways and rolls down the garden. It\'s a tumbleweed with a lawnmower in it.',
+        'The tent goes sideways at 3am. You are now in a sleeping bag-burrito rolling towards the campsite toilets.',
+        'The Jenga tower goes sideways and stays perfectly intact. Physics has quit in protest.',
+        'The wedding cake topples sideways and the bride and groom figures land on the vicar.',
+        'The church spire swings 90° and is now a very ecclesiastical bowsprit.',
+        "The scaffolding tower tips and becomes a scaffolding bridge. Two buildings are now connected. They're dating.",
+        'The bunk bed goes sideways. Now there are two side-by-side beds and one deeply confused sibling.',
+    ],
+    'Kitchen' => [
+        'The pan of boiling water goes sideways and the hob is now a sauna.',
+        'The full pint goes sideways and the foam heads off on its own across the bar.',
+        'The soup bowl tips. Minestrone is now a puddle shaped like the Isle of Wight.',
+        'The gravy boat capsizes. Lifeboats deployed. The roast potatoes are clinging to the yorkshire pudding.',
+        'The fondue pot tips sideways and cheese begins a slow, molten siege on the dining room.',
+        'The tray of drinks goes sideways. Seven cocktails fly in perfect formation. Nobody catches one.',
+        'The fridge tips onto its door. Every jar escapes. Mustard leads the revolt.',
+        'The pressure cooker goes sideways. It is now a jet engine. The kitchen is now airborne.',
+        'The deep fat fryer tilts. The fire brigade arrives, sees it, and slowly backs away.',
+        'The trifle slides sideways and becomes geological strata. A professor from UCL has been called.',
+        'The coffee in the cup holder goes sideways at the first roundabout. It is now in your shoe, and also your soul.',
+        'The tea urn at the village fête topples. The tombola is ruined. The vicar is crying. The WI has declared war.',
+        'The fish tank tips. The goldfish is on its way to the sea and making excellent time.',
+        'The blender goes sideways with the lid off. Your ceiling is now a smoothie.',
+        'The spice rack falls onto the hob. Every flavour, all at once. The kitchen is now a curry.',
+    ],
+    'Tech' => [
+        'The server rack tips sideways and is now a server shelf. Uptime is 100% horizontal.',
+        "The UPS goes sideways and starts leaking acid. It's now an Uninterruptible Puddle Supply.",
+        'The NAS tips mid-rebuild. RAID 5 becomes RAID 0. Your photos are now abstract art.',
+        'The spinning hard drive goes sideways. The head scrapes a perfect circle. Your data is now a vinyl record.',
+        "The 3D printer tilts mid-print. Your Benchy is now a lean-to. It's honestly better.",
+        'The laptop tips into the drink. It reboots in Welsh and refuses to speak English again.',
+        'The monitor arm swings sideways and the 34" screen is now in portrait mode. You are reading code like a scroll.',
+        'The Raspberry Pi stack topples. The router is now the modem, the modem is now the Pi, and the Pi is now sentient.',
+        'The database migration goes sideways. Every column is now a row. Every row is now a column. Every user is now Gerald.',
+        "The Friday deploy goes sideways. Prod is now staging. Staging is now your nan's laptop.",
+        'The git rebase goes sideways. Your commits are now in alphabetical order. Your history is a haiku.',
+        "The Kubernetes cluster tips over. Every pod is now in a different region. One is on the moon. It's fine.",
+        "The DNS change goes sideways. lp0.uk now resolves to a bakery in Swindon. They're getting a lot of hits.",
+        'The backup restore goes sideways. You restored to 2009. Your desktop wallpaper is a Nokia.',
+        'Your boot partition goes sideways. The machine boots, but only into GRUB. GRUB is now your OS. GRUB is happy.',
+    ],
+    'Living things' => [
+        'The sleeping cat slides sideways off the windowsill without waking up. Lands perfectly. Pretends this was the plan.',
+        'The horse turns sideways and is now walking like a crab. It is winning the Grand National.',
+        "The giraffe goes sideways. It's now a living fence.",
+        'The pregnant anything is now very wide. Midwives are refusing to comment.',
+        'The beehive tips sideways. The bees have filed a formal complaint with the council and are picketing your front door.',
+        "The goldfish bowl tilts. The goldfish is now surfing. It does not remember how it got there, but it's thriving.",
+        'The toddler slides sideways off the sofa arm and lands in a laundry basket, giggling. They want to do it 47 more times.',
+        "The surgeon goes sideways mid-operation. You now have a second appendix on your shoulder. It's a feature.",
+        "The tightrope walker goes sideways and simply walks along the air. Nobody knows how. It's not discussed.",
+        'The conductor tips sideways mid-crescendo and the entire orchestra follows. The concert hall is now a ramp.',
+        "The ballet dancer goes sideways en pointe. She's now spinning along the floor like a breakdancer. Standing ovation.",
+        "The juggler goes sideways. The balls continue juggling without him. He's now just watching.",
+        "The newborn's head goes sideways and gives you a look of deep, ancient judgement.",
+        'The tortoise tips onto its side and rolls downhill at unprecedented speeds. Tortoise of the year.',
+        "The flamingo topples sideways. It's now standing on one wing. It looks even more smug.",
+    ],
+    'Big & scary' => [
+        "The rocket goes sideways on the launch pad and takes off horizontally. It's currently overtaking traffic on the M25.",
+        'The nuclear control rod slides sideways. The reactor now produces only mild sarcasm.',
+        'The tanker lorry tips over. The M6 is now a lake of oat milk. A barista is weeping with joy.',
+        'The crane swings sideways and drops a grand piano onto a vicar. Again, the vicar. Why is it always the vicar.',
+        'The cruise ship tips sideways. The all-you-can-eat buffet is now an all-you-can-catch buffet.',
+        "The dam goes sideways and is now holding the river vertically. It's a waterfall in reverse. Tourists love it.",
+        "The oil rig falls over and is now a very ugly island with a helipad. It's declared independence.",
+        "The wind turbine tips sideways and is now a helicopter. It's left for Norway.",
+        'The submarine goes sideways and surfaces in Lake Windermere. Nobody can explain this. The ducks are unbothered.',
+        'The satellite dish swings sideways and now receives exclusively Belgian quiz shows from 1974.',
+        'The Leaning Tower of Pisa finally gives up and lies down. Italy declares a public holiday.',
+        "The space station rotates sideways. Everyone on board is now upside down. Nobody notices. It's space.",
+        'The International Date Line goes sideways and now runs through your kitchen. Breakfast happens on Tuesday. Lunch on Wednesday.',
+        'The telescope mirror tips. Astronomers are now observing a man in Croydon eating a sandwich. Riveting.',
+        'Gravity goes sideways. Everyone is now on the wall. Wall is the new floor. Floor is having a crisis.',
+    ],
+    'Everyday life' => [
+        'The meeting with your boss goes sideways. You now manage them. HR is confused but supportive.',
+        "The first date goes sideways. You end up adopting a donkey together. It's working out.",
+        'The job interview goes sideways. You leave with a different job at a different company in a different country.',
+        "The wedding speech goes sideways. You accidentally reveal the bride's real name is Derek. Nobody knew. Not even Derek.",
+        "The haircut goes sideways. You now have a parting that runs vertically down the back of your head. It's called \"the zip.\"",
+        'The birthday cake tips sideways and the candles light the bunting. The party is now a bonfire night.',
+        'The car wash goes sideways. Your car comes out the side of the building, spotless, in a different postcode.',
+        "The tax return goes sideways. HMRC now owes you £4 trillion and a single ploughman's lunch.",
+        'The Sunday roast slides sideways off the plate and onto the dog. The dog has never been happier. The dog is now the roast.',
+        'Your plans for the evening go sideways. You were going to have a quiet night in. You are now leading a parade.',
+    ],
+];
+
+/**
+ * A hundred doctor's notes for the adult malady of being alive, grouped
+ * by theme. Picked in two steps — category, then note within it — same
+ * shape as SUDDENLY_SIDEWAYS.
+ */
+const ADULTING_SICK_NOTES = [
+    'Mysterious ailments' => [
+        "Patient's left knee has started making a noise like a dial-up modem. Must rest until it connects.",
+        'Patient has caught a mild case of Tuesday. Prognosis: Wednesday.',
+        "Patient's bones are \"doing a thing.\" I've seen it. They are. Signed off 3 days.",
+        'Patient is allergic to the office printer. Not the toner. The printer. Personally.',
+        'Patient sneezed so hard she saw 2009. Needs time to process.',
+        "Patient's spine has unionised and is on strike. Negotiations ongoing.",
+        'Patient has developed acute Monday intolerance. No known cure. Avoid exposure.',
+        "Patient's inner ear now believes it is on a ferry. Do not argue with it.",
+        "Patient's eyelid has been twitching in Morse code. It is spelling \"no.\"",
+        'Patient is suffering from a rare condition where every email sounds passive-aggressive. Even the nice ones. Especially the nice ones.',
+    ],
+    'Self-inflicted' => [
+        'Patient attempted to "just quickly" fix a Kubernetes cluster. It is now day four.',
+        'Patient tried a "fun little stretch" from TikTok. Is now shaped like a question mark.',
+        'Patient ate "one more" cheese at 11pm. The cheese has won.',
+        'Patient lifted a box "with her legs" but forgot which legs. Rest required.',
+        'Patient went to a "chill" 30th birthday party. It was not chill. It is never chill.',
+        'Patient attempted to keep up with a 22-year-old at karaoke. Voice is gone. Dignity under review.',
+        'Patient trod on a Lego in the dark and has seen the face of God. God was also standing on a Lego.',
+        'Patient tried to assemble flat-pack furniture without the instructions. Has been found inside the wardrobe.',
+        'Patient said "I\'ll just have one" at the pub. Patient lied.',
+        'Patient opened a jar of pickles with too much confidence. Wrist and ego both sprained.',
+    ],
+    'Getting older' => [
+        "Patient slept in a funny position. Specifically: lying down. At her age, that's a risk.",
+        'Patient turned her head too quickly to look at a nice dog. Neck has filed for divorce.',
+        'Patient bent down to pick up a pen and her back made a decision without consulting her.',
+        'Patient is experiencing a two-day hangover from two glasses of wine. Welcome to your thirties.',
+        "Patient sneezed while sitting at an angle. Has pulled a muscle she didn't know existed. Neither did I.",
+        "Patient's knees now forecast weather with 94% accuracy. Must be kept indoors as a public service.",
+        'Patient stood up too fast and briefly met her ancestors. They said hi.',
+        'Patient went for a "light jog." The jog was not light. Patient is now a puddle.',
+        "Patient's metabolism has formally retired. A leaving card is being circulated.",
+        'Patient pulled a hamstring putting on socks. Recommend slip-ons for the foreseeable future.',
+    ],
+    'Emotional & existential' => [
+        'Patient watched the end of Toy Story 3 again. Unfit for work for 48 hours.',
+        'Patient has seen the Christmas adverts in October. Is spiritually unwell.',
+        'Patient realised the 90s were 30 years ago. Requires a lie down and a Tamagotchi.',
+        "Patient's favourite café changed its oat milk brand. Grieving period requested.",
+        'Patient read the comments section. Signed off indefinitely.',
+        "Patient finished a really good series and doesn't know who she is anymore.",
+        "Patient's houseplant died despite everything. Bereavement leave approved.",
+        'Patient was asked "what are your five-year goals?" and has not stopped staring at the wall since.',
+        'Patient accidentally saw her own reflection on a front-facing camera. Recovery expected in 3-5 business days.',
+        "Patient's playlist shuffled to a song from a breakup in 2014. Needs the afternoon.",
+    ],
+    'Workplace-induced' => [
+        'Patient was "looped in" on 47 emails. Has developed loop fatigue.',
+        'Patient heard the phrase "let\'s take this offline" and something inside her snapped.',
+        'Patient has been in a meeting that could have been an email. Twice. Same day.',
+        'Patient was asked to "circle back." Is now dizzy.',
+        'Patient\'s keyboard developed a sticky "S" key. All her emails now sound like a snake. Too embarrassing to continue.',
+        'Patient has Teams fatigue. Every sound like a Teams notification triggers fight or flight.',
+        "Patient was forced to do a trust fall at an away day. Nobody caught her. She's fine. Spiritually, not.",
+        'Patient accidentally hit "reply all." Cannot return to the building.',
+        'Patient saw a calendar invite titled "Quick chat." Has not slept since.',
+        'Patient has been asked to "touch base." Refuses to touch anything.',
+    ],
+    'Unexplained by science' => [
+        "Patient's shadow left at 3pm and hasn't returned. Must wait at home.",
+        'Patient keeps hearing the Windows XP startup sound. No computer present.',
+        'Patient now only dreams in spreadsheets. Concerning. Possibly contagious.',
+        "Patient's toaster has started making eye contact.",
+        'Patient woke up fluent in Portuguese. Does not speak Portuguese. Must investigate.',
+        "Patient's hair has gone static and is now picking up local radio.",
+        'Patient is followed by a single pigeon at all times. The pigeon has a notebook.',
+        "Patient's Fitbit says she has walked 40,000 steps while asleep. Needs rest from the walking she didn't do.",
+        "Patient's left sock is always wet. No explanation. Possibly cursed.",
+        "Patient's furniture has started following her room to room. Must stay put until it stops.",
+    ],
+    'Food-related' => [
+        'Patient ate a service station sandwich. Prayers welcome.',
+        "Patient's body has rejected a lentil. Just one. Specifically that one.",
+        'Patient had a "light" lunch at an all-you-can-eat buffet. Has become one with the buffet.',
+        'Patient ate a Scotch egg from the back of the fridge. Do not ask how old.',
+        'Patient attempted the "Hottest Wings Challenge." Can now see sound.',
+        'Patient had a dodgy kebab. The kebab knows what it did.',
+        "Patient sampled every cheese at a farmers' market. All 31. The dairy has revolted.",
+        'Patient ate an entire tub of Celebrations alone. Mainly the Bounties. Investigation ongoing.',
+        'Patient tried to cut sugar out. Body staged a coup. Rest needed while government reforms.',
+        "Patient's coffee was decaf. Nobody told her. She is not okay.",
+    ],
+    'Tech-related' => [
+        'Patient spent 6 hours debugging a missing semicolon. Medically exhausted.',
+        'Patient tried to explain how Wi-Fi works to her parents. Needs a fortnight.',
+        "Patient's NAS made a clicking noise. She heard it at 2am. She will never sleep again.",
+        "Patient's phone updated overnight and moved every button. She doesn't know who she is anymore.",
+        'Patient was told "it works on my machine." Symptoms include rage.',
+        'Patient has been trapped in a CAPTCHA loop identifying traffic lights since Thursday.',
+        'Patient accidentally pushed to main. Requires witness protection.',
+        'Patient opened 147 browser tabs. RAM and patient both crashed.',
+        "Patient's smart home turned all the lights purple and won't say why.",
+        'Patient asked an AI for help and it was too helpful. Overwhelmed. Signed off.',
+    ],
+    'Weather & environment' => [
+        'Patient walked through a cloud of someone\'s vape. Now tastes "blue raspberry" in everything.',
+        'Patient was rained on sideways. The umbrella offered no protection, only judgement.',
+        'Patient experienced British weather: four seasons in one commute. Body confused about what season it is.',
+        'Patient was caught in a gust of wind that stole her lunch. Emotionally and nutritionally depleted.',
+        'Patient made the mistake of sitting in the sun for 12 minutes. Now a tomato. A sad tomato.',
+        "Patient's heating broke. Is now a popsicle. Must thaw at room temperature.",
+        'Patient has hay fever so severe she sneezed a dandelion.',
+        'Patient was attacked by a seagull in Brighton. Chips lost. Soul lost.',
+        'Patient\'s commute took 3 hours due to "leaves on the line." Needs to recover from Southern Rail.',
+        'Patient was caught in fog so thick she ended up in Wales.',
+    ],
+    'Absolutely unhinged' => [
+        'Patient has become aware of her own tongue. Cannot stop thinking about it. Neither can you now.',
+        'Patient tried to count to infinity. Got to 4,000. Needs a nap.',
+        "Patient blinked manually once and now can't stop. Must be supervised.",
+        'Patient saw a goose. The goose saw patient. Something passed between them. Rest required.',
+        "Patient's vibe is off. I measured it. Way off.",
+        "Patient has realised she's never seen her own face directly, only reflections. Existential leave granted.",
+        "Patient has been possessed by the ghost of a minor Victorian accountant. He's fine. She's busy.",
+        'Patient made eye contact with a mime. It was a whole thing.',
+        "Patient sneezed during a yawn. The universe briefly folded in on itself. She's fine but should stay home.",
+        'Patient is simply not feeling it today. As her doctor, I fully support this. Signed: Dr. Felt Like It, MBBS.',
+    ],
+];
+
+const ITS_NOW_FIZZY = [
+    'Household' => [
+        'Sofa — Every time you sit down it sighs like a freshly opened Coke. You now sit very carefully.',
+        'Pillow — Fizzes gently against your ear all night. You dream exclusively of lemonade adverts.',
+        'Duvet — Effervescent. You wake up slightly lifted off the mattress.',
+        'Carpet — Every step goes tssss. The cat refuses to cross the living room.',
+        'Front door — Opens with a pop and sprays the postman.',
+        'Stairs — Each step bubbles under your weight. Going up is fine. Going down is a water slide.',
+        "Bath — You run it and it's already a bath bomb. It's always a bath bomb now.",
+        'Toilet — Flushes like a shaken Fanta. Ceiling damage is ongoing.',
+        'Curtains — Fizz in the breeze. The whole room smells faintly of cream soda.',
+        "Light switch — Crackles with tiny bubbles. Unclear if it's carbonation or electricity. Don't lick it.",
+    ],
+    'Kitchen' => [
+        'Kettle — Already fizzy. Tea now tastes like a sherbet dip.',
+        'Butter — Spreads, then foams. Toast has become a science experiment.',
+        'Fridge — Every time you open it, it burps. Loudly. In company.',
+        'Cutlery drawer — Forks hiss when handled. Spoons are fine. Spoons are always fine.',
+        'Bread — Rises, then keeps rising. Has left via the window.',
+        'Eggs — Crack open like Alka-Seltzer. Omelettes are now a foam.',
+        'Gravy — Carbonated gravy. The Sunday roast is now a pub novelty.',
+        'Salt — Pop Rocks. Every chip is a small concert.',
+        'Microwave — The popcorn button now applies to everything.',
+        'Sponge — Already soapy, now also fizzy. Washing up is a foam party.',
+    ],
+    'Tech' => [
+        'Keyboard — Every keypress makes a tiny pop. Typing sounds like bubble wrap.',
+        'Mouse — Sizzles across the desk on its own little cushion of bubbles. Precision is gone.',
+        'Monitor — The pixels are carbonated. Everything shimmers like a heat haze.',
+        'Server rack — Hisses under load. Fans are now just releasing pressure.',
+        'Hard drive — Spins up with a fsssst. Data now arrives slightly bubbly.',
+        'Ethernet cable — Packets come out effervescent. Ping is lower. Nobody knows why.',
+        'Phone — Fizzes in your pocket constantly. Now indistinguishable from a notification.',
+        "Raspberry Pi — Was already a pie. Now it's a sparkling pie. It's thriving.",
+        'USB stick — Plug it in, it foams over. Files arrive soggy but intact.',
+        'Router — Wi-Fi now has a gentle sparkle. Signal strength measured in bubbles.',
+    ],
+    'Clothing' => [
+        'Socks — Squelch-fizz with every step. Feet feel refreshed and deeply wrong.',
+        'Jeans — Effervescent denim. Sitting down is a decision.',
+        'Bra — Hisses when unclasped. A satisfying end to the day, honestly.',
+        'Wellies — Fill with fizz as you walk. You are now a walking soda fountain.',
+        'Jumper — Wool crackles like sherbet. Static is now a flavour.',
+        'Hat — Pops off your head every 20 minutes like a champagne cork.',
+        'Gloves — Every handshake is a fizzy surprise. Business meetings have become cordial.',
+        'Pyjamas — Lightly sparkling. Sleep is now a spa experience.',
+        'Coat — Pockets bubble over. Keys lost in a sea of foam.',
+        'Slippers — Fizz on contact. Every morning feels like stepping in a Berocca.',
+    ],
+    'Body' => [
+        'Hair — Fizzes in the wind. You look like a freshly poured Guinness.',
+        'Teeth — Constantly sherbety. Dentist is intrigued and slightly envious.',
+        'Knees — Already cracked. Now they fizz. Squatting sounds like opening a can.',
+        'Tears — Carbonated. Crying is now oddly refreshing.',
+        'Sweat — Fizzy. Gym attendance has gone up 400%.',
+        'Fingernails — Hiss when tapped on a desk. Impatience has never sounded so festive.',
+        'Ears — Hear everything with a faint fizz. Classical music is now jazz.',
+        'Elbows — Bubbly. Leaning on a bar has never been so dramatic.',
+        "Stomach — Was always fizzy. Now it's honest about it.",
+        'Hiccups — Each one lets out a small fountain. Party trick secured.',
+    ],
+    'Outdoors' => [
+        'Grass — Lawns now fizz underfoot. Picnics feel like sitting on a sparkling water.',
+        'Trees — Bark hisses in the wind. The forest sounds like a soft drink factory.',
+        'Rain — Carbonated rain. Umbrellas pop open on their own.',
+        'Puddles — Jump in one and get launched three feet into the air.',
+        'Sea — The whole Channel is sparkling. Ferries now arrive slightly faster and very bubbly.',
+        'Snow — Fizzy snowflakes. Snowmen dissolve in a dramatic hiss.',
+        'Clouds — Pop when they get too full. Weather forecasts now include "carbonation levels."',
+        "Mud — Bubbles like a witch's cauldron. Glastonbury is now a spa.",
+        'Pond — The ducks are fizzing. The ducks are unbothered.',
+        'Sun — Just a giant Berocca in the sky now. Slightly orange. Slightly smug.',
+    ],
+    'Transport' => [
+        'Car tyres — Fizz on tarmac. Every journey sounds like a shaken bottle about to burst.',
+        'Petrol — Carbonated. Car hiccups at traffic lights.',
+        'Bike — Pedals fizz. Every hill is suddenly easier and wetter.',
+        'Bus seats — Bubble when sat on. Nobody makes eye contact anymore. Even less than before.',
+        'Tube — The whole Underground fizzes. Mind the gap, and the foam.',
+        'Train horn — Now sounds like a can opening. Commuters are thirsty at all times.',
+        'Plane — Cabin pressure now very bubbly. Every passenger gets a small rush on takeoff.',
+        'Traffic cones — Hiss when knocked over. Roadworks now feel festive.',
+        'Speed bumps — Fizz when driven over. Every car gets a little launch.',
+        'Shopping trolley — Wheels are now carbonated. It still pulls to the left, but now it hisses about it.',
+    ],
+    'Office' => [
+        'Stapler — Every staple goes in with a pop. Paperwork has never been so exciting.',
+        'Coffee machine — Every brew comes out as a sparkling espresso. Productivity up, sanity down.',
+        'Office chair — Fizzes as you spin. Spinning has become company policy.',
+        'Printer — Paper comes out bubbly and slightly damp. Contracts are now legally fizzy.',
+        'Whiteboard markers — Write in fizzing ink. Diagrams dissolve after five minutes. Meetings are now efficient.',
+        'Post-it notes — Peel off with a hiss. Reminders are now noisy.',
+        'Desk plant — Sparkles. Has never been happier.',
+        "Water cooler — Already water. Now it's sparkling water. HR got what they wanted.",
+        'Stand-up meeting — Literally fizzing. Everybody sits down.',
+        'Lanyard — Hisses at the barrier. Security is now very confused.',
+    ],
+    'Entertainment' => [
+        'Guitar strings — Fizz when plucked. Every song is a little shoegaze now.',
+        "Vinyl records — Crackle was always there. Now it's carbonation. Audiophiles in shambles.",
+        'Books — Pages fizz when turned. Dickens has never been so lively.',
+        'TV remote — Hisses every time you change the channel. Netflix now asks "are you still fizzing?"',
+        'Board games — Monopoly money pops in your hand. Arguments are now bubbly.',
+        'Lego — Fizzes underfoot. Still hurts, but now with a surprising tingle.',
+        'Karaoke mic — Voice comes out sparkling. Everyone sounds like a jingle.',
+        'Rubber duck — Fizzes in the bath. Has become a jacuzzi.',
+        "Bouncy castle — Was already bouncy. Now it's also bubbly. It's a hazard. Children love it.",
+        "Fireworks — Were already fizzy. Now they're more fizzy. Nobody's safe.",
+    ],
+    'Absolutely unhinged' => [
+        'Gravity — Fizzy. Things fall slightly slower and with a hiss.',
+        'Silence — Now has a faint background crackle. Libraries are in uproar.',
+        'Monday — Effervescent. Still bad, but now with bubbles.',
+        'Your ex — Still fizzing. Somehow worse.',
+        'Bank balance — Fizzes down. Fast.',
+        'Time — Each second pops. You can hear the day disappearing.',
+        'Concrete — Fizzing. Buildings now settle very audibly.',
+        'The House of Commons — Carbonated. Debates now sound like a Fanta factory, which is a slight improvement.',
+        'The Moon — A giant Mentos. Do not drop it in the sea.',
+        "This list — It's fizzy now. You've been reading a soft drink.",
+    ],
+];
+
+/**
  * Five severity tiers of state-mandated pet, escalating from
  * "featherweight chaos" to "cosmically ill-advised". Bounds are
  * rough mass/threat guidance, not enforced anywhere.
@@ -2835,6 +3211,9 @@ function handle_index(): never
             'GET /unhinged/storage-buddies' => 'A piece of furniture starts following you. Fifty of them.',
             'GET /unhinged/fate-arrived' => 'Fate has arrived, badly. A hundred ways.',
             'GET /unhinged/its-fine' => "It's fine. Probably. A hundred ways.",
+            'GET /unhinged/suddenly-sideways' => 'Everything has gone sideways. A hundred ways, in seven categories.',
+            'GET /unhinged/adulting-sick-note' => "A doctor's note for the adult malady of being alive. A hundred, in ten categories.",
+            'GET /unhinged/its-now-fizzy' => 'Everything is now fizzy. A hundred ways, in ten categories.',
             'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
         'notes' => $notes,
@@ -3494,6 +3873,39 @@ function handle_its_fine(): never
     ]);
 }
 
+function handle_suddenly_sideways(): never
+{
+    $category = array_rand(SUDDENLY_SIDEWAYS);
+
+    send(200, [
+        'instruction' => 'Everything has gone sideways.',
+        'scenario'    => pick(SUDDENLY_SIDEWAYS[$category]),
+        'category'    => $category,
+    ]);
+}
+
+function handle_adulting_sick_note(): never
+{
+    $category = array_rand(ADULTING_SICK_NOTES);
+
+    send(200, [
+        'instruction' => "A doctor's note has been issued.",
+        'note'        => pick(ADULTING_SICK_NOTES[$category]),
+        'category'    => $category,
+    ]);
+}
+
+function handle_its_now_fizzy(): never
+{
+    $category = array_rand(ITS_NOW_FIZZY);
+
+    send(200, [
+        'instruction' => 'Everything is now fizzy.',
+        'fizzy'       => pick(ITS_NOW_FIZZY[$category]),
+        'category'    => $category,
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = client_ip();
@@ -3737,6 +4149,9 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/storage-buddies' => handle_storage_buddies(),
     $method === 'GET' && $path === '/unhinged/fate-arrived' => handle_fate_arrived(),
     $method === 'GET' && $path === '/unhinged/its-fine'    => handle_its_fine(),
+    $method === 'GET' && $path === '/unhinged/suddenly-sideways' => handle_suddenly_sideways(),
+    $method === 'GET' && $path === '/unhinged/adulting-sick-note' => handle_adulting_sick_note(),
+    $method === 'GET' && $path === '/unhinged/its-now-fizzy' => handle_its_now_fizzy(),
     $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',
