@@ -1999,7 +1999,7 @@ const SUDDENLY_SIDEWAYS = [
         "The Friday deploy goes sideways. Prod is now staging. Staging is now your nan's laptop.",
         'The git rebase goes sideways. Your commits are now in alphabetical order. Your history is a haiku.',
         "The Kubernetes cluster tips over. Every pod is now in a different region. One is on the moon. It's fine.",
-        "The DNS change goes sideways. lp0.uk now resolves to a bakery in Swindon. They're getting a lot of hits.",
+        "The DNS change goes sideways. ubereats.com now resolves to a bakery in Swindon. They're getting a lot of hits.",
         'The backup restore goes sideways. You restored to 2009. Your desktop wallpaper is a Nokia.',
         'Your boot partition goes sideways. The machine boots, but only into GRUB. GRUB is now your OS. GRUB is happy.',
     ],
