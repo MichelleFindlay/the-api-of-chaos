@@ -20,6 +20,14 @@
                     "samples": []
                 },
                 {
+                    "name": "AMAZON.YesIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NoIntent",
+                    "samples": []
+                },
+                {
                     "name": "GetEndpoint",
                     "slots": [
                         {
@@ -36,7 +44,6 @@
                         "shake {endpoint}",
                         "do {endpoint}",
                         "invoke {endpoint}",
-                        "{endpoint}",
                         "get me a {endpoint}",
                         "assign me {endpoint}"
                     ]
@@ -96,8 +103,7 @@
                             "name": {
                                 "value": "rocks",
                                 "synonyms": [
-                                    "rock",
-                                    "kick rocks"
+                                    "rock"
                                 ]
                             }
                         },
@@ -130,10 +136,7 @@
                         },
                         {
                             "name": {
-                                "value": "dirt",
-                                "synonyms": [
-                                    "pound dirt"
-                                ]
+                                "value": "dirt"
                             }
                         },
                         {

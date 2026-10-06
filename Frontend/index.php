@@ -724,9 +724,14 @@ $mcpClaudeUrl  = rtrim($mcpWebBase, '/') . '/mcp-claude';
 <link rel="stylesheet" href="css/session.css">
 <link rel="stylesheet" href="css/footer.css">
 <link rel="stylesheet" href="css/dialog.css">
+<link rel="stylesheet" href="css/alexa.css">
 <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
+
+<a class="alexa-tab" href="https://www.amazon.co.uk/dp/B0H6GJY9PS/" target="_blank" rel="noopener" aria-label="Alexa integration" title="Alexa integration">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M12 1a11 11 0 1 1-6.2 20.1L1.5 22.5l1.2-4.3A11 11 0 0 1 12 1Zm0 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14Z"/></svg>
+</a>
 
 <div class="term">
 
