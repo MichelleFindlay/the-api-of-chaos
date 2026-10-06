@@ -1,0 +1,28 @@
+/* Alexa skill tab — an icon pinned to the right edge, vertically centred,
+   so it stays put as the page scrolls. Styled like .mcp-btn, but cyan so
+   the two don't compete. */
+.alexa-tab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bg);
+  background: var(--cyan);
+  border: 1px solid var(--cyan);
+  border-right: 0;
+  padding: 0.6rem;
+  box-shadow: 0 0 14px rgba(111, 179, 192, 0.35);
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+.alexa-tab svg { width: 1.6rem; height: 1.6rem; display: block; }
+.alexa-tab:hover { background: var(--bg); color: var(--cyan); box-shadow: 0 0 18px rgba(111, 179, 192, 0.5); }
+.alexa-tab:focus-visible { outline: 1px solid var(--cyan); outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  .alexa-tab { padding: 0.45rem; }
+  .alexa-tab svg { width: 1.3rem; height: 1.3rem; }
+}
