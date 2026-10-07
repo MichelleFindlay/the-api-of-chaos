@@ -258,6 +258,21 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'unhinged_random_boulder', 'path' => '/unhinged/random-boulder', 'method' => 'GET',
+        'description' => 'A boulder is rolling at you. Two hundred of them, in eighteen categories.',
+        'params' => [],
+    ],
+    [
+        'name' => 'unhinged_toys', 'path' => '/unhinged/toys', 'method' => 'GET',
+        'description' => 'A toy, with something wrong with it. A hundred of them, in nine categories.',
+        'params' => [],
+    ],
+    [
+        'name' => 'unhinged_whats_that', 'path' => '/unhinged/whats-that', 'method' => 'GET',
+        'description' => 'Something is coming over the hill. A hundred things it could be.',
+        'params' => [],
+    ],
+    [
         'name' => 'healthz', 'path' => '/healthz', 'method' => 'GET',
         'description' => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         'params' => [],

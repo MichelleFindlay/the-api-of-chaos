@@ -141,18 +141,28 @@ $CATALOGUE = [
     ],
     [
         'group'   => 'Unhinged Pt 2',
-        'caption' => 'no supervision',
+        'caption' => 'no regrets',
         'items'   => [
             ['path' => '/unhinged/gravity-resigned', 'method' => 'GET', 'note' => 'gravity quit. now float 🫧', 'fields' => []],
             ['path' => '/unhinged/vengeful-weather', 'method' => 'GET', 'note' => 'the sky, now upset ⛈️', 'fields' => []],
             ['path' => '/unhinged/wrongfall', 'method' => 'GET', 'note' => 'Clouds went feral. 🌧️', 'fields' => []],
             ['path' => '/unhinged/poke', 'method' => 'GET', 'note' => 'poke, then escalate dramatically 👉', 'fields' => []],
             ['path' => '/unhinged/storage-buddies', 'method' => 'GET', 'note' => 'furniture following you 🗄️', 'fields' => []],
-            ['path' => '/unhinged/fate-arrived', 'new' => true, 'method' => 'GET', 'note' => 'fate has arrived, badly 🔮', 'fields' => []],
-            ['path' => '/unhinged/its-fine', 'new' => true, 'method' => 'GET', 'note' => 'it\'s fine. probably. 🔥', 'fields' => []],
+            ['path' => '/unhinged/fate-arrived', 'method' => 'GET', 'note' => 'fate has arrived, badly 🔮', 'fields' => []],
+            ['path' => '/unhinged/its-fine', 'method' => 'GET', 'note' => 'it\'s fine. probably. 🔥', 'fields' => []],
             ['path' => '/unhinged/suddenly-sideways', 'new' => true, 'method' => 'GET', 'note' => 'everything but sideways ↪️', 'fields' => []],
             ['path' => '/unhinged/adulting-sick-note', 'new' => true, 'method' => 'GET', 'note' => 'certified not-a-corpse 🤒', 'fields' => []],
             ['path' => '/unhinged/its-now-fizzy', 'new' => true, 'method' => 'GET', 'note' => 'everything but carbonated 🫧', 'fields' => []],
+        ],
+    ],
+    [
+        'group'   => 'Unhinged Pt 3',
+        'collapsed' => true,
+        'caption' => 'no filter',
+        'items'   => [
+            ['path' => '/unhinged/random-boulder', 'new' => true, 'method' => 'GET', 'note' => 'round, rolling at you 🪨', 'fields' => []],
+            ['path' => '/unhinged/toys', 'new' => true, 'method' => 'GET', 'note' => 'some assembly required 🧸', 'fields' => []],
+            ['path' => '/unhinged/whats-that', 'new' => true, 'method' => 'GET', 'note' => 'coming over the hill ⛰️', 'fields' => []],
         ],
     ],
     [

@@ -469,6 +469,35 @@
                                     "fizzy"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "random boulder",
+                                "synonyms": [
+                                    "boulder",
+                                    "a boulder",
+                                    "rolling boulder"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "toys",
+                                "synonyms": [
+                                    "toy",
+                                    "a toy"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "whats that",
+                                "synonyms": [
+                                    "what's that",
+                                    "over the hill",
+                                    "coming over the hill"
+                                ]
+                            }
                         }
                     ]
                 }

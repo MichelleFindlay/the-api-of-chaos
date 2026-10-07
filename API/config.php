@@ -26,7 +26,7 @@ const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
  * same number in Frontend/index.php's APP_VERSION and Frontend/mcp/lib.php's
  * SERVER_VERSION.
  */
-const APP_VERSION = '2.19.0';
+const APP_VERSION = '2.20.0';
 const GITHUB_REPO = 'MichelleFindlay/the-api-of-chaos';
 
 /**
@@ -75,6 +75,27 @@ const TRUSTED_PROXIES = [
     '2a06:98c0::/29',
     '2c0f:f248::/32',
 ];
+
+/**
+ * Lets the Alexa skill keep one pile (and one set of fingers) per Amazon
+ * account. The skill runs on AWS, so every Alexa user reaches this API
+ * from the same, ever-changing pool of AWS addresses; keyed on IP they'd
+ * all share one drifting pile. Instead the skill sends a hash of the
+ * Alexa userId in PILE_ID_HEADER, and proves it's really the skill by
+ * also sending this shared secret in PILE_SECRET_HEADER. Without a
+ * matching secret the pile header is ignored and the caller's IP is used
+ * as normal, so nobody else can claim an Alexa pile.
+ *
+ * The secret is never committed. It's read from the PILE_SECRET_ENV
+ * environment variable or, failing that, from PILE_SECRET_FILE (inside
+ * data/, which .htaccess denies and .gitignore excludes). Leave both
+ * unset to switch the feature off. The skill needs the same value in its
+ * own CHAOS_PILE_SECRET environment variable.
+ */
+const PILE_ID_HEADER     = 'X-Chaos-Pile';
+const PILE_SECRET_HEADER = 'X-Chaos-Pile-Secret';
+const PILE_SECRET_ENV    = 'CHAOS_PILE_SECRET';
+const PILE_SECRET_FILE   = __DIR__ . '/data/pile-secret.txt';
 
 // How many fingers/toes you start (and get restored) with. Toes are
 // only spent once fingers run out.
