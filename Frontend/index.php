@@ -141,6 +141,7 @@ $CATALOGUE = [
     ],
     [
         'group'   => 'Unhinged Pt 2',
+        'collapsed' => true,
         'caption' => 'no regrets',
         'items'   => [
             ['path' => '/unhinged/gravity-resigned', 'method' => 'GET', 'note' => 'gravity quit. now float 🫧', 'fields' => []],
@@ -163,6 +164,14 @@ $CATALOGUE = [
             ['path' => '/unhinged/random-boulder', 'new' => true, 'method' => 'GET', 'note' => 'round, rolling at you 🪨', 'fields' => []],
             ['path' => '/unhinged/toys', 'new' => true, 'method' => 'GET', 'note' => 'some assembly required 🧸', 'fields' => []],
             ['path' => '/unhinged/whats-that', 'new' => true, 'method' => 'GET', 'note' => 'coming over the hill ⛰️', 'fields' => []],
+        ],
+    ],
+    [
+        'group'   => 'Cursed',
+        'collapsed' => true,
+        'caption' => 'happily never after',
+        'items'   => [
+            ['path' => '/cursed/childhood-tales', 'new' => true, 'method' => 'GET', 'note' => 'once upon a time, never again 📖', 'fields' => []],
         ],
     ],
     [
@@ -286,6 +295,17 @@ function chaos_client_ip(): string
 function chaos_pile_id(): string
 {
     return chaos_client_ip();
+}
+
+/**
+ * A local stylesheet or script URL with its modified time attached, so a
+ * changed file gets a new URL and Cloudflare or the browser can't keep
+ * serving the old copy.
+ */
+function chaos_asset(string $path): string
+{
+    $mtime = @filemtime(__DIR__ . '/' . $path);
+    return $mtime ? $path . '?v=' . $mtime : $path;
 }
 
 /** Cloudflare's two-letter country code for this visitor, when present. */
@@ -709,6 +729,21 @@ $clientIp  = chaos_client_ip();
 $country   = chaos_client_country();
 $sectionNo = 0;
 
+/**
+ * The "new" switch starts on whenever there's anything new to show. While
+ * it's on, sections holding something new start open (showing only their
+ * new endpoints) and everything else stays collapsed.
+ */
+foreach ($CATALOGUE as &$group) {
+    $group['has_new'] = (bool) array_filter($group['items'], static fn (array $i): bool => !empty($i['new']));
+}
+unset($group);
+$anyNew  = (bool) array_filter($CATALOGUE, static fn (array $g): bool => $g['has_new']);
+$anyOpen = false;
+foreach ($CATALOGUE as $group) {
+    $anyOpen = $anyOpen || empty($group['collapsed']) || ($anyNew && $group['has_new']);
+}
+
 /** MCP connector URLs live on the web host, so they follow it to staging too. */
 $mcpWebBase    = (($_SERVER['HTTP_HOST'] ?? '') === parse_url(STAGING_WEB_URL, PHP_URL_HOST)) ? STAGING_WEB_URL : WEB_URL;
 $mcpOpenApiUrl = rtrim($mcpWebBase, '/') . '/mcp';
@@ -725,17 +760,17 @@ $mcpClaudeUrl  = rtrim($mcpWebBase, '/') . '/mcp-claude';
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<script src="js/theme-init.js"></script>
-<link rel="stylesheet" href="css/theme.css">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/banner.css">
-<link rel="stylesheet" href="css/panes.css">
-<link rel="stylesheet" href="css/commands.css">
-<link rel="stylesheet" href="css/session.css">
-<link rel="stylesheet" href="css/footer.css">
-<link rel="stylesheet" href="css/dialog.css">
-<link rel="stylesheet" href="css/alexa.css">
-<link rel="stylesheet" href="css/responsive.css">
+<script src="<?= chaos_h(chaos_asset('js/theme-init.js')) ?>"></script>
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/theme.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/base.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/banner.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/panes.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/commands.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/session.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/footer.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/dialog.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/alexa.css')) ?>">
+<link rel="stylesheet" href="<?= chaos_h(chaos_asset('css/responsive.css')) ?>">
 </head>
 <body>
 
@@ -765,15 +800,18 @@ $mcpClaudeUrl  = rtrim($mcpWebBase, '/') . '/mcp-claude';
     <section class="pane" aria-label="Commands">
       <div class="pane__bar">
         <span>endpoints</span>
-        <button id="toggle-all" class="barbtn" type="button" aria-pressed="false">hide all</button>
+        <span class="pane__tools">
+          <label class="newonly"><input id="new-only" type="checkbox" role="switch" autocomplete="off"<?= $anyNew ? ' checked' : '' ?>> new</label>
+          <button id="toggle-all" class="barbtn" type="button" aria-pressed="<?= $anyOpen ? 'false' : 'true' ?>"><?= $anyOpen ? 'hide all' : 'show all' ?></button>
+        </span>
       </div>
-      <div class="pane__body">
+      <div class="pane__body<?= $anyNew ? ' is-new-only' : '' ?>">
         <?php foreach ($CATALOGUE as $group): $sectionNo++; ?>
-        <details class="grpwrap"<?= empty($group['collapsed']) ? ' open' : '' ?>>
+        <details class="grpwrap"<?= (empty($group['collapsed']) || ($anyNew && $group['has_new'])) ? ' open' : '' ?><?= empty($group['collapsed']) ? ' data-default-open' : '' ?><?= $group['has_new'] ? ' data-has-new' : '' ?>>
           <summary class="grp"><span class="grp__chev" aria-hidden="true">▾</span><?= chaos_h(strtolower($group['group'])) ?> <em>&mdash; <?= chaos_h(strtolower($group['caption'] ?? '')) ?></em></summary>
           <div class="grpbody">
           <?php foreach ($group['items'] as $item): ?>
-          <div class="row">
+          <div class="row<?= !empty($item['new']) ? ' is-new' : '' ?>">
             <button class="run"
                     data-path="<?= chaos_h($item['path']) ?>"
                     data-method="<?= chaos_h($item['method']) ?>"><span class="verb"><?= chaos_h($item['method']) ?></span> <?= chaos_h($item['display'] ?? $item['path']) ?></button>
@@ -791,6 +829,7 @@ $mcpClaudeUrl  = rtrim($mcpWebBase, '/') . '/mcp-claude';
             <span class="note"><?= chaos_h(strtolower($item['note'] ?? '')) ?></span>
           </div>
           <?php endforeach; ?>
+          <?php if (!$group['has_new']): ?><p class="grp__nonew">nothing new here</p><?php endif; ?>
           </div>
         </details>
         <?php endforeach; ?>
@@ -866,9 +905,9 @@ $mcpClaudeUrl  = rtrim($mcpWebBase, '/') . '/mcp-claude';
     clientIp: <?= json_encode($clientIp) ?>
   };
 </script>
-<script src="js/panels.js"></script>
-<script src="js/mcp-dialog.js"></script>
-<script src="js/theme-toggle.js"></script>
-<script src="js/cli.js"></script>
+<script src="<?= chaos_h(chaos_asset('js/panels.js')) ?>"></script>
+<script src="<?= chaos_h(chaos_asset('js/mcp-dialog.js')) ?>"></script>
+<script src="<?= chaos_h(chaos_asset('js/theme-toggle.js')) ?>"></script>
+<script src="<?= chaos_h(chaos_asset('js/cli.js')) ?>"></script>
 </body>
 </html>

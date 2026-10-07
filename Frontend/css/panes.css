@@ -38,4 +38,60 @@
 .barbtn:hover { color: var(--amber); border-color: var(--amber); }
 .barbtn:focus-visible { outline: 1px solid var(--amber); outline-offset: 1px; }
 
+/* "new" switch sits beside hide all; switching it on shows only new
+   endpoints. A checkbox underneath, drawn as a gold toggle. */
+.pane__tools { display: flex; align-items: center; gap: 0.75rem; }
+.newonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  cursor: pointer;
+  user-select: none;
+}
+.newonly:hover, .newonly:has(input:checked) { color: var(--gold); }
+.newonly:has(input:checked) { text-shadow: 0 0 8px rgba(245, 197, 66, 0.55); }
+.newonly input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 2rem;
+  height: 1rem;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--bg);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.newonly input::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: calc(1rem - 4px);
+  height: calc(1rem - 4px);
+  border-radius: 50%;
+  background: var(--dim);
+  transition: transform 150ms ease, background 150ms ease;
+}
+.newonly:hover input { border-color: var(--gold); }
+.newonly input:checked {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(245, 197, 66, 0.6);
+}
+.newonly input:checked::before { transform: translateX(1rem); background: var(--bg); }
+.newonly input:focus-visible { outline: 1px solid var(--gold); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .newonly input, .newonly input::before { transition: none; }
+}
+
+.pane__body.is-new-only .row:not(.is-new) { display: none; }
+/* sections with nothing new say so, but only while the switch is on */
+.grp__nonew { display: none; margin: 0.35rem 0 0; padding-left: 1.4rem; color: var(--muted); font-size: 0.85em; }
+.pane__body.is-new-only .grp__nonew { display: block; }
+
 .pane__body { padding: 0.85rem 0.75rem 1.1rem; }

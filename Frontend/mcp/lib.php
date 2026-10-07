@@ -273,6 +273,11 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'cursed_childhood_tales', 'path' => '/cursed/childhood-tales', 'method' => 'GET',
+        'description' => 'A childhood story, cursed. A hundred of them, in five categories.',
+        'params' => [],
+    ],
+    [
         'name' => 'healthz', 'path' => '/healthz', 'method' => 'GET',
         'description' => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         'params' => [],

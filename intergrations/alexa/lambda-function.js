@@ -163,7 +163,13 @@ const endpointMap = {
   'whats that': '/unhinged/whats-that',
   "what's that": '/unhinged/whats-that',
   'over the hill': '/unhinged/whats-that',
-  'coming over the hill': '/unhinged/whats-that'
+  'coming over the hill': '/unhinged/whats-that',
+  'childhood tales': '/cursed/childhood-tales',
+  'cursed childhood tales': '/cursed/childhood-tales',
+  'childhood tale': '/cursed/childhood-tales',
+  'cursed tale': '/cursed/childhood-tales',
+  'cursed tales': '/cursed/childhood-tales',
+  'bedtime story': '/cursed/childhood-tales'
 };
 
 function callApi(path, queryParams = {}, method = 'GET', pileId = '') {
@@ -419,6 +425,7 @@ exports.handler = async function(event, context) {
         'Ministry: gentle correction, or mandatory pet adoption. ' +
         'Cage: put your finger in the cage, try the cage with fictional creatures, or check your fingers. ' +
         'And unhinged: the eight ball, optimism, pessimism, advice, a non-committal answer, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, its now fizzy, a random boulder, toys, or whats that. ' +
+        'And cursed: a childhood tale. ' +
         'What would you like?', false);
     }
 

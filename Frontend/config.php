@@ -174,6 +174,7 @@ const ALLOWED_PATHS = [
     '#^/cage/finger/(left|reset)$#',
     '#^/cage/fictional/finger$#',
     '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck|gravity-resigned|vengeful-weather|wrongfall|poke|storage-buddies|fate-arrived|its-fine|suddenly-sideways|adulting-sick-note|its-now-fizzy|random-boulder|toys|whats-that)$#',
+    '#^/cursed/childhood-tales$#',
 ];
 
 /** Paths that may be called with DELETE. Everything else is GET or POST. */

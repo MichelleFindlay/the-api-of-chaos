@@ -52,6 +52,7 @@
 | GET | /unhinged/random-boulder | A boulder is rolling at you. Two hundred of them, in eighteen categories. |
 | GET | /unhinged/toys | A toy, with something wrong with it. A hundred of them, in nine categories. |
 | GET | /unhinged/whats-that | Something is coming over the hill. coming over the hill. |
+| GET | /cursed/childhood-tales | A childhood story, cursed. A hundred of them, in five categories. |
 | GET | /healthz | Liveness, plus lifetime request, unique-IP, and rocks-kicked counts. |
 
 

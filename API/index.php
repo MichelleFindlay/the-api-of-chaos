@@ -60,6 +60,7 @@ declare(strict_types=1);
  *   GET    /unhinged/random-boulder  a boulder is rolling at you
  *   GET    /unhinged/toys       a toy, with something wrong with it
  *   GET    /unhinged/whats-that  something is coming over the hill
+ *   GET    /cursed/childhood-tales  a childhood story, cursed
  *   GET    /healthz             liveness, plus lifetime request/unique-IP/rocks-kicked counts
  *
  * Query params
@@ -2782,6 +2783,124 @@ const WHATS_THAT_RESPONSES = [
 ];
 
 /**
+ * A hundred childhood stories, cursed, grouped by where they came from.
+ * Picked in two steps — category, then tale within it — same shape as
+ * UNHINGED_TOYS.
+ */
+const CURSED_CHILDHOOD_TALES = [
+    'Fairy tales' => [
+        'Little Red Riding Hood: The Path Was Never Straight. The forest path curves left forever, and she\'s been walking it since 1697. Grandma\'s cottage has a staircase that goes down further than the hill is tall. In the bed lies something wearing Grandma, wearing the wolf, wearing something else, all the way down. "What big eyes you have," she says. It answers, "Which ones?"',
+        'Snow White: The Mirror Answers. The Queen never asked who was fairest; she asked what was watching. The mirror is not glass but a membrane, and on the other side something vast has been pressing its face against it for centuries, waiting for someone pure enough to step through. The apple was a key. The glass coffin is a lens.',
+        "Hansel: Breadcrumbs. The birds didn't eat the crumbs; they arranged them. When Hansel finally reads the pattern from a treetop, he realises it's a summoning circle the size of the forest, and he's standing in the middle of it.",
+        "Gretel: The Oven Remembers. She shoved the witch in and slammed the door, and became a hero. Sixty years later the knocking from inside hasn't stopped, and it's getting politer. Last night it said please. Tonight it said her name in her mother's voice.",
+        "Goldilocks: Just Right. Three bowls of porridge, three chairs and three beds, but the measurements are wrong in a way that hurts to look at. The small bowl holds more than the big one, and the middle chair has four legs and also five. When the bears come home, they stand on their hind legs a little too easily. Daddy Bear's smile has a hinge.",
+        'Cinderella: Midnight. At the stroke of twelve the coach turned back into a pumpkin, the horses into mice, and the footmen into lizards. The Fairy Godmother never said what Cinderella was before she was a girl. The glass slipper fits because it was moulded from her original foot, and the Prince searches the kingdom for her with a face of pure terror.',
+        "Sleeping Beauty: A Hundred Years. She slept for a century so something else could use her dreams as a door. The briars around the castle aren't defensive; they're stitches holding the wound shut. The prince's kiss pulled the last thread, and the castle exhales.",
+        "Rapunzel: Let Down Your Hair. Her hair hasn't been cut in eighteen years and is four hundred metres long. It doesn't hang down the tower; it goes down, into the ground, into the roots, into something that has been drinking through it. Every night something climbs. Every morning she's a little lighter.",
+        "The Little Match Girl: Every Flame a Window. Each match shows her a warm room, a feast, her dead grandmother. She keeps lighting them because she's freezing, and because on match nine the grandmother turned her head. By match twenty, the windows are showing the room behind her. By the last match, the cold isn't coming from the snow.",
+        "The Ugly Duckling: Becoming. The other ducklings were right to be afraid. It wasn't growing into a swan; it was growing into its true shape, very slowly, so nobody would notice. The swans on the lake accept it at once. They bow. They've been waiting.",
+        "Thumbelina: Beneath the Petals. A childless woman buys a barleycorn from a witch, and a girl the size of a thumb is born from the flower. Nobody asks what pollinated it. The toad, the mole and the beetle all want to marry her, not for love but because they recognise what she'll hatch into.",
+        "The Little Mermaid: From the Trench. She gave up her voice for legs, and every step feels like knives, but that's not the horror. The horror is that her father the Sea King is not a merman. He's the trench. And he's coming up the beach to bring her home, and the tide goes out for three miles first.",
+        'Jack: Beans. Five magic beans for one cow. The stalk didn\'t grow up but down from somewhere above the sky. The giant at the top isn\'t a giant; he\'s just normal-sized for where the stalk comes from. "Fee-fi-fo-fum" is not a rhyme. It\'s a coordinate.',
+        'Snow-White and Rose-Red: The Visitor in the Snow. A bear knocks at the cottage door on a winter night, and the sisters let it sleep by the fire. Every spring it leaves, every winter it returns, and each year it stands a little more upright. This winter it took off its fur at the door, folded it neatly, and sat down with them.',
+        "The Steadfast Tin Soldier: One Leg Short. He was cast last, from not quite enough tin, and so he alone can see the thing in the snuffbox. Nobody believes him. He's tin. He can't move. He can only stand, and watch the lid open a little more every night.",
+        'The Princess and the Pea: Twenty Mattresses. The queen put a pea under twenty mattresses and twenty featherbeds to test a princess. The princess lay awake all night, bruised. The queen announced she was real royalty. In the morning servants removed every mattress and found no pea, just a small round hole in the bed frame, going down.',
+        "The Six Swans' Sister: Silence. Six years without speaking, weaving shirts from nettles to turn her brothers back from swans. The nettles grow from a graveyard. They whisper while she works. If she says one word the spell fails, but they say plenty, and she's begun to understand them.",
+        "The Shoemaker: The Little Helpers. Every night tiny cobblers finish his shoes, flawlessly. He grows rich. One night he hides to watch them work and learns they're not elves but larvae. The shoes are cocoons, and every customer is walking out with one on each foot.",
+        "The Goose Girl: Falada Speaks. Her horse's head was nailed above the city gate, and every morning it speaks to her. It began with sympathy. Now it's giving instructions. The city gate is very old. The horse says it was built to keep something in.",
+        "Simpleton: The Golden Goose. Everyone who touches the golden goose sticks to it: the innkeeper's daughters, the parson, the sexton, two farmers. The procession grows to the length of a village. Nobody can let go, and Simpleton is laughing, leading them all toward the sea at a steady walk, and he hasn't blinked in days.",
+        "The Fir Tree: Evergreen. A little fir tree spent its whole life wishing to be chosen, and finally it was, cut down, decorated and loved for one night. Then it was burnt. The roots are still in the ground, and they remember, and they're spreading under the town looking for the family.",
+        "Gerda: The Snow Queen's Shard. A splinter of the troll mirror lodges in Kay's eye, and he stops seeing beauty. He sees the truth instead: the true angles of the world, the ones that don't add up. Gerda crosses a frozen continent to save him and finds him in the ice palace, finally happy, solving a puzzle that will end everything.",
+        "Beauty: The Rose. She took her father's place in the Beast's castle and learned to love him. When the curse broke and he became a prince, she screamed. Because the Beast was the mask. The prince is what was underneath it, wearing a face it learned from portraits.",
+        "Tom Thumb: Swallowed. Tom gets swallowed by a cow, a fish, a wolf and a giant, and always comes back out. But each time he's inside something there's more room in there than there should be, and he keeps meeting the other Toms who didn't make it.",
+        "The Star Money Girl: Falling Stars. A poor girl gives away everything until she stands naked in the woods, and the stars fall into her apron as coins. That's where the original story stops. This film continues: the stars don't stop falling. Each one is still white-hot, still alive, and they've chosen her as their nest.",
+    ],
+    'Fables and folk tales' => [
+        'The Gingerbread Man: Run Run Run. "You can\'t catch me," he shouts, and he\'s right. Nobody can, because the thing that baked him has been chasing him since the oven door opened and he\'s never once looked back. The fox offering a lift across the river is the only one who understands. The fox is also running.',
+        "The Three Little Pigs: Huff. The wolf blew down the straw house and the stick house, but couldn't blow down the brick house. So he stopped blowing and started breathing in. Nobody had thought about that. Now the third pig sits in the brick house as the air gets thinner and the walls start to bow inward.",
+        "Chicken Licken: The Sky Is Falling. An acorn hits her on the head, and she runs to tell the King. Henny Penny, Cocky Locky, Ducky Lucky, Goosey Loosey and Turkey Lurkey all believe her. Foxy Loxy offers to lead them to safety and eats them. The film ends on the King looking up. The sky is falling. It wasn't an acorn.",
+        "The Tortoise: Slow and Steady. The hare fell asleep and the tortoise won. But the tortoise never stopped at the finish line. It's still going, at the same speed, in a straight line, through mountains, through cities, through you. It has been racing for ten thousand years and the finish line it's aiming for isn't on this planet.",
+        "The Crow: Sing For Me. The fox flatters the crow into singing so she'll drop her cheese. She opens her beak and sings, and the note she produces is not a crow's note. Every animal in the wood goes silent. The fox runs. The cheese is still falling.",
+        "The Country Mouse: Under the City. The town mouse's feasts are lavish, but they're interrupted by cats and dogs, and the country mouse heads home. That's the fable. This film is about the noise the town mouse never mentioned, coming from the walls, from the walls inside the walls, the ones that run down under the cellars into a city that's much older.",
+        "The Lamb: Downstream. The wolf accuses the lamb of muddying his drinking water, even though the lamb is downstream. The lamb is right; it wasn't him. Upstream, something enormous is bathing in the river, and the water is turning a colour with no name.",
+        "The Mouse: The Net. The lion spares the mouse, and later the mouse gnaws through the hunters' net to free him. Then she sees the hunters. They have too many joints and they move together like a flock, and they don't seem angry at all. They seem delighted.",
+        'The Littlest Billy Goat Gruff: Under the Bridge. "Eat my bigger brother instead," he tells the troll, and trots across. The troll was never the danger; the troll was the guard. The meadow on the other side, the green grass all three goats crossed for, has teeth.',
+        "Peter: The Meadow Gate. Grandfather told Peter never to go into the meadow, because the wolf might come. Grandfather lied. The wolf is fine. Grandfather locked the gate because the meadow was hungry, and the grass already knows Peter's footsteps.",
+        "The Duck: Still Quacking. At the end of the story, you can hear the duck quacking inside the wolf, because the wolf swallowed her alive. It's been decades. She's still quacking, from the wolf, from the zoo, from the wolf's grave. Now from under the city. She's learned other words.",
+        "The Babes in the Wood: Covered in Leaves. Two orphans are abandoned in the forest to die, and robins cover their bodies with leaves. The robins kept going. Leaf after leaf, year after year, building a mound that's now a hill, with two small heartbeats under it, and very large ones.",
+    ],
+    'Nursery rhymes' => [
+        'Little Bo-Peep: Leave Them Alone. "Leave them alone and they\'ll come home," everyone said. Bo-Peep did, and they came home, single file in perfect rows, but they\'re the wrong colour now. They stand around her bed at night and bleat in harmony. Something in the hills sent them back as a message.',
+        "Mary: It Followed Her. Mary had a little lamb. It followed her to school one day, which was against the rules. It followed her home. It followed her to college, to her wedding, to the hospital where she gave birth. It's been following her for eighty years. It's never aged. It's never once looked away.",
+        "The Lamb: Fleece White as Snow. Nobody has ever sheared Mary's lamb. Every attempt ended with the shearer running. Underneath the white fleece isn't skin; it's a door.",
+        "Little Boy Blue: Asleep in the Haystack. The sheep's in the meadow, the cow's in the corn, and Little Boy Blue is under the haystack, fast asleep. He won't wake up. Someone is blowing his horn, though, and the cows have stopped moving, and the corn is leaning toward the sound.",
+        "Little Miss Muffet: Beside Her. She was eating her curds and whey when a spider sat down beside her. Except it wasn't a spider; it was the tip of one leg, belonging to something under the meadow that had grown to the size of the county. Miss Muffet ran. The leg stayed where it was, patient.",
+        "Jack and Jill: The Well at the Top. Why would anyone put a well at the top of a hill? Jack and Jill go up to fetch a pail of water, and Jack falls down and breaks his crown, and Jill comes tumbling after. They don't stop tumbling. The hill goes down forever on the other side.",
+        "Humpty Dumpty: The Great Fall. He sat on a wall, and he had a great fall. All the king's horses and all the king's men couldn't put him back together. Not because the pieces were broken, but because of what came out. The king's men have been guarding that wall ever since, and none of them talk about what hatched.",
+        'The Owl and the Pussycat: A Year and a Day. They went to sea in a beautiful pea-green boat with honey and plenty of money, and sailed for a year and a day to the land where the Bong-tree grows. They married, danced by the light of the moon, and never came back. Postcards still arrive. The handwriting gets stranger every year. The last one was just the moon, drawn with too many sides.',
+        "Simple Simon: Fishing in a Pail. Simple Simon went a-fishing for a whale, and all the water he had was in his mother's pail. Everyone laughed. He kept fishing. On the ninth day, the line went tight, and kept going tight, and the pail is a pail on the outside only.",
+        'Baa Baa Black Sheep: Three Bags Full. "Have you any wool?" "Yes sir, yes sir, three bags full." One for the master, one for the dame, and one for the little boy who lives down the lane. Nobody has ever asked what\'s in the bags, or why the little boy down the lane has never been seen, or why the bags are moving.',
+        "The Three Little Kittens: Lost Mittens. They lost their mittens and began to cry. They found them again, later, on someone else's hands, someone very tall walking down the lane at dusk, waving.",
+        "Little Jack Horner: In the Corner. He sat in the corner eating his Christmas pie, stuck in his thumb, and pulled out a plum. Then the pie pulled back. The corner of the room isn't a corner any more. It's an angle that keeps going, and Jack is very slowly being reeled in.",
+        "Incy Wincy Spider: Up the Spout Again. Down came the rain and washed the spider out. Out came the sun and dried up all the rain, and Incy Wincy climbed the spout again. And again. And again. Every time it comes back up the spout it's a little bigger. The spout's been replaced with a wider one twice. The rain is now afraid of it.",
+    ],
+    "Classic children's books" => [
+        "Winnie-the-Pooh: Hunny. Pooh has eaten honey from the same jar every day for a hundred years, and it's never run out. He's never looked at the bottom. The bottom is looking at him. The Hundred Acre Wood is exactly one hundred acres, measured from every direction, which isn't possible.",
+        "Piglet: Very Small Animal. Piglet has always been afraid of Heffalumps and Woozles. Everyone told him they weren't real. Everyone was wrong, and Piglet is the only one who's been keeping count of the footprints around the tree. There are more of them every time they go round.",
+        "Roo: The Pouch. Kanga's pouch is deeper than Kanga is. Roo has been exploring it for years. He's found rooms down there, and corridors, and a door with a nameplate with his name on it, older than he is.",
+        "Christopher Robin: Grown Up. He left the Wood at the end of childhood. Fifty years later he returns, and the animals are waiting, but they've been waiting a very long time with nobody to play with, and they have grown up too, in their own way. They want to play the old games. All of them, forever.",
+        'Tigger: Bouncy. "The wonderful thing about Tiggers is I\'m the only one." Except every time he bounces, he comes down somewhere else, a little further from the Wood. He\'s met the other Tiggers out there. They\'re not wonderful.',
+        "Paddington Bear: Please Look After This Bear. He arrived at the station with a suitcase, a hat and a label. Darkest Peru isn't a place on any map the Browns can find. Aunt Lucy's letters arrive weekly from a postmark that doesn't exist, and lately they've included instructions for the family.",
+        "Peter Rabbit: Mr McGregor's Garden. Peter lost his little blue jacket in Mr McGregor's garden, and Mr McGregor hung it on a scarecrow. The scarecrow is moving now, every night a few inches closer to the rabbit hole, and Peter's mother has stopped letting anyone sleep.",
+        "Benjamin Bunny: The Onions. Benjamin and Peter go back for the clothes, and grab onions from the garden as a gift for Mrs Rabbit. The onions have layers that don't end. The soil in the vegetable patch has been fed something for generations. Mr McGregor's wife's famous rabbit pie has a secret ingredient, and it is not rabbit.",
+        "Jemima Puddle-Duck: The Gentleman With Sandy Whiskers. He offers her a quiet shed for her eggs, full of feathers. So many feathers. Far more feathers than one gentleman could have collected from one farm, and they're not all from ducks, and some of them are still warm.",
+        "Mrs Tiggy-Winkle: Washing Day. She takes in laundry for all the animals of the hills, and returns it spotless. Except the stains don't come out; she moves them. Into the hill. Every stain the animals ever made is in there, and the hill is beginning to breathe.",
+        "Tom Kitten: Roly-Poly. Rats roll Tom in dough to make a pudding, and he's rescued just in time. But the rats were never the hungry ones. They were only cooking. The thing in the walls that they were cooking for has been waiting very patiently for its dinner.",
+        "Pinocchio: A Real Boy. The Blue Fairy granted Geppetto's wish, and the puppet became a real boy. A real boy. Specifically, a real boy, one who had died, centuries ago, and been waiting in the wood of the tree.",
+        "Heidi: Higher Up the Mountain. Grandfather's hut is the last building on the mountain, because nothing above it is right. Heidi goes higher every summer with the goats. The goats come back different. Peter the goatherd hasn't spoken since July. And the mountain grows a few feet every year.",
+        "Alice: The Rabbit Hole. She followed the White Rabbit down the hole and fell for a long time. Long enough to read, and nap, and grow up and grow old in the falling. She hasn't landed. Wonderland was only the bit she saw on the way down. She's still falling, past things that make the Jabberwock look like a kitten.",
+        "Dorothy Gale: No Place Like Home. She clicked her heels three times and woke up in Kansas, in her own bed. Aunt Em and Uncle Henry are thrilled. The farmhands are thrilled. Toto won't stop growling at her.",
+        'The Tin Woodman: A Heart. The Wizard gave him a heart, a silk one, stuffed with sawdust. It began to beat. It beats in a rhythm that no human heart has ever kept, and the Wizard is now very far away, very quickly.',
+        "Mole: Spring Cleaning. Mole was spring-cleaning when he got fed up, threw down his brush and dug up into the open air. He forgot to close the tunnel behind him. Something followed him up, and it's been riding in the boat with him and Ratty ever since, under the water, keeping pace.",
+        'Wilbur: Some Pig. The words in the web saved his life: "Some Pig," "Terrific," "Radiant," "Humble." Charlotte didn\'t write the last one. Charlotte is dead. Words keep appearing in webs all over the farm, and they\'ve started spelling out dates.',
+        'Fern Arable: The Runt. She stopped her father killing the runt of the litter, and the farm never forgave her. The farm, not the family. The fields went quiet. The animals stopped speaking. Something in the soil had been promised that pig.',
+        'The Very Hungry Caterpillar: Saturday. On Saturday it ate through one piece of chocolate cake, one ice cream cone, one pickle, one slice of Swiss cheese, one slice of salami, one lollipop, one piece of cherry pie, one sausage, one cupcake and one slice of watermelon. On Sunday it was still hungry. On Monday it ate the town. The cocoon is the size of a cathedral now, and humming.',
+        "Spot the Dog: Where's Spot? Is he behind the door? No. Is he under the stairs? No. Is he inside the clock? No. Is he in the piano? No. Don't lift the last flap. Mum lifted the last flap. Where's Mum?",
+        "Kipper: The Basket. Kipper sleeps in his basket and dreams, and the dreams don't stay in the basket. Tiger's started having them. The whole street's started having them. In the dreams, there's a basket at the bottom of the sea, and something is sleeping in it, and it is dreaming of Kipper.",
+        "Elmer: Patchwork. Elmer is a patchwork of bright colours, and the other elephants love him. One grey elephant asks where the colours came from. Elmer smiles. Every herd he's visited has had one fewer grey elephant afterward.",
+        "Sophie: The Tiger Who Came to Tea. He ate all the sandwiches, all the cakes, all the food in the fridge, drank all of Daddy's beer and all the water in the taps, and left. Except he didn't leave. He's still at the table. He's been sitting at the table for forty years, and Sophie's mother has to keep setting him a place, because the last time she didn't, the house became very small.",
+        "Thomas the Tank Engine: The Branch Line. There's a station on the Island of Sodor that isn't on the Fat Controller's map. Only Thomas goes there. He comes back with carriages that aren't Annie and Clarabel, and the passengers who board them never get off at the other end.",
+        "Postman Pat: Return to Sender. One parcel, brown paper, no address, no stamp. It's warm, and it ticks like a clock running backwards. Pat delivers it house to house in Greendale, and everyone says it's not for them. Everyone who touched it is now speaking in a language with no vowels. Jess the cat won't come near the van.",
+        "Noddy: Toyland. The bell on top of Noddy's hat rings whenever he nods. It's started ringing when he's still. It's started ringing when he's asleep. Big Ears has worked out it's being rung from the other side.",
+        "Little Grey Rabbit: The Hedgerow. Something very old lives at the bottom of the hedgerow. It's always been polite, and it only asks for small things: a thimble, a button, a squirrel. Little Grey Rabbit has been keeping it fed for years. Squirrel and Hare have no idea what she's protecting them from.",
+        'Babar: The King of the Elephants. Babar returned from the city and founded Celesteville, a gleaming capital in the jungle. Nobody asks why the ground was already flat there, or what the elephants found when they dug the foundations, or why the old king who died before Babar ate a mushroom he found in the exact spot where the palace now stands.',
+        "Curious George: Too Curious. He's a good little monkey, and always very curious. That's the problem. The Man in the Yellow Hat had one rule: don't open the trunk. George opened the trunk.",
+        "Madeline: Twelve Little Girls. In an old house in Paris covered in vines lived twelve little girls in two straight lines. Miss Clavel counts them every night. Lately, there are thirteen. Nobody can tell which one is new, and all thirteen of them say it's Madeline.",
+        "Pollyanna: The Glad Game. Pollyanna finds something to be glad about in everything, no matter how terrible. The town loves her for it. Then the terrible things get stranger, and she keeps being glad about them, glad about the shapes in the sky and the sounds under the town, and the town starts to wonder what side she's on.",
+        'Cedric: The Inheritance. A sweet American boy inherits an English earldom and wins over his grumpy grandfather. But the estate comes with a debt, an ancient one, owed to something under the chapel. Every heir has paid it once. Cedric is very sweet and very young, and grandfather is suddenly being very, very kind.',
+        'Beth March: The Piano. Beth was the gentlest of the four sisters, and she died young. Her piano still plays in the evenings. The tune is the one she always played, at first. Then it changes, every night a little more, into a song made for an instrument with more keys than a piano has.',
+        "The Little Prince: Asteroid B-612. He left his tiny planet with its one rose and three volcanoes to explore the universe. But one of those volcanoes was never extinct. He tamed something out there, just as the fox taught him, and he is responsible for what he's tamed. It's coming to find him.",
+        "Bambi: Man Is in the Forest. Bambi's mother told him Man was the greatest danger in the forest. She was wrong. Man is afraid of the forest too. That's why Man comes with guns. That's why Man keeps setting fires.",
+        "Dumbo: The Magic Feather. Dumbo didn't need the feather to fly, but he needed it to come back down. Without it he just keeps rising, ears spread, over the circus, over the clouds, up and up, and the higher he goes the more he can see what's waiting above the sky.",
+        "Stuart Little: Born Small. The Littles' second son was born the size and shape of a mouse. The doctors couldn't explain it. Nor could anyone else. He's polite and charming and well-dressed and remarkably happy, and he never casts a shadow.",
+        "The BFG: Dream Country. He catches dreams in glass jars and blows the good ones into children's bedrooms. One jar is different. It's been on the top shelf for three hundred years, and one night, very quietly, the lid began to unscrew from the inside.",
+        "Charlie Bucket: The Golden Ticket. Five children enter the chocolate factory, and only one comes out with the keys. The factory chose him. The factory has always chosen. The Oompa-Loompas sing a song for every child that disappears, and they've been singing that song for a very long time.",
+        "Ferdinand the Bull: Smelling the Flowers. Ferdinand was supposed to fight in the ring in Madrid, but he just sat down in the middle and smelled the flowers in the ladies' hair. The matador was furious. But Ferdinand had seen what was sitting in the stands, among the crowd, wearing a crowd, and decided the safest thing was to keep very, very still.",
+    ],
+    'Myths, legends and Bible stories' => [
+        "Baby Moses: The Reeds. His mother put him in a basket in the Nile to save his life, and Pharaoh's daughter found him in the reeds. Between the two, the basket drifted for three days, and spent one night somewhere the river doesn't usually go. He came back with eyes that didn't blink and knowledge of words nobody had taught him.",
+        'The Lost Sheep: Ninety-Nine. The shepherd left the ninety-nine to search for the one that strayed, and found it in the hills, and carried it home rejoicing. Nobody asks what was watching the ninety-nine while he was gone. When he got back, they were all standing in a perfect circle, facing outward, and none of them blinked.',
+        "Young David: The Fifth Stone. He picked up five smooth stones from the brook and needed only one to fell Goliath. He's kept the other four for decades. The brook he took them from has never had stones since, and something is still standing very still in the valley, waiting for him to throw the next one.",
+        "Young Samuel: Here I Am. A boy in the temple hears his name called in the night. He runs to Eli, the priest, who says he didn't call. It happens again, and again. Eli tells him to answer. Samuel answers, and the voice keeps calling, every night, for the rest of his life, and it hasn't once said who it is.",
+        "Persephone: Six Seeds. She ate six pomegranate seeds in the underworld, and so must spend six months of every year below. That's the myth. In the film, the thing below counts differently. Six seeds, six months, six years, six aeons. She has never come back up. What returns each spring wears her face, and makes the flowers grow in strange shapes.",
+        "Pandora: Hope. She opened the jar, and every evil flew into the world: sickness, sorrow, war. She slammed the lid shut, and only Hope was left inside. Everyone has always assumed that was a good thing. But nobody has asked why the gods packed Hope in with all the other evils, or why it's been scratching at the lid so patiently.",
+        "Androcles: The Thorn. He pulled a thorn from a suffering lion's paw, and years later in the arena the lion spared him. But it wasn't a thorn. It was a tooth. And whatever lost it has been looking for it ever since, and Androcles kept it in a pouch around his neck as a lucky charm.",
+        "Gelert: Faithful. The prince came home to find his cradle overturned and his hound Gelert covered in blood. He killed the dog in rage, then heard the baby crying, safe, beside the corpse of a huge wolf Gelert had fought off. That's the legend. The film asks: if it wasn't the baby's blood, and it wasn't the wolf's, whose was it? And what did Gelert know about that baby?",
+        "The Traveller: The Road to Jericho. A man is beaten and left half-dead in a ditch. A priest passes by on the other side of the road. So does a Levite. Everyone assumes they were heartless. They weren't. They'd seen what was in the ditch beside him. Only the Samaritan stopped, because he couldn't see it. He's been seeing it ever since.",
+    ],
+];
+
+/**
  * Five severity tiers of state-mandated pet, escalating from
  * "featherweight chaos" to "cosmically ill-advised". Bounds are
  * rough mass/threat guidance, not enforced anywhere.
@@ -3731,6 +3850,7 @@ function handle_index(): never
             'GET /unhinged/random-boulder' => 'A boulder is rolling at you. Two hundred of them, in eighteen categories.',
             'GET /unhinged/toys' => 'A toy, with something wrong with it. A hundred of them, in nine categories.',
             'GET /unhinged/whats-that' => 'Something is coming over the hill. A hundred things it could be.',
+            'GET /cursed/childhood-tales' => 'A childhood story, cursed. A hundred of them, in five categories.',
             'GET /healthz'           => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         ],
         'notes' => $notes,
@@ -4453,6 +4573,17 @@ function handle_whats_that(): never
     ]);
 }
 
+function handle_cursed_childhood_tales(): never
+{
+    $category = array_rand(CURSED_CHILDHOOD_TALES);
+
+    send(200, [
+        'instruction' => 'Once upon a time.',
+        'tale'        => pick(CURSED_CHILDHOOD_TALES[$category]),
+        'category'    => $category,
+    ]);
+}
+
 function handle_fingers_left(): never
 {
     $id      = pile_id();
@@ -4702,6 +4833,7 @@ match (true) {
     $method === 'GET' && $path === '/unhinged/random-boulder' => handle_random_boulder(),
     $method === 'GET' && $path === '/unhinged/toys'        => handle_toys(),
     $method === 'GET' && $path === '/unhinged/whats-that'  => handle_whats_that(),
+    $method === 'GET' && $path === '/cursed/childhood-tales' => handle_cursed_childhood_tales(),
     $method === 'GET' && $path === '/healthz'             => handle_healthz(),
     default => send(404, [
         'error'  => 'No such service.',

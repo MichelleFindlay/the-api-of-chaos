@@ -498,6 +498,18 @@
                                     "coming over the hill"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "childhood tales",
+                                "synonyms": [
+                                    "cursed childhood tales",
+                                    "childhood tale",
+                                    "cursed tale",
+                                    "cursed tales",
+                                    "bedtime story"
+                                ]
+                            }
                         }
                     ]
                 }

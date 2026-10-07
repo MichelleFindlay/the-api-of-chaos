@@ -12,6 +12,7 @@
   --surface-alt:   #10161d;
   --surface-hover: #0f151c;
   --muted:         #465250;
+  --gold:          #f5c542;
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
   color-scheme: dark;
 }
@@ -31,6 +32,7 @@
   --surface-alt:   #e6e9e0;
   --surface-hover: #e3e6dc;
   --muted:         #8a938c;
+  --gold:          #9a6f00;
   color-scheme: light;
 }
 
@@ -49,6 +51,7 @@
   --surface-alt:   #1a1a1a;
   --surface-hover: #2b2b2b;
   --muted:         #cccccc;
+  --gold:          #ffd700;
   color-scheme: dark;
 }
 :root[data-theme="high-contrast"] .banner__grad {
