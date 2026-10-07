@@ -1,7 +1,23 @@
 const https = require('https');
 const zlib = require('zlib');
+const crypto = require('crypto');
 
 const API_HOST = 'api.dumpsterfire.uk'; // Your API domain
+
+// Shared with the API (CHAOS_PILE_SECRET there too). Set it as an
+// environment variable on this Lambda, never in this file. With it, each
+// Alexa account gets its own pile and fingers; without it, every request
+// falls back to the API's IP-based pile, which is one shared pile for
+// every Alexa user since they all arrive from AWS.
+const PILE_SECRET = process.env.CHAOS_PILE_SECRET || '';
+
+// The API only ever sees a hash of the Alexa userId, never the ID itself.
+function pileIdFor(event) {
+  const userId = (event.context && event.context.System && event.context.System.user && event.context.System.user.userId)
+    || (event.session && event.session.user && event.session.user.userId)
+    || '';
+  return userId ? 'alexa:' + crypto.createHash('sha256').update(userId).digest('hex') : '';
+}
 
 const endpointMap = {
   'rocks': '/kick/rocks',
@@ -136,10 +152,27 @@ const endpointMap = {
   'its now fizzy': '/unhinged/its-now-fizzy',
   "it's now fizzy": '/unhinged/its-now-fizzy',
   'now fizzy': '/unhinged/its-now-fizzy',
-  'fizzy': '/unhinged/its-now-fizzy'
+  'fizzy': '/unhinged/its-now-fizzy',
+  'random boulder': '/unhinged/random-boulder',
+  'boulder': '/unhinged/random-boulder',
+  'a boulder': '/unhinged/random-boulder',
+  'rolling boulder': '/unhinged/random-boulder',
+  'toys': '/unhinged/toys',
+  'toy': '/unhinged/toys',
+  'a toy': '/unhinged/toys',
+  'whats that': '/unhinged/whats-that',
+  "what's that": '/unhinged/whats-that',
+  'over the hill': '/unhinged/whats-that',
+  'coming over the hill': '/unhinged/whats-that',
+  'childhood tales': '/cursed/childhood-tales',
+  'cursed childhood tales': '/cursed/childhood-tales',
+  'childhood tale': '/cursed/childhood-tales',
+  'cursed tale': '/cursed/childhood-tales',
+  'cursed tales': '/cursed/childhood-tales',
+  'bedtime story': '/cursed/childhood-tales'
 };
 
-function callApi(path, queryParams = {}, method = 'GET') {
+function callApi(path, queryParams = {}, method = 'GET', pileId = '') {
   const queryString = Object.keys(queryParams).length > 0
     ? '?' + Object.entries(queryParams).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
     : '';
@@ -155,6 +188,10 @@ function callApi(path, queryParams = {}, method = 'GET') {
       'Accept-Encoding': 'identity'
     }
   };
+  if (pileId && PILE_SECRET) {
+    options.headers['X-Chaos-Pile'] = pileId;
+    options.headers['X-Chaos-Pile-Secret'] = PILE_SECRET;
+  }
 
   // /unhinged endpoints have a 1-in-10 chance of returning a 418 "fell
   // into the void" response instead of real content - that's charming on
@@ -387,7 +424,8 @@ exports.handler = async function(event, context) {
         'Excuses: for teams, social, oops, late, or an alibi. ' +
         'Ministry: gentle correction, or mandatory pet adoption. ' +
         'Cage: put your finger in the cage, try the cage with fictional creatures, or check your fingers. ' +
-        'And unhinged: the eight ball, optimism, pessimism, advice, a non-committal answer, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, or its now fizzy. ' +
+        'And unhinged: the eight ball, optimism, pessimism, advice, a non-committal answer, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, its now fizzy, a random boulder, toys, or whats that. ' +
+        'And cursed: a childhood tale. ' +
         'What would you like?', false);
     }
 
@@ -410,13 +448,14 @@ exports.handler = async function(event, context) {
     const slotValue = (name) => (slots[name] && slots[name].value) ? slots[name].value : null;
 
     const sessionAttrs = (event.session && event.session.attributes) || {};
+    const pileId = pileIdFor(event);
 
     // Resetting a pile is destructive and cannot be undone, so it needs
     // an explicit yes before it happens - the pending state round-trips
     // through sessionAttributes between this turn and the next.
     if (intentName === 'AMAZON.YesIntent') {
       if (sessionAttrs.pendingReset) {
-        const result = await callApi('/pound/dirt', {}, 'DELETE');
+        const result = await callApi('/pound/dirt', {}, 'DELETE', pileId);
         return buildResponse(result, false);
       }
       return buildResponse('I am not sure what you are confirming. Try another command.', false);
@@ -487,7 +526,7 @@ exports.handler = async function(event, context) {
       return buildResponse('I did not understand that. Try another command, or say stop to quit.', false);
     }
 
-    const result = await callApi(path, queryParams, 'GET');
+    const result = await callApi(path, queryParams, 'GET', pileId);
     return buildResponse(result, false);
 
   } catch (error) {

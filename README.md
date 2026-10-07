@@ -1,6 +1,6 @@
 # The API of Chaos
 
-**v2.19.0** — Dismissal, at scale, with an SLA of none.
+**v2.20.0** — Dismissal, at scale, with an SLA of none.
 
 **Base URL** - https://api.dumpsterfire.uk
 
@@ -49,6 +49,10 @@
 | GET | /unhinged/suddenly-sideways | Everything has gone sideways. A hundred ways, in seven categories. |
 | GET | /unhinged/adulting-sick-note | A doctor's note for the adult malady of being alive. A hundred, in ten categories. |
 | GET | /unhinged/its-now-fizzy | Everything is now fizzy. A hundred ways, in ten categories. |
+| GET | /unhinged/random-boulder | A boulder is rolling at you. Two hundred of them, in eighteen categories. |
+| GET | /unhinged/toys | A toy, with something wrong with it. A hundred of them, in nine categories. |
+| GET | /unhinged/whats-that | Something is coming over the hill. coming over the hill. |
+| GET | /cursed/childhood-tales | A childhood story, cursed. A hundred of them, in five categories. |
 | GET | /healthz | Liveness, plus lifetime request, unique-IP, and rocks-kicked counts. |
 
 
@@ -58,15 +62,15 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
-| Web Frontend | 2.19.0 | ✅ yes | Active |
-| Amazon Alexa | 2.19.0 | ✅ yes | Active |
+| Web Frontend | 2.20.0 | ✅ yes | Active |
+| Amazon Alexa | 2.20.0 | ✅ yes | Active |
 
 ## MCP Endpoints
 
 | Type | Version | URL | Status |
 |---|---|---|---|
-| OpenAI | 2.19.0 | Web Frontend/mcp/ | Active |
-| Claude | 2.19.0 | Web Frontend/mcp-claude/ | Active |
+| OpenAI | 2.20.0 | Web Frontend/mcp/ | Active |
+| Claude | 2.20.0 | Web Frontend/mcp-claude/ | Active |
 
 ### Adding OpenAI MCP
 

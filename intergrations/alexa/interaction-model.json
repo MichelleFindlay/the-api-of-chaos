@@ -469,6 +469,47 @@
                                     "fizzy"
                                 ]
                             }
+                        },
+                        {
+                            "name": {
+                                "value": "random boulder",
+                                "synonyms": [
+                                    "boulder",
+                                    "a boulder",
+                                    "rolling boulder"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "toys",
+                                "synonyms": [
+                                    "toy",
+                                    "a toy"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "whats that",
+                                "synonyms": [
+                                    "what's that",
+                                    "over the hill",
+                                    "coming over the hill"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "childhood tales",
+                                "synonyms": [
+                                    "cursed childhood tales",
+                                    "childhood tale",
+                                    "cursed tale",
+                                    "cursed tales",
+                                    "bedtime story"
+                                ]
+                            }
                         }
                     ]
                 }
