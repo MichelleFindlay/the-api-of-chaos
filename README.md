@@ -1,6 +1,6 @@
 # The API of Chaos
 
-**v2.20.0** — Dismissal, at scale, with an SLA of none.
+**v2.21.0** — Dismissal, at scale, with an SLA of none.
 
 **Base URL** - https://api.dumpsterfire.uk
 
@@ -23,6 +23,7 @@
 | GET | /excuses/ring-ring | A reason you did not pick up. |
 | GET | /excuses/late | A reason you're late. |
 | GET | /excuses/alibis | A reason you weren't there.
+| GET | /excuses/inlaws | A reason you can't visit the in-laws. Two hundred of them, in ten categories. |
 | GET | /ministry/gentle-correction | Rolls a d6 against the Ministry's approved remedies, graded in newtons. |
 | GET | /ministry/mandatory-pet-adoption | Assigns a legally binding pet from 203 options, tiered by how badly it ends you.  |
 | GET | /cage/finger | Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next. |
@@ -62,15 +63,15 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
-| Web Frontend | 2.20.0 | ✅ yes | Active |
-| Amazon Alexa | 2.20.0 | ✅ yes | Active |
+| Web Frontend | 2.21.0 | ✅ yes | Active |
+| Amazon Alexa | 2.21.0 | ✅ yes | Active |
 
 ## MCP Endpoints
 
 | Type | Version | URL | Status |
 |---|---|---|---|
-| OpenAI | 2.20.0 | Web Frontend/mcp/ | Active |
-| Claude | 2.20.0 | Web Frontend/mcp-claude/ | Active |
+| OpenAI | 2.21.0 | Web Frontend/mcp/ | Active |
+| Claude | 2.21.0 | Web Frontend/mcp-claude/ | Active |
 
 ### Adding OpenAI MCP
 

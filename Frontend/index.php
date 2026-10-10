@@ -92,7 +92,7 @@ $CATALOGUE = [
     [
         'group'   => 'Excuses',
         'collapsed' => true,
-        'caption' => 'six ways out',
+        'caption' => 'seven ways out',
         'items'   => [
             ['path' => '/excuses/teams',        'method' => 'GET', 'note' => 'not joining the call 👏',        'fields' => []],
             ['path' => '/excuses/social',       'method' => 'GET', 'note' => 'not attending, with tier 👥',    'fields' => []],
@@ -100,6 +100,7 @@ $CATALOGUE = [
             ['path' => '/excuses/ring-ring',    'method' => 'GET', 'note' => 'why you did not pick up 📞',     'fields' => []],
             ['path' => '/excuses/late',         'method' => 'GET', 'note' => 'why you are late ⏰',            'fields' => []],
             ['path' => '/excuses/alibis',       'method' => 'GET', 'note' => 'why you were not there 😉',      'fields' => []],
+            ['path' => '/excuses/inlaws',       'method' => 'GET', 'new' => true, 'note' => 'why you cannot visit the in-laws 🏡', 'fields' => []],
         ],
     ],
     [

@@ -128,6 +128,11 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'excuses_inlaws', 'path' => '/excuses/inlaws', 'method' => 'GET',
+        'description' => "A reason you can't visit the in-laws. Two hundred of them, in ten categories.",
+        'params' => [],
+    ],
+    [
         'name' => 'ministry_gentle_correction', 'path' => '/ministry/gentle-correction', 'method' => 'GET',
         'description' => "Rolls a d6 against the Ministry's approved remedies, graded in newtons.",
         'params' => [],

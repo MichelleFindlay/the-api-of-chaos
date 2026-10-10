@@ -25,7 +25,7 @@ const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
  * This site's own version, shown in the banner. Bump this alongside the
  * same number in Web/index.php and Frontend/mcp/lib.php's SERVER_VERSION.
  */
-const APP_VERSION  = '2.20.0';
+const APP_VERSION  = '2.21.0';
 const GITHUB_REPO  = 'MichelleFindlay/the-api-of-chaos';
 
 /**
@@ -168,7 +168,7 @@ const ALLOWED_PATHS = [
     '#^/kick/munitions/tiers$#',
     '#^/pound/dirt$#',
     '#^/pound/dirt/(status|tiers|leaderboard)$#',
-    '#^/excuses/(teams|social|oops|ring-ring|late|alibis)$#',
+    '#^/excuses/(teams|social|oops|ring-ring|late|alibis|inlaws)$#',
     '#^/ministry/(gentle-correction|mandatory-pet-adoption)$#',
     '#^/cage/finger$#',
     '#^/cage/finger/(left|reset)$#',

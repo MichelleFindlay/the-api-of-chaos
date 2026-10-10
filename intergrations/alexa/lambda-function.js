@@ -62,6 +62,11 @@ const endpointMap = {
   'excuses alibis': '/excuses/alibis',
   'alibi': '/excuses/alibis',
   'wasnt there': '/excuses/alibis',
+  'excuses inlaws': '/excuses/inlaws',
+  'inlaws': '/excuses/inlaws',
+  'in laws': '/excuses/inlaws',
+  'inlaws excuse': '/excuses/inlaws',
+  'in laws excuse': '/excuses/inlaws',
   'gentle correction': '/ministry/gentle-correction',
   'ministry correction': '/ministry/gentle-correction',
   'mandatory pet adoption': '/ministry/mandatory-pet-adoption',
@@ -421,7 +426,7 @@ exports.handler = async function(event, context) {
       return buildResponse('Welcome to the API of Chaos. Here is what I can do. ' +
         'Kick: rocks, or munitions. ' +
         'Pound: dirt, check your pile, or the leaderboard. ' +
-        'Excuses: for teams, social, oops, late, or an alibi. ' +
+        'Excuses: for teams, social, oops, late, an alibi, or the in-laws. ' +
         'Ministry: gentle correction, or mandatory pet adoption. ' +
         'Cage: put your finger in the cage, try the cage with fictional creatures, or check your fingers. ' +
         'And unhinged: the eight ball, optimism, pessimism, advice, a non-committal answer, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, its now fizzy, a random boulder, toys, or whats that. ' +
