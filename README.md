@@ -1,6 +1,6 @@
 # The API of Chaos
 
-**v2.21.0** — Dismissal, at scale, with an SLA of none.
+**v2.22.0** — Dismissal, at scale, with an SLA of none.
 
 **Base URL** - https://api.dumpsterfire.uk
 
@@ -28,6 +28,7 @@
 | GET | /ministry/mandatory-pet-adoption | Assigns a legally binding pet from 203 options, tiered by how badly it ends you.  |
 | GET | /cage/finger | Put your finger in the cage. 50 animals, 50/50 odds. Costs a finger if taken; once fingers run out, toes are next. |
 | GET | /cage/fictional/finger | Put your finger in the cage. 50 fictional creatures this time. Shares your finger/toe count with /cage/finger. |
+| GET | /cage/finger/haunted | Put your finger in the cage. 100 haunted and supernatural entities this time. Shares your finger/toe count with /cage/finger. |
 | GET | /cage/finger/left | How many fingers and toes you have left, out of 10 each. |
 | GET | /cage/finger/reset | Pray to the gods of the holy hairy toe for 10 fingers and 10 toes again. |
 | GET | /unhinged/8ball | Shake it. It answers, unreliably. |
@@ -54,6 +55,8 @@
 | GET | /unhinged/toys | A toy, with something wrong with it. A hundred of them, in nine categories. |
 | GET | /unhinged/whats-that | Something is coming over the hill. coming over the hill. |
 | GET | /cursed/childhood-tales | A childhood story, cursed. A hundred of them, in five categories. |
+| GET | /cursed/furniture | A piece of furniture, and what's wrong with it. Two hundred of them. |
+| GET | /cursed/heirloom | A family heirloom, passed down with strings attached. Two hundred of them. |
 | GET | /healthz | Liveness, plus lifetime request, unique-IP, and rocks-kicked counts. |
 
 
@@ -63,15 +66,15 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
-| Web Frontend | 2.21.0 | ✅ yes | Active |
-| Amazon Alexa | 2.21.0 | ✅ yes | Active |
+| Web Frontend | 2.22.0 | ✅ yes | Active |
+| Amazon Alexa | 2.22.0 | ✅ yes | Active |
 
 ## MCP Endpoints
 
 | Type | Version | URL | Status |
 |---|---|---|---|
-| OpenAI | 2.21.0 | Web Frontend/mcp/ | Active |
-| Claude | 2.21.0 | Web Frontend/mcp-claude/ | Active |
+| OpenAI | 2.22.0 | Web Frontend/mcp/ | Active |
+| Claude | 2.22.0 | Web Frontend/mcp-claude/ | Active |
 
 ### Adding OpenAI MCP
 

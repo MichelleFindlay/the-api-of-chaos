@@ -153,6 +153,11 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'cage_finger_haunted', 'path' => '/cage/finger/haunted', 'method' => 'GET',
+        'description' => 'Put your finger in the cage. 100 haunted and supernatural entities this time. Shares your finger/toe count with cage_finger.',
+        'params' => [],
+    ],
+    [
         'name' => 'cage_finger_left', 'path' => '/cage/finger/left', 'method' => 'GET',
         'description' => 'How many fingers and toes you have left, out of 10 each.',
         'params' => [],
@@ -280,6 +285,16 @@ $MCP_TOOLS = [
     [
         'name' => 'cursed_childhood_tales', 'path' => '/cursed/childhood-tales', 'method' => 'GET',
         'description' => 'A childhood story, cursed. A hundred of them, in five categories.',
+        'params' => [],
+    ],
+    [
+        'name' => 'cursed_furniture', 'path' => '/cursed/furniture', 'method' => 'GET',
+        'description' => "A piece of furniture, and what's wrong with it. Two hundred of them.",
+        'params' => [],
+    ],
+    [
+        'name' => 'cursed_heirloom', 'path' => '/cursed/heirloom', 'method' => 'GET',
+        'description' => 'A family heirloom, passed down with strings attached. Two hundred of them.',
         'params' => [],
     ],
     [

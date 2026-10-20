@@ -119,6 +119,7 @@ $CATALOGUE = [
         'items'   => [
             ['path' => '/cage/finger',           'method' => 'GET', 'note' => '50 animals. costs a 👉 if taken', 'fields' => []],
             ['path' => '/cage/fictional/finger', 'method' => 'GET', 'note' => '50 fictional creatures, same 🫵',  'fields' => []],
+            ['path' => '/cage/finger/haunted',   'method' => 'GET', 'new' => true, 'note' => '100 haunted entities, same 👻',   'fields' => []],
             ['path' => '/cage/finger/left',      'method' => 'GET', 'note' => 'what remains, out of 10 each 🖐️',        'fields' => []],
             ['path' => '/cage/finger/reset',     'method' => 'GET', 'note' => 'pray to the holy hairy toe 🦶',          'fields' => []],
         ],
@@ -173,6 +174,8 @@ $CATALOGUE = [
         'caption' => 'happily never after',
         'items'   => [
             ['path' => '/cursed/childhood-tales', 'new' => true, 'method' => 'GET', 'note' => 'once upon a time, never again 📖', 'fields' => []],
+            ['path' => '/cursed/furniture', 'new' => true, 'method' => 'GET', 'note' => 'it\'s just furniture 🪑', 'fields' => []],
+            ['path' => '/cursed/heirloom', 'new' => true, 'method' => 'GET', 'note' => 'it\'s been in the family 🕰️', 'fields' => []],
         ],
     ],
     [
