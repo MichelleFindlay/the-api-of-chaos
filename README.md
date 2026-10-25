@@ -1,6 +1,6 @@
 # The API of Chaos
 
-**v2.22.0** — Dismissal, at scale, with an SLA of none.
+**v2.21.0** — Dismissal, at scale, with an SLA of none.
 
 **Base URL** - https://api.dumpsterfire.uk
 
@@ -66,15 +66,15 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
-| Web Frontend | 2.22.0 | ✅ yes | Active |
-| Amazon Alexa | 2.22.0 | ✅ yes | Active |
+| Web Frontend | 2.21.0 | ✅ yes | Active |
+| Amazon Alexa | 2.21.0 | ✅ yes | Active |
 
 ## MCP Endpoints
 
 | Type | Version | URL | Status |
 |---|---|---|---|
-| OpenAI | 2.22.0 | Web Frontend/mcp/ | Active |
-| Claude | 2.22.0 | Web Frontend/mcp-claude/ | Active |
+| OpenAI | 2.21.0 | Web Frontend/mcp/ | Active |
+| Claude | 2.21.0 | Web Frontend/mcp-claude/ | Active |
 
 ### Adding OpenAI MCP
 
