@@ -128,6 +128,11 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'excuses_inlaws', 'path' => '/excuses/inlaws', 'method' => 'GET',
+        'description' => "A reason you can't visit the in-laws. Two hundred of them, in ten categories.",
+        'params' => [],
+    ],
+    [
         'name' => 'ministry_gentle_correction', 'path' => '/ministry/gentle-correction', 'method' => 'GET',
         'description' => "Rolls a d6 against the Ministry's approved remedies, graded in newtons.",
         'params' => [],
@@ -145,6 +150,11 @@ $MCP_TOOLS = [
     [
         'name' => 'cage_fictional_finger', 'path' => '/cage/fictional/finger', 'method' => 'GET',
         'description' => 'Put your finger in the cage. 50 fictional creatures this time. Shares your finger/toe count with cage_finger.',
+        'params' => [],
+    ],
+    [
+        'name' => 'cage_finger_haunted', 'path' => '/cage/finger/haunted', 'method' => 'GET',
+        'description' => 'Put your finger in the cage. 100 haunted and supernatural entities this time. Shares your finger/toe count with cage_finger.',
         'params' => [],
     ],
     [
@@ -275,6 +285,16 @@ $MCP_TOOLS = [
     [
         'name' => 'cursed_childhood_tales', 'path' => '/cursed/childhood-tales', 'method' => 'GET',
         'description' => 'A childhood story, cursed. A hundred of them, in five categories.',
+        'params' => [],
+    ],
+    [
+        'name' => 'cursed_furniture', 'path' => '/cursed/furniture', 'method' => 'GET',
+        'description' => "A piece of furniture, and what's wrong with it. Two hundred of them.",
+        'params' => [],
+    ],
+    [
+        'name' => 'cursed_heirloom', 'path' => '/cursed/heirloom', 'method' => 'GET',
+        'description' => 'A family heirloom, passed down with strings attached. Two hundred of them.',
         'params' => [],
     ],
     [

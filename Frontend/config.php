@@ -25,7 +25,7 @@ const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
  * This site's own version, shown in the banner. Bump this alongside the
  * same number in Web/index.php and Frontend/mcp/lib.php's SERVER_VERSION.
  */
-const APP_VERSION  = '2.20.0';
+const APP_VERSION  = '2.22.0';
 const GITHUB_REPO  = 'MichelleFindlay/the-api-of-chaos';
 
 /**
@@ -168,13 +168,15 @@ const ALLOWED_PATHS = [
     '#^/kick/munitions/tiers$#',
     '#^/pound/dirt$#',
     '#^/pound/dirt/(status|tiers|leaderboard)$#',
-    '#^/excuses/(teams|social|oops|ring-ring|late|alibis)$#',
+    '#^/excuses/(teams|social|oops|ring-ring|late|alibis|inlaws)$#',
     '#^/ministry/(gentle-correction|mandatory-pet-adoption)$#',
     '#^/cage/finger$#',
-    '#^/cage/finger/(left|reset)$#',
+    '#^/cage/finger/(left|reset|haunted)$#',
     '#^/cage/fictional/finger$#',
     '#^/unhinged/(8ball|optimism|pessimism|advice|non-committal|optimistic-dooom|turn-it-upside-down|solid-suddenly-liquid|solid-suddenly-gelatinous|choose-your-duck|gravity-resigned|vengeful-weather|wrongfall|poke|storage-buddies|fate-arrived|its-fine|suddenly-sideways|adulting-sick-note|its-now-fizzy|random-boulder|toys|whats-that)$#',
     '#^/cursed/childhood-tales$#',
+    '#^/cursed/furniture$#',
+    '#^/cursed/heirloom$#',
 ];
 
 /** Paths that may be called with DELETE. Everything else is GET or POST. */
