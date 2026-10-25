@@ -78,6 +78,10 @@ const endpointMap = {
   'fictional finger': '/cage/fictional/finger',
   'fictional creature': '/cage/fictional/finger',
   'fictional finger cage': '/cage/fictional/finger',
+  'haunted finger': '/cage/finger/haunted',
+  'haunted cage': '/cage/finger/haunted',
+  'haunted finger cage': '/cage/finger/haunted',
+  'ghost cage': '/cage/finger/haunted',
   'finger status': '/cage/finger/left',
   'fingers left': '/cage/finger/left',
   'toes left': '/cage/finger/left',
@@ -174,7 +178,13 @@ const endpointMap = {
   'childhood tale': '/cursed/childhood-tales',
   'cursed tale': '/cursed/childhood-tales',
   'cursed tales': '/cursed/childhood-tales',
-  'bedtime story': '/cursed/childhood-tales'
+  'bedtime story': '/cursed/childhood-tales',
+  // Plain 'furniture' stays with /unhinged/storage-buddies above.
+  'cursed furniture': '/cursed/furniture',
+  'haunted furniture': '/cursed/furniture',
+  'cursed heirloom': '/cursed/heirloom',
+  'heirloom': '/cursed/heirloom',
+  'family heirloom': '/cursed/heirloom'
 };
 
 function callApi(path, queryParams = {}, method = 'GET', pileId = '') {
@@ -428,9 +438,9 @@ exports.handler = async function(event, context) {
         'Pound: dirt, check your pile, or the leaderboard. ' +
         'Excuses: for teams, social, oops, late, an alibi, or the in-laws. ' +
         'Ministry: gentle correction, or mandatory pet adoption. ' +
-        'Cage: put your finger in the cage, try the cage with fictional creatures, or check your fingers. ' +
+        'Cage: put your finger in the cage, try the cage with fictional creatures or haunted ones, or check your fingers. ' +
         'And unhinged: the eight ball, optimism, pessimism, advice, a non-committal answer, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, its now fizzy, a random boulder, toys, or whats that. ' +
-        'And cursed: a childhood tale. ' +
+        'And cursed: a childhood tale, cursed furniture, or a family heirloom. ' +
         'What would you like?', false);
     }
 
@@ -502,7 +512,7 @@ exports.handler = async function(event, context) {
 
       if (!path) {
         console.error('Unmatched endpoint. spoken="' + spoken + '" resolved="' + resolved + '"');
-        return buildResponse('I do not know that one. Try rocks, munitions, excuses, cage, or unhinged.', false);
+        return buildResponse('I do not know that one. Try rocks, munitions, excuses, cage, unhinged, or cursed.', false);
       }
 
       if (slotValue('tier')) {
@@ -520,7 +530,7 @@ exports.handler = async function(event, context) {
     } else if (intentName === 'HealthCheck') {
       path = '/healthz';
     } else if (intentName === 'AMAZON.HelpIntent') {
-      return buildResponse('You can ask for rocks, munitions, excuses, cage games, or unhinged answers.', false);
+      return buildResponse('You can ask for rocks, munitions, excuses, cage games, unhinged answers, or something cursed.', false);
     } else if (intentName === 'AMAZON.StopIntent' || intentName === 'AMAZON.CancelIntent') {
       return buildResponse('Goodbye. You can also find the API of Chaos on the web at dumpsterfire dot U K.', true);
     } else if (intentName === 'AMAZON.FallbackIntent') {

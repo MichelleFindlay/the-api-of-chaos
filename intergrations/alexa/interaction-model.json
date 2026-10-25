@@ -270,6 +270,16 @@
                         },
                         {
                             "name": {
+                                "value": "haunted finger",
+                                "synonyms": [
+                                    "haunted cage",
+                                    "haunted finger cage",
+                                    "ghost cage"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
                                 "value": "finger status",
                                 "synonyms": [
                                     "fingers left",
@@ -519,6 +529,23 @@
                                     "cursed tale",
                                     "cursed tales",
                                     "bedtime story"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "cursed furniture",
+                                "synonyms": [
+                                    "haunted furniture"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "cursed heirloom",
+                                "synonyms": [
+                                    "heirloom",
+                                    "family heirloom"
                                 ]
                             }
                         }
