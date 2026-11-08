@@ -25,7 +25,7 @@ const STAGING_API_URL = 'https://dev.dumpsterfire.uk/api';
  * This site's own version, shown in the banner. Bump this alongside the
  * same number in Web/index.php and Frontend/mcp/lib.php's SERVER_VERSION.
  */
-const APP_VERSION  = '2.21.0';
+const APP_VERSION  = '2.22.0';
 const GITHUB_REPO  = 'MichelleFindlay/the-api-of-chaos';
 
 /**
@@ -177,6 +177,8 @@ const ALLOWED_PATHS = [
     '#^/cursed/childhood-tales$#',
     '#^/cursed/furniture$#',
     '#^/cursed/heirloom$#',
+    '#^/cursed/it-grew-legs$#',
+    '#^/cursed/bibbidi-bobbidi-boo$#',
 ];
 
 /** Paths that may be called with DELETE. Everything else is GET or POST. */

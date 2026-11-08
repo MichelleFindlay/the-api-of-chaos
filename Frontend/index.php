@@ -100,7 +100,7 @@ $CATALOGUE = [
             ['path' => '/excuses/ring-ring',    'method' => 'GET', 'note' => 'why you did not pick up 📞',     'fields' => []],
             ['path' => '/excuses/late',         'method' => 'GET', 'note' => 'why you are late ⏰',            'fields' => []],
             ['path' => '/excuses/alibis',       'method' => 'GET', 'note' => 'why you were not there 😉',      'fields' => []],
-            ['path' => '/excuses/inlaws',       'method' => 'GET', 'new' => true, 'note' => 'why you cannot visit the in-laws 🏡', 'fields' => []],
+            ['path' => '/excuses/inlaws',       'method' => 'GET', 'note' => 'why you cannot visit the in-laws 🏡', 'fields' => []],
         ],
     ],
     [
@@ -119,7 +119,7 @@ $CATALOGUE = [
         'items'   => [
             ['path' => '/cage/finger',           'method' => 'GET', 'note' => '50 animals. costs a 👉 if taken', 'fields' => []],
             ['path' => '/cage/fictional/finger', 'method' => 'GET', 'note' => '50 fictional creatures, same 🫵',  'fields' => []],
-            ['path' => '/cage/finger/haunted',   'method' => 'GET', 'new' => true, 'note' => '100 haunted entities, same 👻',   'fields' => []],
+            ['path' => '/cage/finger/haunted',   'method' => 'GET', 'note' => '100 haunted entities, same 👻',   'fields' => []],
             ['path' => '/cage/finger/left',      'method' => 'GET', 'note' => 'what remains, out of 10 each 🖐️',        'fields' => []],
             ['path' => '/cage/finger/reset',     'method' => 'GET', 'note' => 'pray to the holy hairy toe 🦶',          'fields' => []],
         ],
@@ -153,9 +153,9 @@ $CATALOGUE = [
             ['path' => '/unhinged/storage-buddies', 'method' => 'GET', 'note' => 'furniture following you 🗄️', 'fields' => []],
             ['path' => '/unhinged/fate-arrived', 'method' => 'GET', 'note' => 'fate has arrived, badly 🔮', 'fields' => []],
             ['path' => '/unhinged/its-fine', 'method' => 'GET', 'note' => 'it\'s fine. probably. 🔥', 'fields' => []],
-            ['path' => '/unhinged/suddenly-sideways', 'new' => true, 'method' => 'GET', 'note' => 'everything but sideways ↪️', 'fields' => []],
-            ['path' => '/unhinged/adulting-sick-note', 'new' => true, 'method' => 'GET', 'note' => 'certified not-a-corpse 🤒', 'fields' => []],
-            ['path' => '/unhinged/its-now-fizzy', 'new' => true, 'method' => 'GET', 'note' => 'everything but carbonated 🫧', 'fields' => []],
+            ['path' => '/unhinged/suddenly-sideways', 'method' => 'GET', 'note' => 'everything but sideways ↪️', 'fields' => []],
+            ['path' => '/unhinged/adulting-sick-note', 'method' => 'GET', 'note' => 'certified not-a-corpse 🤒', 'fields' => []],
+            ['path' => '/unhinged/its-now-fizzy', 'method' => 'GET', 'note' => 'everything but carbonated 🫧', 'fields' => []],
         ],
     ],
     [
@@ -163,9 +163,9 @@ $CATALOGUE = [
         'collapsed' => true,
         'caption' => 'no filter',
         'items'   => [
-            ['path' => '/unhinged/random-boulder', 'new' => true, 'method' => 'GET', 'note' => 'round, rolling at you 🪨', 'fields' => []],
-            ['path' => '/unhinged/toys', 'new' => true, 'method' => 'GET', 'note' => 'some assembly required 🧸', 'fields' => []],
-            ['path' => '/unhinged/whats-that', 'new' => true, 'method' => 'GET', 'note' => 'coming over the hill ⛰️', 'fields' => []],
+            ['path' => '/unhinged/random-boulder', 'method' => 'GET', 'note' => 'round, rolling at you 🪨', 'fields' => []],
+            ['path' => '/unhinged/toys', 'method' => 'GET', 'note' => 'some assembly required 🧸', 'fields' => []],
+            ['path' => '/unhinged/whats-that', 'method' => 'GET', 'note' => 'coming over the hill ⛰️', 'fields' => []],
         ],
     ],
     [
@@ -173,9 +173,11 @@ $CATALOGUE = [
         'collapsed' => true,
         'caption' => 'happily never after',
         'items'   => [
-            ['path' => '/cursed/childhood-tales', 'new' => true, 'method' => 'GET', 'note' => 'once upon a time, never again 📖', 'fields' => []],
-            ['path' => '/cursed/furniture', 'new' => true, 'method' => 'GET', 'note' => 'it\'s just furniture 🪑', 'fields' => []],
+            ['path' => '/cursed/childhood-tales', 'method' => 'GET', 'note' => 'once upon a time, never again 📖', 'fields' => []],
+            ['path' => '/cursed/furniture', 'method' => 'GET', 'note' => 'it\'s just furniture 🪑', 'fields' => []],
             ['path' => '/cursed/heirloom', 'new' => true, 'method' => 'GET', 'note' => 'it\'s been in the family 🕰️', 'fields' => []],
+            ['path' => '/cursed/it-grew-legs', 'new' => true, 'method' => 'GET', 'note' => 'it\'s behind you 🦵', 'fields' => []],
+            ['path' => '/cursed/bibbidi-bobbidi-boo', 'new' => true, 'method' => 'GET', 'note' => 'a wish, slightly wrong 🪄', 'fields' => []],
         ],
     ],
     [

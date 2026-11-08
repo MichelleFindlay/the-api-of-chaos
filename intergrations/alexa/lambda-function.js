@@ -184,7 +184,14 @@ const endpointMap = {
   'haunted furniture': '/cursed/furniture',
   'cursed heirloom': '/cursed/heirloom',
   'heirloom': '/cursed/heirloom',
-  'family heirloom': '/cursed/heirloom'
+  'family heirloom': '/cursed/heirloom',
+  'it grew legs': '/cursed/it-grew-legs',
+  'grew legs': '/cursed/it-grew-legs',
+  'legs': '/cursed/it-grew-legs',
+  'bibbidi bobbidi boo': '/cursed/bibbidi-bobbidi-boo',
+  'bibbity bobbity boo': '/cursed/bibbidi-bobbidi-boo',
+  'fairy godmother': '/cursed/bibbidi-bobbidi-boo',
+  'make a wish': '/cursed/bibbidi-bobbidi-boo'
 };
 
 function callApi(path, queryParams = {}, method = 'GET', pileId = '') {
@@ -440,7 +447,7 @@ exports.handler = async function(event, context) {
         'Ministry: gentle correction, or mandatory pet adoption. ' +
         'Cage: put your finger in the cage, try the cage with fictional creatures or haunted ones, or check your fingers. ' +
         'And unhinged: the eight ball, optimism, pessimism, advice, a non-committal answer, optimistic doom, turn it upside down, change something from solid to a jelly or liquid, choose your duck, gravity resigned, vengeful weather, wrongfall, poke, storage buddies, fate arrived, its fine, suddenly sideways, an adulting sick note, its now fizzy, a random boulder, toys, or whats that. ' +
-        'And cursed: a childhood tale, cursed furniture, or a family heirloom. ' +
+        'And cursed: a childhood tale, cursed furniture, a family heirloom, it grew legs, or your fairy godmother. ' +
         'What would you like?', false);
     }
 

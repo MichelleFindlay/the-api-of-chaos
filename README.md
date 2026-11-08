@@ -1,6 +1,6 @@
 # The API of Chaos
 
-**v2.21.0** — Dismissal, at scale, with an SLA of none.
+**v2.22.0** — Dismissal, at scale, with an SLA of none.
 
 **Base URL** - https://api.dumpsterfire.uk
 
@@ -57,6 +57,8 @@
 | GET | /cursed/childhood-tales | A childhood story, cursed. A hundred of them, in five categories. |
 | GET | /cursed/furniture | A piece of furniture, and what's wrong with it. Two hundred of them. |
 | GET | /cursed/heirloom | A family heirloom, passed down with strings attached. Two hundred of them. |
+| GET | /cursed/it-grew-legs | Something ordinary, now with legs. Two hundred of them. |
+| GET | /cursed/bibbidi-bobbidi-boo | Your fairy godmother casts a spell. It goes slightly wrong. Two hundred ways, in eight categories. |
 | GET | /healthz | Liveness, plus lifetime request, unique-IP, and rocks-kicked counts. |
 
 
@@ -66,15 +68,15 @@
 
 | Integration | Version | Published | Status |
 |---|---|---|---|
-| Web Frontend | 2.21.0 | ✅ yes | Active |
-| Amazon Alexa | 2.21.0 | ✅ yes | Active |
+| Web Frontend | 2.22.0 | ✅ yes | Active |
+| Amazon Alexa | 2.22.0 | ✅ yes | Active |
 
 ## MCP Endpoints
 
 | Type | Version | URL | Status |
 |---|---|---|---|
-| OpenAI | 2.21.0 | Web Frontend/mcp/ | Active |
-| Claude | 2.21.0 | Web Frontend/mcp-claude/ | Active |
+| OpenAI | 2.22.0 | Web Frontend/mcp/ | Active |
+| Claude | 2.22.0 | Web Frontend/mcp-claude/ | Active |
 
 ### Adding OpenAI MCP
 

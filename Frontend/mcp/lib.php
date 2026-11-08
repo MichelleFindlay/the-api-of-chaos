@@ -298,6 +298,16 @@ $MCP_TOOLS = [
         'params' => [],
     ],
     [
+        'name' => 'cursed_it_grew_legs', 'path' => '/cursed/it-grew-legs', 'method' => 'GET',
+        'description' => 'Something ordinary, now with legs. Two hundred of them.',
+        'params' => [],
+    ],
+    [
+        'name' => 'cursed_bibbidi_bobbidi_boo', 'path' => '/cursed/bibbidi-bobbidi-boo', 'method' => 'GET',
+        'description' => 'Your fairy godmother casts a spell. It goes slightly wrong. Two hundred ways, in eight categories.',
+        'params' => [],
+    ],
+    [
         'name' => 'healthz', 'path' => '/healthz', 'method' => 'GET',
         'description' => 'Liveness, plus lifetime request, unique-IP, and rocks-kicked counts.',
         'params' => [],
